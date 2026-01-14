@@ -9,19 +9,6 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-// Global error handler for debugging on mobile
-window.onerror = (msg, url, line, _col, _error) => {
-  const root = document.getElementById('root');
-  if (root) {
-    root.innerHTML = `<div style="padding: 20px; color: red;">
-      <h3>Erreur de chargement</h3>
-      <p>${msg}</p>
-      <small>${url}:${line}</small>
-    </div>`;
-  }
-  return false;
-};
-
 try {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
@@ -31,7 +18,7 @@ try {
   );
 } catch (error: any) {
   rootElement.innerHTML = `<div style="padding: 20px; color: red;">
-    <h3>Erreur fatale</h3>
+    <h3>Erreur d'exécution React</h3>
     <p>${error.message}</p>
   </div>`;
 }

@@ -21,8 +21,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
 
   const DEFAULT_GEMINI_MODELS = [
     { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash (Expérimental 🚀)' },
-    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Rapide & Stable)' },
-    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Plus intelligent)' },
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Stable ✅)' },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Performance ✨)' },
+    { id: 'gemini-3-flash', name: 'Gemini 3.0 Flash (Nouveau 🆕)' },
+    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Héritage)' },
   ];
 
   // Initialize from localStorage or defaults, but ALWAYS ensure the current config model is present

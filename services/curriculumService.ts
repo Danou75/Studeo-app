@@ -224,7 +224,7 @@ export const generateStudyProgram = async (
 
              if (provider === 'gemini') {
                  if (!apiKey) throw new Error("Clé API nécessaire pour le mode Média (Gemini)");
-                 url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel || 'gemini-1.5-flash'}:generateContent?key=${apiKey}`;
+                 url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel || 'gemini-2.0-flash-exp'}:generateContent?key=${apiKey}`;
                  payload = {
                     contents: [{
                         parts: [

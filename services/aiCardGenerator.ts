@@ -57,7 +57,7 @@ export const generateFlashcardsWithAI = async (
 
          if (activeProvider === 'gemini') {
             apiKey = apiKey || localStorage.getItem('gemini_api_key') || '';
-            model = model || 'gemini-1.5-flash';
+            model = model || 'gemini-2.0-flash-exp';
             if (!apiKey) throw new Error("Clé API Gemini requise pour le mode Multimédia.");
             url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             payload = {
@@ -696,10 +696,11 @@ export const generateSmartDistractors = async (
             
             if (isTauri) {
                  responseText = await invoke<string>('generate_flashcards_command', { 
-                    prompt, apiKey: apiKey.trim(), modelName: config.modelName || 'gemini-1.5-flash'
+                    prompt, apiKey: apiKey.trim(), modelName: config.modelName || 'gemini-2.0-flash-exp'
                 });
             } else {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${config.modelName || 'gemini-1.5-flash'}:generateContent?key=${apiKey}`;
+                const modelName = config.modelName;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName || 'gemini-2.0-flash-exp'}:generateContent?key=${apiKey.trim()}`;
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

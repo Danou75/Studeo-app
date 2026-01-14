@@ -23,8 +23,8 @@ export default defineConfig(({ mode }) => ({
   // https://tauri.app/v1/api/config#buildconfig.beforedevcommand
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
-    // Tauri supports es2021
-    target: mode === 'web' ? 'es2020' : (process.env.TAURI_PLATFORM == 'windows' ? 'chrome105' : 'safari15'),
+    // Target es2015 specifically for web to support older iPad models (Safari 13+)
+    target: mode === 'web' ? 'es2015' : (process.env.TAURI_PLATFORM == 'windows' ? 'chrome105' : 'safari15'),
     // don't minify for debug builds
     minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
     // produce sourcemaps for debug builds

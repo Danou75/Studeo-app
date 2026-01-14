@@ -10,7 +10,7 @@ if (!rootElement) {
 }
 
 // Global error handler for debugging on mobile
-window.onerror = (msg, url, line, col, error) => {
+window.onerror = (msg, url, line, _col, _error) => {
   const root = document.getElementById('root');
   if (root) {
     root.innerHTML = `<div style="padding: 20px; color: red;">

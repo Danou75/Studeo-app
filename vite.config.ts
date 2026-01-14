@@ -1,16 +1,10 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import legacy from '@vitejs/plugin-legacy'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  plugins: [
-    react(),
-    mode === 'web' ? legacy({
-      targets: ['defaults', 'Safari 13'],
-    }) : null,
-  ].filter(Boolean),
+  plugins: [react()],
   // prevent vite from obscuring rust errors
   clearScreen: false,
   // Tauri expects a fixed port, fail if that port is not available
@@ -29,20 +23,9 @@ export default defineConfig(({ mode }) => ({
   // https://tauri.app/v1/api/config#buildconfig.beforedevcommand
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
-    // Target es2015 specifically for web to support older iPad models (Safari 13+)
-    target: mode === 'web' ? 'es2015' : (process.env.TAURI_PLATFORM == 'windows' ? 'chrome105' : 'safari15'),
-    // Switch to terser for better compatibility on older browsers
-    minify: mode === 'web' ? 'terser' : (!process.env.TAURI_DEBUG ? 'esbuild' : false),
-    terserOptions: mode === 'web' ? {
-      compress: {
-        keep_fnames: true,
-        keep_classnames: true,
-      },
-      mangle: {
-        keep_fnames: true,
-        keep_classnames: true,
-      }
-    } : undefined,
+    // Standard target for modern browsers (BigInt support)
+    target: mode === 'web' ? 'es2020' : (process.env.TAURI_PLATFORM == 'windows' ? 'chrome105' : 'safari15'),
+    minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
     // produce sourcemaps for debug builds
     sourcemap: !!process.env.TAURI_DEBUG,
     outDir: 'dist',

@@ -22,9 +22,8 @@ export default defineConfig(({ mode }) => ({
     // https://tauri.app/v1/api/config#buildconfig.beforedevcommand
     envPrefix: ['VITE_', 'TAURI_'],
     build: {
-        // Tauri supports es2021
+        // Standard target for modern browsers (BigInt support)
         target: mode === 'web' ? 'es2020' : (process.env.TAURI_PLATFORM == 'windows' ? 'chrome105' : 'safari15'),
-        // don't minify for debug builds
         minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
         // produce sourcemaps for debug builds
         sourcemap: !!process.env.TAURI_DEBUG,

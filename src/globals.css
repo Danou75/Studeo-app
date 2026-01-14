@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+:root {
+  /* Fallback values from 'Default' theme */
+  --color-primary: #4f46e5;
+  --color-background: #ffffff;
+  --color-text: #111827;
+}
+
+.dark {
+  --color-primary: #6366f1;
+  --color-background: #111827;
+  --color-text: #f9fafb;
+}

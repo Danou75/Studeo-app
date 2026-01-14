@@ -1,0 +1,5 @@
+{
+  "name": "Mon Quiz App avant tauri",
+  "description": "An advanced flashcard application to test and improve your vocabulary in multiple languages. It features flexible file imports (JSON, CSV, Markdown), high-quality text-to-speech pronunciation powered by Gemini, and detailed quiz history tracking.",
+  "requestFramePermissions": []
+}

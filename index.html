@@ -11,20 +11,32 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
     <script>
-      // Diagnostic immédiat pour les anciens navigateurs
+      // POLYFILLS pour iPad Air 2 (iOS 15.0 - 15.7)
+      if (!Array.prototype.at) {
+        Array.prototype.at = function(n) {
+          n = Math.trunc(n) || 0;
+          if (n < 0) n += this.length;
+          if (n < 0 || n >= this.length) return undefined;
+          return this[n];
+        };
+      }
+      if (typeof structuredClone !== 'function') {
+        window.structuredClone = function(obj) { return JSON.parse(JSON.stringify(obj)); };
+      }
+
+      // Diagnostic
       window.onerror = function(msg, url, line, col, error) {
         var root = document.getElementById('root');
         if (root) {
           root.innerHTML = '<div style="padding: 20px; color: red; font-family: sans-serif;">' +
-            '<h3>Erreur de chargement (Diagnostic)</h3>' +
-            '<p style="background: #fee; padding: 10px; border-radius: 4px;">' + msg + '</p>' +
-            '<small>' + url + ' L:' + line + ' C:' + col + '</small>' +
-            '<p style="margin-top: 20px; font-size: 13px; color: #666;">Ceci est souvent lié à une version de Safari trop ancienne pour certaines fonctions mathématiques de l\'IA.</p>' +
+            '<h3>⚠️ Erreur Technique</h3>' +
+            '<p style="background: #fee; padding: 10px; border-radius: 4px; font-size: small;">' + msg + '</p>' +
+            '<small>' + url + ' (L:' + line + ')</small>' +
+            '<div style="margin-top:20px"><button onclick="localStorage.clear();location.reload();" style="padding:10px;background:#4f46e5;color:white;border:none;border-radius:5px">Réinitialiser l\'application</button></div>' +
             '</div>';
         }
         return false;
       };
-      console.log("Diagnostic script initialized");
     </script>
   </head>
   <body

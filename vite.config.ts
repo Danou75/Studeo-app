@@ -31,8 +31,18 @@ export default defineConfig(({ mode }) => ({
   build: {
     // Target es2015 specifically for web to support older iPad models (Safari 13+)
     target: mode === 'web' ? 'es2015' : (process.env.TAURI_PLATFORM == 'windows' ? 'chrome105' : 'safari15'),
-    // don't minify for debug builds
-    minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
+    // Switch to terser for better compatibility on older browsers
+    minify: mode === 'web' ? 'terser' : (!process.env.TAURI_DEBUG ? 'esbuild' : false),
+    terserOptions: mode === 'web' ? {
+      compress: {
+        keep_fnames: true,
+        keep_classnames: true,
+      },
+      mangle: {
+        keep_fnames: true,
+        keep_classnames: true,
+      }
+    } : undefined,
     // produce sourcemaps for debug builds
     sourcemap: !!process.env.TAURI_DEBUG,
     outDir: 'dist',

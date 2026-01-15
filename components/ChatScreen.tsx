@@ -167,13 +167,26 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     };
 
     const handleNewChat = () => {
-        hasAutoLoaded.current = true; // Empêcher l'auto-rechargement après un reset manuel
-        setCurrentSession(null);
-        setTutorName('');
-        setTutorSubject('');
-        setShowSetup(true);
+        hasAutoLoaded.current = true; // Empêcher l'auto-rechargement intempestif
+        
+        if (currentSession) {
+            // Si la session actuelle est déjà vide, on ne fait rien
+            if (currentSession.messages.length === 0) {
+                showToast('La discussion est déjà vide', 'info');
+                setShowSidebar(false);
+                return;
+            }
+
+            // On crée une NOUVELLE session avec les MÊMES paramètres (Nom/Sujet)
+            // Cela donne l'impression de "vider" le chat tout en gardant le contexte
+            const session = ChatService.createSession(currentSession.tutorName, currentSession.tutorSubject);
+            setCurrentSession(session);
+            showToast('Nouvelle discussion démarrée', 'success');
+        } else {
+            // Fallback
+            setShowSetup(true);
+        }
         setShowSidebar(false);
-        showToast('Nouvelle session prête', 'info');
     };
 
     const handleLoadSession = (session: ChatSession) => {

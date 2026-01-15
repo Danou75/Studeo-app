@@ -73,6 +73,8 @@ export class ChatService {
                 uniqueSessions.push(session);
             });
 
+            uniqueSessions.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+            
             if (changed) {
                 console.log('Sessions cleaned and migrated: Saving updates to localStorage');
                 this.saveSessions(uniqueSessions);

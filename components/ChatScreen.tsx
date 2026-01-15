@@ -107,12 +107,36 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         scrollToBottom();
     }, [currentSession?.messages]);
 
-    // Créer une session au démarrage si tuteur fourni
+    // Charger automatiquement la dernière session au démarrage si aucune n'est spécifiée
     useEffect(() => {
-        if (initialTutorName && initialTutorSubject && !currentSession) {
-            const session = ChatService.createSession(initialTutorName, initialTutorSubject);
-            setCurrentSession(session);
-            setShowSetup(false);
+        if (!currentSession) {
+            const sessions = ChatService.getSessions();
+            
+            if (initialTutorName && initialTutorSubject) {
+                // Recherche d'une session existante pour ce tuteur
+                const existing = sessions.find(s => 
+                    s.tutorName === initialTutorName && 
+                    s.tutorSubject === initialTutorSubject
+                );
+                
+                if (existing) {
+                    setCurrentSession(existing);
+                    setTutorName(existing.tutorName);
+                    setTutorSubject(existing.tutorSubject);
+                    setShowSetup(false);
+                } else {
+                    // Création d'une nouvelle session si aucune n'existe
+                    const session = ChatService.createSession(initialTutorName, initialTutorSubject);
+                    setCurrentSession(session);
+                    setShowSetup(false);
+                }
+            } else if (sessions.length > 0 && !initialTutorName) {
+                // Si on revient sur l'écran sans tuteur spécifique, on reprend la TOUTE DERNIÈRE session active
+                setCurrentSession(sessions[0]);
+                setTutorName(sessions[0].tutorName);
+                setTutorSubject(sessions[0].tutorSubject);
+                setShowSetup(false);
+            }
         }
     }, [initialTutorName, initialTutorSubject, currentSession]);
 
@@ -122,9 +146,29 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             return;
         }
 
-        const session = ChatService.createSession(tutorName, tutorSubject);
-        setCurrentSession(session);
+        // Vérifier si une session existe déjà pour ce tuteur
+        const sessions = ChatService.getSessions();
+        const existing = sessions.find(s => 
+            s.tutorName === tutorName.trim() && 
+            s.tutorSubject === tutorSubject.trim()
+        );
+
+        if (existing) {
+            setCurrentSession(existing);
+            showToast('Conversation existante reprise', 'info');
+        } else {
+            const session = ChatService.createSession(tutorName, tutorSubject);
+            setCurrentSession(session);
+        }
         setShowSetup(false);
+    };
+
+    const handleNewChat = () => {
+        setCurrentSession(null);
+        setTutorName('');
+        setTutorSubject('');
+        setShowSetup(true);
+        setShowSidebar(false);
     };
 
     const handleLoadSession = (session: ChatSession) => {
@@ -321,10 +365,12 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                         >
                             <i className="fas fa-home mr-2 text-inherit"></i> Accueil
                         </Button>
-                        <h1 className="text-3xl font-black drop-shadow-sm flex items-center gap-3 text-inherit">
-                            <span className="text-4xl text-inherit">🎓</span> Créer une session de tutorat
+                        <h1 className="text-xl md:text-3xl font-black drop-shadow-sm flex items-center gap-2 md:gap-3 text-inherit">
+                            <span className="text-2xl md:text-4xl text-inherit">🎓</span> {initialTutorName ? `Discuter avec ${initialTutorName}` : 'Créer une session de tutorat'}
                         </h1>
-                        <p className="opacity-80 mt-1 text-base text-inherit">Configurez votre tuteur personnel pour commencer</p>
+                        <p className="opacity-80 mt-1 text-xs md:text-base text-inherit">
+                            {initialTutorName ? `Posez vos questions sur ${initialTutorSubject}` : 'Configurez votre tuteur personnel pour commencer'}
+                        </p>
                     </div>
                 </div>
 
@@ -428,13 +474,22 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             {showSidebar && (
                 <div className="w-80 bg-background-secondary border-r border-border flex flex-col min-h-0">
                     <div className="p-4 border-b border-border flex justify-between items-center">
-                        <h3 className="font-bold">Conversations</h3>
-                        <button
-                            onClick={() => setShowSidebar(false)}
-                            className="text-text-secondary hover:text-text"
-                        >
-                            <i className="fas fa-times"></i>
-                        </button>
+                        <h3 className="font-bold">Historique</h3>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleNewChat}
+                                className="text-primary hover:text-primary-dark p-1"
+                                title="Nouvelle discussion"
+                            >
+                                <i className="fas fa-plus-circle"></i>
+                            </button>
+                            <button
+                                onClick={() => setShowSidebar(false)}
+                                className="text-text-secondary hover:text-text p-1"
+                            >
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
                         {allSessions.map(session => (
@@ -484,6 +539,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                             title="Historique"
                         >
                             <i className="fas fa-history"></i>
+                        </button>
+
+                        <button
+                            onClick={handleNewChat}
+                            className="p-2 hover:bg-background rounded-lg transition-colors text-primary"
+                            title="Nouvelle conversation"
+                        >
+                            <i className="fas fa-plus-circle"></i>
                         </button>
                     </div>
                     

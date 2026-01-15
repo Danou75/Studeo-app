@@ -40,6 +40,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     const [showSidebar, setShowSidebar] = useState(false);
     const [isGeneratingCards, setIsGeneratingCards] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const hasAutoLoaded = useRef(false);
 
     // Setup form
     const [tutorName, setTutorName] = useState(initialTutorName || '');
@@ -109,7 +110,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
     // Charger automatiquement la dernière session au démarrage si aucune n'est spécifiée
     useEffect(() => {
-        if (!currentSession) {
+        if (!currentSession && !hasAutoLoaded.current) {
             const sessions = ChatService.getSessions();
             
             if (initialTutorName && initialTutorSubject) {
@@ -130,12 +131,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                     setCurrentSession(session);
                     setShowSetup(false);
                 }
+                hasAutoLoaded.current = true;
             } else if (sessions.length > 0 && !initialTutorName) {
                 // Si on revient sur l'écran sans tuteur spécifique, on reprend la TOUTE DERNIÈRE session active
                 setCurrentSession(sessions[0]);
                 setTutorName(sessions[0].tutorName);
                 setTutorSubject(sessions[0].tutorSubject);
                 setShowSetup(false);
+                hasAutoLoaded.current = true;
             }
         }
     }, [initialTutorName, initialTutorSubject, currentSession]);
@@ -164,11 +167,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     };
 
     const handleNewChat = () => {
+        hasAutoLoaded.current = true; // Empêcher l'auto-rechargement après un reset manuel
         setCurrentSession(null);
         setTutorName('');
         setTutorSubject('');
         setShowSetup(true);
         setShowSidebar(false);
+        showToast('Nouvelle session prête', 'info');
     };
 
     const handleLoadSession = (session: ChatSession) => {

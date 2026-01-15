@@ -50,7 +50,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
             {/* Header */}
             <div 
-                className={`transition-all duration-500 p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                className={`transition-all duration-500 p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
                 <div className="relative z-10 flex justify-between items-start">
@@ -59,14 +59,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                             variant="secondary" 
                             onClick={onBack} 
                             size="sm" 
-                            className={`mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm transition-all`}
+                            className={`mb-2 md:mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm transition-all`}
                         >
                             <i className="fas fa-home mr-2 text-inherit"></i> Accueil
                         </Button>
-                        <h1 className="text-3xl font-black drop-shadow-sm text-inherit">
+                        <h1 className="text-xl md:text-3xl font-black drop-shadow-sm text-inherit">
                             {t('dashboard.title')}
                         </h1>
-                        <p className="opacity-80 mt-1 text-base text-inherit">Consultez vos progrès et vos succès</p>
+                        <p className="opacity-80 mt-1 text-xs md:text-base text-inherit">Consultez vos progrès et vos succès</p>
                     </div>
                 </div>
             </div>

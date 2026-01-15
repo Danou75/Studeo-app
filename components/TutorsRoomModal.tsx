@@ -154,7 +154,7 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
             <div className="flex-1 overflow-hidden flex flex-col">
                 {/* Header */}
                 <div 
-                    className={`transition-all duration-500 p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                    className={`transition-all duration-500 p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                     style={{ background: getThemeGradient(themeStyle, themeMode) }}
                 >
                     <div className="flex justify-between items-center">
@@ -166,10 +166,10 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                         </button>
                         
                         <div className="flex-1 text-center">
-                            <h2 className="text-3xl font-bold flex items-center justify-center gap-3 text-inherit">
+                            <h2 className="text-xl md:text-3xl font-bold flex items-center justify-center gap-2 md:gap-3 text-inherit">
                                 🎓 {t('tutors.title')}
                             </h2>
-                            <p className="opacity-90 mt-2 text-inherit">
+                            <p className="opacity-90 mt-1 md:mt-2 text-[10px] md:text-base text-inherit">
                                 {t('tutors.subtitle')}
                             </p>
                         </div>
@@ -200,7 +200,7 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                         <button
                             key={cat.id}
                             onClick={() => onSelectCategory(cat.id)}
-                            className={`flex-1 py-4 px-6 font-semibold transition-all ${
+                            className={`flex-1 py-3 md:py-4 px-4 md:px-6 font-semibold transition-all whitespace-nowrap overflow-hidden text-ellipsis ${
                                 selectedCategory === cat.id
                                     ? 'bg-white dark:bg-gray-800 text-primary border-b-2 border-primary'
                                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'

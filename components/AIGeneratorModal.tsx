@@ -564,8 +564,8 @@ CONTEXTE UTILISATEUR : ${context}
                 </div>
             </div>
 
-            <div className="p-4 md:p-6 flex-1 overflow-y-auto min-h-0 pb-32">
-                <div className={`flex gap-4 mb-6 ${initialMode === 'quiz' ? 'justify-center' : ''}`}>
+            <div className="p-3 md:p-6 flex-1 overflow-y-auto min-h-0 pb-32">
+                <div className={`flex flex-wrap gap-2 md:gap-4 mb-6 ${initialMode === 'quiz' ? 'justify-center' : ''}`}>
                     {/* Option Quiz */}
                     {(initialMode === 'quiz' || !initialMode) && (
                         <button
@@ -588,7 +588,7 @@ CONTEXTE UTILISATEUR : ${context}
                     {(initialMode === 'quiz' || !initialMode) && (
                         <button
                             onClick={() => setGenerationType('mixed-quiz')}
-                            className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-3 ${
+                            className={`flex-1 min-w-[140px] py-2 md:py-3 px-2 md:px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-2 md:gap-3 ${
                                 generationType === 'mixed-quiz'
                                     ? 'border-indigo-600 bg-indigo-600/10 text-indigo-600 font-bold'
                                     : 'border-border bg-background hover:bg-background-secondary text-text-secondary'
@@ -606,7 +606,7 @@ CONTEXTE UTILISATEUR : ${context}
                     {initialMode !== 'quiz' && (
                         <button
                             onClick={() => setGenerationType('lesson')}
-                            className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-3 ${
+                            className={`flex-1 min-w-[140px] py-2 md:py-3 px-2 md:px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-2 md:gap-3 ${
                                 generationType === 'lesson'
                                     ? 'border-primary bg-primary/10 text-primary font-bold'
                                     : 'border-border bg-background hover:bg-background-secondary text-text-secondary'
@@ -624,7 +624,7 @@ CONTEXTE UTILISATEUR : ${context}
                     {(initialMode === 'curriculum' || !initialMode) && (
                         <button
                             onClick={() => setGenerationType('curriculum')}
-                            className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-3 ${
+                            className={`flex-1 min-w-[140px] py-2 md:py-3 px-2 md:px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-2 md:gap-3 ${
                                 generationType === 'curriculum'
                                     ? 'border-primary bg-primary/10 text-primary font-bold'
                                     : 'border-border bg-background hover:bg-background-secondary text-text-secondary'

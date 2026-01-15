@@ -140,7 +140,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
             <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
                 {/* Header Programme */}
                 <div 
-                    className={`transition-all duration-500 p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                    className={`transition-all duration-500 p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                     style={{ background: getThemeGradient(themeStyle, themeMode) }}
                 >
                     <div className="relative z-10">
@@ -149,7 +149,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
                                 variant="secondary" 
                                 onClick={() => setSelectedProgram(null)} 
                                 size="sm" 
-                                className={`transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
+                                className={`transition-all mb-2 md:mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
                             >
                                 <i className="fas fa-arrow-left mr-2 text-inherit"></i> {t('curriculum.backToList')}
                             </Button>
@@ -202,7 +202,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
                                 {tutor?.emoji || '🎓'}
                             </div>
                             <div>
-                                <h1 className="text-2xl font-black drop-shadow-sm">{selectedProgram.topic}</h1>
+                                <h1 className="text-xl md:text-2xl font-black drop-shadow-sm">{selectedProgram.topic}</h1>
                                 <div className="flex items-center gap-2 mt-1 opacity-90">
                                     <span className="bg-white/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider">
                                         {selectedProgram.targetLevel}
@@ -379,7 +379,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
         {/* Header */}
         <div 
-            className={`transition-all duration-500 p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+            className={`transition-all duration-500 p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
             style={{ background: getThemeGradient(themeStyle, themeMode) }}
         >
             <div className="relative z-10 flex justify-between items-start">
@@ -388,12 +388,12 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
                         variant="secondary" 
                         onClick={onBack} 
                         size="sm" 
-                        className={`transition-all mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
+                        className={`transition-all mb-2 md:mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
                     >
                         <i className="fas fa-home mr-2 text-inherit"></i> Accueil
                     </Button>
-                    <h1 className="text-3xl font-black drop-shadow-sm flex items-center gap-3 text-inherit">
-                        <span className="text-3xl text-inherit">🗺️</span> {t('curriculum.title')}
+                    <h1 className="text-2xl md:text-3xl font-black drop-shadow-sm flex items-center gap-3 text-inherit">
+                        <span className="text-2xl md:text-3xl text-inherit">🗺️</span> {t('curriculum.title')}
                     </h1>
                     <p className="opacity-80 mt-1 text-base text-inherit">{t('curriculum.subtitle')}</p>
                 </div>

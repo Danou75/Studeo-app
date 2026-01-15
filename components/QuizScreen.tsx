@@ -856,7 +856,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative text-text">
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 min-h-0 bg-background/50 pb-32">
+        <div className="flex-1 overflow-y-auto p-3 md:p-8 min-h-0 bg-background/50 pb-32">
             <div className="max-w-2xl mx-auto">
       {onBackToLesson && (
         <Button 
@@ -918,11 +918,11 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
 
       {renderGameIndicators()}
       
-      <div className="mb-4 text-sm text-text-secondary">
+      <div className="mb-2 md:mb-4 text-xs md:text-sm text-text-secondary">
         {t('quiz.stats.cardCount', { current: currentIndex + 1, total: quizCards.length })}
       </div>
 
-      <h2 className="text-2xl font-semibold mb-4 notranslate text-primary" translate="no">{question}</h2>
+      <h2 className="text-xl md:text-2xl font-semibold mb-3 md:mb-4 notranslate text-primary" translate="no">{question}</h2>
 
       {effectiveQuizMode === 'mcq' && isLoadingOptions && (
         <div className="flex flex-col items-center justify-center p-8 space-y-4 animate-pulse bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
@@ -932,7 +932,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
       )}
 
       {effectiveQuizMode === 'mcq' && options.length > 0 && !isLoadingOptions && (
-        <div className="grid grid-cols-2 gap-2 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
           {options.map((opt, i) => (
             <button
               key={i}
@@ -1015,30 +1015,30 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
         {/* Actions d'aide - Hidden while loading AI options */}
         {!isLoadingOptions && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
             <button 
                 onClick={speakQuestion} 
-                className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-green-100 bg-green-50/50 text-green-700 hover:bg-green-100 transition-all font-bold shadow-sm min-h-[100px]"
+                className="flex flex-col items-center justify-center p-3 md:p-4 rounded-xl border-2 border-green-100 bg-green-50/50 text-green-700 hover:bg-green-100 transition-all font-bold shadow-sm min-h-[70px] md:min-h-[100px]"
             >
-                <i className="fas fa-volume-up text-2xl mb-2"></i>
-                <span className="text-sm">{t('quiz.actions.listen')}</span>
+                <i className="fas fa-volume-up text-xl md:text-2xl mb-1 md:mb-2"></i>
+                <span className="text-xs md:text-sm">{t('quiz.actions.listen')}</span>
             </button>
 
             {!isRevealed ? (
                 <>
                     <button 
                         onClick={handleShowAnswer}
-                        className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-all font-bold shadow-sm min-h-[100px]"
+                        className="flex flex-col items-center justify-center p-3 md:p-4 rounded-xl border-2 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-all font-bold shadow-sm min-h-[70px] md:min-h-[100px]"
                     >
                         {t('quiz.actions.reveal')}
                     </button>
                     <button 
                         onClick={() => setHintLevel(prev => Math.min(prev + 1, 2))} 
                         disabled={hintLevel >= 2}
-                        className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 transition-all font-bold shadow-sm min-h-[100px] disabled:opacity-50"
+                        className="flex flex-col items-center justify-center p-3 md:p-4 rounded-xl border-2 border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 transition-all font-bold shadow-sm min-h-[70px] md:min-h-[100px] disabled:opacity-50"
                     >
-                        <i className="fas fa-lightbulb text-2xl mb-2"></i>
-                        <span className="text-sm">{t('quiz.actions.hint')}</span>
+                        <i className="fas fa-lightbulb text-xl md:text-2xl mb-1 md:mb-2"></i>
+                        <span className="text-xs md:text-sm">{t('quiz.actions.hint')}</span>
                     </button>
                 </>
             ) : (

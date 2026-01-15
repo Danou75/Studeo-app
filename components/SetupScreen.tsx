@@ -221,7 +221,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
         <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
             {/* Header */}
             <div 
-                className={`p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 transition-all duration-500 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                className={`p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 transition-all duration-500 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
                 <div className="relative z-10 flex justify-between items-start">
@@ -230,14 +230,14 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                             variant="secondary" 
                             onClick={onBack} 
                             size="sm" 
-                            className={`mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm transition-all`}
+                            className={`mb-2 md:mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm transition-all`}
                         >
                             <i className="fas fa-home mr-2"></i> Accueil
                         </Button>
-                        <h1 className="text-3xl font-black drop-shadow-sm text-inherit">
+                        <h1 className="text-xl md:text-3xl font-black drop-shadow-sm text-inherit">
                             {t('setup.title')}
                         </h1>
-                        <p className="opacity-80 mt-1 text-base text-inherit">Prêt pour votre séance d'apprentissage ?</p>
+                        <p className="opacity-80 mt-1 text-xs md:text-base text-inherit line-clamp-1">Prêt pour votre séance d'apprentissage ?</p>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -281,13 +281,13 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
             {/* Sens de la Traduction Section */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 md:p-6 mb-4 md:mb-6 w-full max-w-4xl mx-auto">
                 <h3 className="text-center text-lg md:text-xl font-black mb-4 md:mb-6 text-gray-800 dark:text-gray-200">{t('setup.directionLabel')}</h3>
-                <div className="flex items-center justify-center gap-4 md:gap-12">
+                <div className="flex items-center justify-center gap-2 md:gap-12">
                     <div className="flex-1 max-w-[240px]">
-                        <p className="text-center text-xs font-bold text-gray-400 uppercase mb-2">Question</p>
+                        <p className="text-center text-[10px] md:text-xs font-bold text-gray-400 uppercase mb-1 md:mb-2">Question</p>
                         <select 
                             value={questionLang} 
                             onChange={e => setQuestionLang(e.target.value)} 
-                            className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl py-2 px-4 font-medium focus:ring-2 focus:ring-green-500/20 outline-none cursor-pointer"
+                            className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl py-1.5 md:py-2 px-2 md:px-4 text-sm md:font-medium focus:ring-2 focus:ring-green-500/20 outline-none cursor-pointer"
                         >
                             {allColumns.map(lang => (
                                 <option key={lang} value={lang}>
@@ -298,15 +298,15 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                     </div>
                     
                     <div className="text-primary">
-                        <i className="fas fa-arrow-right text-2xl"></i>
+                        <i className="fas fa-arrow-right text-lg md:text-2xl"></i>
                     </div>
 
                     <div className="flex-1 max-w-[240px]">
-                        <p className="text-center text-xs font-bold text-gray-400 uppercase mb-2">Réponse</p>
+                        <p className="text-center text-[10px] md:text-xs font-bold text-gray-400 uppercase mb-1 md:mb-2">Réponse</p>
                         <select 
                             value={answerLang} 
                             onChange={e => setAnswerLang(e.target.value)} 
-                            className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl py-2 px-4 font-medium focus:ring-2 focus:ring-green-500/20 outline-none cursor-pointer"
+                            className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl py-1.5 md:py-2 px-2 md:px-4 text-sm md:font-medium focus:ring-2 focus:ring-green-500/20 outline-none cursor-pointer"
                         >
                             {allColumns.map(lang => (
                                 <option key={lang} value={lang}>
@@ -353,11 +353,11 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl mx-auto pb-6">
                 
                 {/* Block 1: Quiz Modes */}
-                <div className="bg-gray-50/50 dark:bg-gray-900/50 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 flex flex-col h-full shadow-sm">
+                <div className="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl md:rounded-3xl p-3 md:p-6 border border-gray-100 dark:border-gray-800 flex flex-col h-full shadow-sm">
                     <h4 className="text-center font-bold text-gray-700 dark:text-gray-300 mb-3 md:mb-6 flex items-center justify-center gap-2 text-sm md:text-base">
                         <i className="fas fa-layer-group text-primary"></i> {t('setup.quizModeLabel')}
                     </h4>
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {[
                             { id: 'classic', icon: 'fa-keyboard', label: t('setup.mode.classic') },
                             { id: 'mcq', icon: 'fa-list-ul', label: t('setup.mode.mcq') },
@@ -382,8 +382,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                 </div>
 
                 {/* Block 2: Count & Options */}
-                <div className="bg-gray-50/50 dark:bg-gray-900/50 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 flex flex-col h-full shadow-sm">
-                    <div className="grid grid-cols-2 gap-4 h-full">
+                <div className="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl md:rounded-3xl p-3 md:p-6 border border-gray-100 dark:border-gray-800 flex flex-col h-full shadow-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
                         {/* Number selector */}
                         <div className="flex flex-col">
                             <h4 className="font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
@@ -426,11 +426,11 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                 </div>
 
                 {/* Block 3: Game Modes */}
-                <div className="bg-gray-50/50 dark:bg-gray-900/50 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 flex flex-col h-full shadow-sm">
+                <div className="bg-gray-50/50 dark:bg-gray-900/50 rounded-2xl md:rounded-3xl p-3 md:p-6 border border-gray-100 dark:border-gray-800 flex flex-col h-full shadow-sm">
                     <h4 className="text-center font-bold text-gray-700 dark:text-gray-300 mb-3 md:mb-6 flex items-center justify-center gap-2 text-sm md:text-base">
                          <i className="fas fa-gamepad text-primary"></i> {t('setup.gameMode.label')}
                     </h4>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {[
                             { id: 'normal', icon: 'fa-play-circle', label: t('setup.gameMode.normal'), color: 'bg-primary' },
                             { id: 'timed', icon: 'fa-stopwatch', label: t('setup.gameMode.timed'), color: 'bg-warning' },

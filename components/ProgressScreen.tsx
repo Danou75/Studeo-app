@@ -118,16 +118,16 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ onBack }) => {
     return (
         <div className="flex-1 min-h-0 flex flex-col bg-background overflow-hidden relative">
             {/* Header */}
-            <div className="p-4 md:p-6 shrink-0 border-b border-border bg-background-secondary shadow-sm">
-                <div className="max-w-7xl mx-auto flex justify-between items-center">
-                    <Button onClick={onBack} variant="secondary" size="sm">
-                        <i className="fas fa-home mr-2"></i> Accueil
+            <div className="p-3 md:p-6 shrink-0 border-b border-border bg-background-secondary shadow-sm">
+                <div className="max-w-7xl mx-auto flex justify-between items-center gap-2">
+                    <Button onClick={onBack} variant="secondary" size="sm" className="shrink-0">
+                        <i className="fas fa-home mr-1 md:mr-2"></i> <span className="hidden sm:inline">Accueil</span>
                     </Button>
-                    <h1 className="text-2xl md:text-3xl font-bold text-primary flex items-center gap-3">
-                        <i className="fas fa-chart-line text-inherit"></i>
+                    <h1 className="text-lg md:text-3xl font-bold text-primary flex items-center gap-2 md:gap-3 text-center truncate">
+                        <i className="fas fa-chart-line text-inherit hidden xs:inline"></i>
                         Mes Progrès
                     </h1>
-                    <div className="w-24"></div> {/* Spacer pour centrer le titre */}
+                    <div className="w-8 md:w-24"></div> 
                 </div>
             </div>
 

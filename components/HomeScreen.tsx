@@ -137,7 +137,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="relative mb-4 py-2">
                 <div className="text-center w-full">
                     <h1 
-                        className="text-4xl sm:text-5xl md:text-7xl font-black mb-0 tracking-tighter drop-shadow-sm filter bg-clip-text text-transparent"
+                        className="text-3xl sm:text-5xl md:text-7xl font-black mb-0 tracking-tighter drop-shadow-sm filter bg-clip-text text-transparent"
                         style={{ 
                             backgroundImage: brandGradient,
                             backgroundSize: '200% auto',

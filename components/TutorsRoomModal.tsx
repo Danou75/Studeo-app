@@ -195,7 +195,7 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                 </div>
 
                 {/* Category Tabs */}
-                <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 overflow-x-auto no-scrollbar">
                     {categories.map(cat => (
                         <button
                             key={cat.id}

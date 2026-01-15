@@ -4,10 +4,17 @@
 
 html, body, #root {
   height: 100% !important;
+  height: 100dvh !important;
   width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
+}
+
+/* Allow scrolling on body only if really needed, but keep it clean for Tauri */
+body {
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 :root {

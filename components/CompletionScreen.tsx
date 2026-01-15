@@ -80,7 +80,7 @@ export const CompletionScreen: React.FC<Props> = ({
   const displayedHistory = showFullHistory ? history : history.slice(0, 5);
 
   return (
-    <div className="min-h-full p-6 space-y-6">
+    <div className="h-full overflow-y-auto p-6 space-y-6">
       <h2 className="text-2xl font-bold">{t('completion.title')}</h2>
 
       {/* Succès débloqués */}

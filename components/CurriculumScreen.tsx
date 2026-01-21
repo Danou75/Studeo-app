@@ -434,7 +434,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
                                 onClick={() => setSelectedProgram(program)}
                                 className="bg-background rounded-xl shadow-lg border border-border hover:shadow-xl hover:border-primary transition-all cursor-pointer group flex flex-col overflow-hidden relative"
                             >
-                                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                <div className="absolute bottom-[70px] right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();

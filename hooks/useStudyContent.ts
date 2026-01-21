@@ -87,6 +87,12 @@ export const useStudyContent = () => {
         setStudyPrograms(prev => prev.filter((p: StudyProgram) => p.id !== programId));
     };
 
+    const handleRenameProgram = (programId: string, newTitle: string) => {
+        setStudyPrograms(prev => prev.map((p: StudyProgram) => 
+            p.id === programId ? { ...p, topic: newTitle } : p
+        ));
+    };
+
     const handleDeleteLesson = (lessonId: string) => {
         setSavedLessons(prev => prev.filter((l: Lesson) => l.id !== lessonId));
     };
@@ -149,6 +155,7 @@ export const useStudyContent = () => {
         handleCurriculumGenerated,
         handleSaveLesson,
         handleDeleteProgram,
+        handleRenameProgram,
         handleDeleteLesson,
         markCurrentModuleComplete,
         updateSavedLesson

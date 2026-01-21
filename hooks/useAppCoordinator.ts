@@ -685,6 +685,7 @@ export const useAppCoordinator = () => {
         onStartSRSReview,
         handleGenerateModuleContent,
         handleDeleteProgram: studyContent.handleDeleteProgram,
+        handleRenameProgram: studyContent.handleRenameProgram,
         handleDeleteLesson: studyContent.handleDeleteLesson,
         handleMarkModuleComplete: studyContent.markCurrentModuleComplete,
         handleStartModule,

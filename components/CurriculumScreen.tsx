@@ -19,6 +19,7 @@ interface CurriculumScreenProps {
     onStartModule: (module: StudyModule, tutorId: string) => void;
     onStartQuiz: (module: StudyModule, tutorId: string) => void;
     onDeleteProgram: (id: string) => void;
+    onRenameProgram: (id: string, newTitle: string) => void;
     onDrawingChallenge?: (module: StudyModule) => void;
     onStartTutorial?: (topic: string) => void;
     onNewProgram?: () => void;
@@ -36,11 +37,15 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     onDrawingChallenge,
     onStartTutorial,
     onNewProgram,
+    onRenameProgram,
     themeMode, 
     themeStyle 
 }) => {
     const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
     const [loadingModuleId, setLoadingModuleId] = useState<string | null>(null);
+    const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+    const [renameProgramId, setRenameProgramId] = useState<string | null>(null);
+    const [newTitle, setNewTitle] = useState('');
     const { showToast } = useToast();
     const { showConfirmation } = useConfirmation();
     const { t } = useTranslation();
@@ -427,8 +432,38 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
                             <div 
                                 key={program.id}
                                 onClick={() => setSelectedProgram(program)}
-                                className="bg-background rounded-xl shadow-lg border border-border hover:shadow-xl hover:border-primary transition-all cursor-pointer group flex flex-col overflow-hidden"
+                                className="bg-background rounded-xl shadow-lg border border-border hover:shadow-xl hover:border-primary transition-all cursor-pointer group flex flex-col overflow-hidden relative"
                             >
+                                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setRenameProgramId(program.id);
+                                            setNewTitle(program.topic);
+                                            setIsRenameModalOpen(true);
+                                        }}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/90 dark:bg-gray-800/90 text-text-muted hover:text-primary shadow-sm border border-border transition-colors focus:ring-2 focus:ring-primary/20 outline-none"
+                                        title="Renommer"
+                                    >
+                                        <i className="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            showConfirmation({
+                                                title: "Supprimer le parcours",
+                                                message: `Êtes-vous sûr de vouloir supprimer définitivement le parcours "${program.topic}" ?`,
+                                                confirmText: "Supprimer",
+                                                variant: "danger",
+                                                onConfirm: () => onDeleteProgram(program.id)
+                                            });
+                                        }}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/90 dark:bg-gray-800/90 text-text-muted hover:text-red-500 shadow-sm border border-border transition-colors focus:ring-2 focus:ring-red-500/20 outline-none"
+                                        title="Supprimer"
+                                    >
+                                        <i className="fas fa-trash-alt text-xs"></i>
+                                    </button>
+                                </div>
                                 <div className="p-6 flex-1">
                                     <div className="flex items-start justify-between mb-4">
                                         <div className="text-4xl bg-background-secondary w-16 h-16 flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform">
@@ -468,6 +503,52 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
                 </div>
             )}
         </div>
+
+        {/* Modal de renommage */}
+        {isRenameModalOpen && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="bg-background rounded-2xl shadow-2xl max-w-md w-full border border-border overflow-hidden animate-scale-in">
+                    <div className="p-6 border-b border-border">
+                        <h3 className="text-xl font-bold">Modifier le nom du parcours</h3>
+                    </div>
+                    <div className="p-6">
+                        <input
+                            autoFocus
+                            type="text"
+                            value={newTitle}
+                            onChange={(e) => setNewTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && newTitle.trim()) {
+                                    onRenameProgram(renameProgramId!, newTitle);
+                                    setIsRenameModalOpen(false);
+                                } else if (e.key === 'Escape') {
+                                    setIsRenameModalOpen(false);
+                                }
+                            }}
+                            className="w-full px-4 py-3 bg-background-secondary border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                            placeholder="Nouveau nom du parcours..."
+                        />
+                    </div>
+                    <div className="p-6 bg-background-secondary flex justify-end gap-3">
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => setIsRenameModalOpen(false)}
+                        >
+                            Annuler
+                        </Button>
+                        <Button 
+                            disabled={!newTitle.trim()}
+                            onClick={() => {
+                                onRenameProgram(renameProgramId!, newTitle);
+                                setIsRenameModalOpen(false);
+                            }}
+                        >
+                            Enregistrer
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
     );
 };

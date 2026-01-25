@@ -642,15 +642,7 @@ Format JSON STRICT (tableau d'objets) :
 
                 {customSuggestions.length === 0 ? (
                     <div className="text-center py-12 bg-primary/5 rounded-[2rem] border border-dashed border-primary/20">
-                        <p className="text-sm text-text-secondary italic mb-4">Cliquez sur Renouveler pour obtenir des suggestions de parcours.</p>
-                        <Button 
-                            variant="secondary" 
-                            size="sm" 
-                            onClick={() => setShowRenewModal(true)}
-                            loading={isRenewingCatalog}
-                        >
-                            Générer des idées
-                        </Button>
+                        <p className="text-sm text-text-secondary italic">Cliquez sur "Générer des idées" en haut à droite pour obtenir des suggestions de parcours.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

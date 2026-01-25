@@ -62,6 +62,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     const [isRenewingCatalog, setIsRenewingCatalog] = useState(false);
     const [showRenewModal, setShowRenewModal] = useState(false);
     const [renewPreferences, setRenewPreferences] = useState('');
+    const [viewMode, setViewMode] = useLocalStorage<'grid' | 'list'>('curriculum_view_mode', 'grid');
     const [customSuggestions, setCustomSuggestions] = useLocalStorage<SuggestedProgram[]>('curriculum_suggestions_catalog', []);
     
     const { config } = useAIConfig();
@@ -516,11 +517,31 @@ Format JSON STRICT (tableau d'objets) :
                     </h1>
                     <p className="opacity-80 mt-1 text-base text-inherit">{t('curriculum.subtitle')}</p>
                 </div>
-                {onNewProgram && (
-                    <Button onClick={onNewProgram} size="sm" className="bg-white/90 hover:bg-white text-primary border-none font-bold shadow-lg transform hover:scale-105 active:scale-95 transition-all">
-                        <i className="fas fa-plus mr-2"></i> {t('curriculum.new')}
-                    </Button>
-                )}
+
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 p-1 bg-black/10 dark:bg-white/5 rounded-xl backdrop-blur-sm border border-white/10 shrink-0">
+                        <button
+                            onClick={() => setViewMode('grid')}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-inherit opacity-50 hover:opacity-100'}`}
+                            title="Vue Grille"
+                        >
+                            <i className="fas fa-th-large text-xs"></i>
+                        </button>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-inherit opacity-50 hover:opacity-100'}`}
+                            title="Vue Liste"
+                        >
+                            <i className="fas fa-list text-xs"></i>
+                        </button>
+                    </div>
+
+                    {onNewProgram && (
+                        <Button onClick={onNewProgram} size="sm" className="bg-white/90 hover:bg-white text-primary border-none font-bold shadow-lg transform hover:scale-105 active:scale-95 transition-all">
+                            <i className="fas fa-plus mr-2"></i> {t('curriculum.new')}
+                        </Button>
+                    )}
+                </div>
             </div>
         </div>
 
@@ -537,7 +558,7 @@ Format JSON STRICT (tableau d'objets) :
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className={viewMode === 'list' ? "flex flex-col gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
                     {programs.map(program => {
                         const tutor = getTutor(program.tutorId);
                         const progress = Math.round((program.modules.filter(m => m.status === 'completed').length / program.modules.length) * 100);
@@ -546,9 +567,17 @@ Format JSON STRICT (tableau d'objets) :
                             <div 
                                 key={program.id}
                                 onClick={() => setSelectedProgram(program)}
-                                className="bg-background rounded-xl shadow-lg border border-border hover:shadow-xl hover:border-primary transition-all cursor-pointer group flex flex-col overflow-hidden relative"
+                                className={`bg-background border border-border rounded-2xl transition-all cursor-pointer group flex overflow-hidden relative ${
+                                    viewMode === 'grid' 
+                                        ? 'flex-col shadow-lg hover:shadow-xl hover:border-primary' 
+                                        : 'flex-row items-center p-4 gap-4 hover:bg-background-secondary'
+                                }`}
                             >
-                                <div className="absolute bottom-[70px] right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                {/* Actions Overlay (Grid) or Inline (List) */}
+                                <div className={viewMode === 'grid' 
+                                    ? "absolute bottom-[70px] right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                                    : "flex gap-2 order-last"
+                                }>
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -556,7 +585,7 @@ Format JSON STRICT (tableau d'objets) :
                                             setNewTitle(program.topic);
                                             setIsRenameModalOpen(true);
                                         }}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/90 dark:bg-gray-800/90 text-text-muted hover:text-primary shadow-sm border border-border transition-colors focus:ring-2 focus:ring-primary/20 outline-none"
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-primary shadow-sm border border-border transition-colors focus:ring-2 focus:ring-primary/20 outline-none"
                                         title="Renommer"
                                     >
                                         <i className="fas fa-edit text-xs"></i>
@@ -572,45 +601,65 @@ Format JSON STRICT (tableau d'objets) :
                                                 onConfirm: () => onDeleteProgram(program.id)
                                             });
                                         }}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/90 dark:bg-gray-800/90 text-text-muted hover:text-red-500 shadow-sm border border-border transition-colors focus:ring-2 focus:ring-red-500/20 outline-none"
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-red-500 shadow-sm border border-border transition-colors focus:ring-2 focus:ring-red-500/20 outline-none"
                                         title="Supprimer"
                                     >
                                         <i className="fas fa-trash-alt text-xs"></i>
                                     </button>
                                 </div>
-                                <div className="p-6 flex-1">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="text-4xl bg-background-secondary w-16 h-16 flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform">
-                                            {tutor?.emoji || '🎓'}
-                                        </div>
-                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wide bg-primary/10 text-primary`}>
-                                            {program.targetLevel}
-                                        </span>
+
+                                {/* Content */}
+                                <div className={`flex items-center justify-center shrink-0 ${
+                                    viewMode === 'grid' ? 'p-6 pb-0' : 'w-16 h-16 bg-background-secondary rounded-xl'
+                                }`}>
+                                    <div className={`${viewMode === 'grid' ? 'text-4xl bg-background-secondary w-16 h-16' : 'text-3xl'} flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform`}>
+                                        {tutor?.emoji || '🎓'}
                                     </div>
+                                </div>
+
+                                <div className={`flex-1 min-w-0 ${viewMode === 'grid' ? 'p-6' : 'px-2'}`}>
+                                    {viewMode === 'grid' && (
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary`}>
+                                                {program.targetLevel}
+                                            </span>
+                                        </div>
+                                    )}
                                     
-                                    <h3 className="text-xl font-bold mb-1 group-hover:text-primary transition-colors line-clamp-1">
+                                    <h3 className={`font-bold group-hover:text-primary transition-colors truncate ${viewMode === 'grid' ? 'text-xl mb-1' : 'text-base'}`}>
                                         {program.topic}
                                     </h3>
-                                    <p className="text-sm text-text-muted mb-4">
-                                        {t('curriculum.withTutor', { name: tutor?.name })}
-                                    </p>
                                     
-                                    <div className="mt-4">
-                                        <div className="flex justify-between text-xs mb-1">
-                                            <span>{t('curriculum.progressLabel')}</span>
-                                            <span className="font-bold">{progress}%</span>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-xs text-text-muted truncate">
+                                            {t('curriculum.withTutor', { name: tutor?.name })}
+                                        </p>
+                                        {viewMode === 'list' && (
+                                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                                                {program.targetLevel}
+                                            </span>
+                                        )}
+                                    </div>
+                                    
+                                    <div className={viewMode === 'grid' ? "mt-4" : "mt-2 max-w-xs"}>
+                                        <div className="flex justify-between text-[10px] mb-1">
+                                            <span className="text-text-muted uppercase tracking-tighter font-bold">{t('curriculum.progressLabel')}</span>
+                                            <span className="font-bold text-primary">{progress}%</span>
                                         </div>
-                                        <div className="w-full bg-background-tertiary rounded-full h-2">
+                                        <div className="w-full bg-background-tertiary rounded-full h-1.5 overflow-hidden">
                                             <div 
-                                                className="bg-primary h-2 rounded-full transition-all" 
+                                                className="bg-primary h-full transition-all duration-1000" 
                                                 style={{ width: `${progress}%` }}
                                             ></div>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-background-secondary p-3 text-center text-xs font-semibold text-text-muted uppercase tracking-wider group-hover:bg-primary group-hover:text-white transition-colors">
-                                    {t('curriculum.continue')}
-                                </div>
+
+                                {viewMode === 'grid' && (
+                                    <div className="bg-background-secondary p-3 text-center text-xs font-semibold text-text-muted uppercase tracking-wider group-hover:bg-primary group-hover:text-white transition-colors">
+                                        {t('curriculum.continue')}
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
@@ -645,11 +694,15 @@ Format JSON STRICT (tableau d'objets) :
                         <p className="text-sm text-text-secondary italic">Cliquez sur "Générer des idées" en haut à droite pour obtenir des suggestions de parcours.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className={viewMode === 'list' ? "flex flex-col gap-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
                         {customSuggestions.map(suggestion => (
                             <div 
                                 key={suggestion.id}
-                                className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-border hover:shadow-xl transition-all group relative flex flex-col"
+                                className={`bg-white dark:bg-gray-800 border border-border rounded-2xl transition-all group relative flex ${
+                                    viewMode === 'grid' 
+                                        ? 'flex-col p-6 hover:shadow-xl' 
+                                        : 'flex-row items-center p-4 gap-4 hover:bg-background-secondary'
+                                }`}
                             >
                                 <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button 
@@ -659,19 +712,25 @@ Format JSON STRICT (tableau d'objets) :
                                         <i className="fas fa-trash-alt text-xs"></i>
                                     </button>
                                 </div>
-                                <div className="flex-1">
+
+                                <div className="flex-1 min-w-0">
                                     <span className="px-2 py-0.5 bg-accent/10 text-accent text-[10px] font-bold uppercase rounded mb-3 inline-block">
                                         {suggestion.category}
                                     </span>
-                                    <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">{suggestion.title}</h3>
-                                    <p className="text-xs text-text-muted mb-6 line-clamp-3">"{suggestion.description}"</p>
+                                    <h3 className={`font-bold group-hover:text-primary transition-colors truncate ${viewMode === 'grid' ? 'text-lg mb-2' : 'text-base mb-0'}`}>
+                                        {suggestion.title}
+                                    </h3>
+                                    <p className={`text-xs text-text-muted italic opacity-70 ${viewMode === 'grid' ? 'mb-6 line-clamp-3' : 'line-clamp-1'}`}>
+                                        "{suggestion.description}"
+                                    </p>
                                 </div>
+
                                 <Button 
                                     variant="primary" 
-                                    className="w-full rounded-xl mt-auto"
+                                    className={viewMode === 'grid' ? "w-full rounded-xl mt-auto" : "rounded-xl px-6 shrink-0"}
                                     onClick={() => onSuggestedProgram(suggestion.title, suggestion.category)}
                                 >
-                                    <i className="fas fa-magic mr-2"></i> Créer ce parcours
+                                    <i className="fas fa-magic mr-2"></i> {viewMode === 'grid' ? 'Créer ce parcours' : 'Créer'}
                                 </Button>
                             </div>
                         ))}

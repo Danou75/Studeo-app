@@ -24,6 +24,8 @@ interface HomeScreenProps {
     onThemeModeChange: (mode: ThemeMode) => void;
     onThemeStyleChange: (style: ThemeStyle) => void;
     onShowHelp: () => void;
+    onOpenAuth: () => void;
+    user: any;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -47,7 +49,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     themeStyle,
     onThemeModeChange,
     onThemeStyleChange,
-    onShowHelp
+    onShowHelp,
+    onOpenAuth,
+    user
 }) => {
     const { t, language, setLanguage } = useTranslation();
 
@@ -194,6 +198,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         >
                             <i className="fas fa-fire"></i> {streak}
                         </div>
+                        <button onClick={onOpenAuth} className={`p-2 rounded-xl shadow-sm transition-all flex items-center gap-2 px-3 ${user ? 'bg-success/10 text-success border border-success/20' : 'bg-white dark:bg-gray-800 text-gray-400 hover:text-primary'}`}>
+                            <i className={`fas ${user ? 'fa-cloud-check' : 'fa-cloud-upload-alt'}`}></i>
+                            {user && <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">Synchro ON</span>}
+                        </button>
                         <button onClick={() => onThemeModeChange(themeMode === 'dark' ? 'light' : 'dark')} className="p-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm text-gray-400 hover:text-violet-500 transition-colors"><i className={`fas fa-${themeMode === 'dark' ? 'sun' : 'moon'}`}></i></button>
                         <button onClick={onShowHelp} className="p-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm text-gray-400 hover:text-violet-500 transition-colors"><i className="fas fa-question-circle"></i></button>
                         <button onClick={onNavigateToSettings} className="p-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm text-gray-400 hover:text-violet-500 transition-colors"><i className="fas fa-cog"></i></button>

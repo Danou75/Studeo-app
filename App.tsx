@@ -28,6 +28,9 @@ import { KnowledgeMapScreen } from "./components/KnowledgeMapScreen";
 import { LibraryScreen } from "./components/LibraryScreen";
 import { VideoLabScreen } from "./components/VideoLabScreen";
 import { ExerciseScreen } from "./components/ExerciseScreen";
+import { AuthModal } from "./components/AuthModal";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { syncService } from "./services/syncService";
 
 import { ProgressScreen } from "./components/ProgressScreen";
 import { ChatScreen } from "./components/ChatScreen";
@@ -57,6 +60,9 @@ const AppContent: React.FC = () => {
 
   const [isSetsManagerOpen, setIsSetsManagerOpen] = React.useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = React.useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+  
+  const { user, session } = useAuth();
 
 
   
@@ -86,6 +92,49 @@ const AppContent: React.FC = () => {
         return newHistory;
     });
   };
+
+  // Synchronisation automatique / Migration vers le Cloud
+  React.useEffect(() => {
+    if (user) {
+        const syncToCloud = async () => {
+             // 1. Sync Profile
+             await syncService.syncProfile(user.id, {
+                 theme_mode: theme.themeMode,
+                 theme_style: theme.themeStyle,
+                 gamification_data: gamification.gamificationData,
+                 analytics_data: analyticsData
+             });
+
+             // 2. Sync Flashcards
+             await syncService.syncFlashcards(user.id, flashcards.flashcardSets);
+
+             // 3. Sync Programs
+             await syncService.syncStudyPrograms(user.id, coordinator.studyPrograms);
+             
+             coordinator.showToast("Données synchronisées avec votre Cloud Studeo", "success");
+        };
+        
+        // On déclenche une synchro au login ou changement majeur
+        // Pour éviter de saturer Supabase, on pourrait limiter, mais pour Studeo (données légères) c'est ok.
+        syncToCloud();
+    }
+  }, [user]);
+
+  // Récupération des données Cloud au Login (Si local est vide ou premier login)
+  React.useEffect(() => {
+     if (user) {
+         const loadCloudData = async () => {
+             const cloudProfile = await syncService.getProfile(user.id);
+             if (cloudProfile) {
+                 if (cloudProfile.theme_mode) theme.setThemeMode(cloudProfile.theme_mode as any);
+                 if (cloudProfile.theme_style) theme.setThemeStyle(cloudProfile.theme_style as any);
+                 // etc... 
+             }
+         };
+         loadCloudData();
+     }
+  }, [session]);
+
 
   const [selectedTutorialTopic, setSelectedTutorialTopic] = React.useState<string | undefined>(undefined);
   const [activeTutorId, setActiveTutorId] = React.useState<string>("maitre-leonard");
@@ -133,6 +182,8 @@ const AppContent: React.FC = () => {
             onThemeModeChange={theme.setThemeMode}
             onThemeStyleChange={theme.setThemeStyle}
             onShowHelp={() => setIsHelpModalOpen(true)}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
+            user={user}
           />
         );
 
@@ -567,6 +618,13 @@ const AppContent: React.FC = () => {
         onClose={() => setIsHelpModalOpen(false)} 
       />
 
+      <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          themeMode={theme.themeMode}
+          themeStyle={theme.themeStyle}
+      />
+
 
 
 
@@ -580,7 +638,9 @@ const App: React.FC = () => {
       <AIConfigProvider>
         <ToastProvider>
           <ConfirmationProvider>
-              <AppContent />
+            <AuthProvider>
+                <AppContent />
+            </AuthProvider>
           </ConfirmationProvider>
         </ToastProvider>
       </AIConfigProvider>

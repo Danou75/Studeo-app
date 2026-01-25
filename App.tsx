@@ -93,11 +93,15 @@ const AppContent: React.FC = () => {
     });
   };
 
-  // Synchronisation automatique / Migration vers le Cloud
+  const isInitialSyncProgress = React.useRef(false);
+
+  // Synchronisation automatique (Réactive)
   React.useEffect(() => {
-    if (user) {
-        const syncToCloud = async () => {
-             // 1. Sync Profile
+    if (!user || isInitialSyncProgress.current) return;
+
+    const timeoutId = setTimeout(async () => {
+         try {
+             // 1. Sync Profile (Incluant suggestions)
              await syncService.syncProfile(user.id, {
                  theme_mode: theme.themeMode,
                  theme_style: theme.themeStyle,
@@ -113,49 +117,72 @@ const AppContent: React.FC = () => {
              // 3. Sync Programs
              await syncService.syncStudyPrograms(user.id, coordinator.studyPrograms);
              
-             coordinator.showToast("Données synchronisées avec votre Cloud Studeo", "success");
-        };
-        
-        // On déclenche une synchro au login ou changement majeur
-        // Pour éviter de saturer Supabase, on pourrait limiter, mais pour Studeo (données légères) c'est ok.
-        syncToCloud();
-    }
-  }, [user]);
+             console.log("☁️ Cloud Sync: OK");
+         } catch (e) {
+             console.error("☁️ Cloud Sync Error:", e);
+         }
+    }, 2000); // Délai de 2 secondes pour éviter de saturer Supabase
+    
+    return () => clearTimeout(timeoutId);
+  }, [
+      user, 
+      flashcards.flashcardSets, 
+      coordinator.studyPrograms, 
+      coordinator.curriculumSuggestions, 
+      coordinator.librarySuggestions,
+      theme.themeMode,
+      theme.themeStyle,
+      gamification.gamificationData,
+      analyticsData
+  ]);
+
 
   // Récupération des données Cloud au Login (Si local est vide ou premier login)
   React.useEffect(() => {
      if (user) {
          const loadCloudData = async () => {
+             if (isInitialSyncProgress.current) return;
+             isInitialSyncProgress.current = true;
+             
              coordinator.showToast("☁️ Chargement de vos données cloud...", "info");
              
-             // 1. Profil & Thème
-             const cloudProfile = await syncService.getProfile(user.id);
-             if (cloudProfile) {
-                 if (cloudProfile.theme_mode) theme.setThemeMode(cloudProfile.theme_mode as any);
-                 if (cloudProfile.theme_style) theme.setThemeStyle(cloudProfile.theme_style as any);
-                 if (cloudProfile.curriculum_suggestions) coordinator.setCurriculumSuggestions(cloudProfile.curriculum_suggestions);
-                 if (cloudProfile.library_suggestions) coordinator.setLibrarySuggestions(cloudProfile.library_suggestions);
-             }
+             try {
+                 // 1. Profil & Thème
+                 const cloudProfile = await syncService.getProfile(user.id);
+                 if (cloudProfile) {
+                     if (cloudProfile.theme_mode) theme.setThemeMode(cloudProfile.theme_mode as any);
+                     if (cloudProfile.theme_style) theme.setThemeStyle(cloudProfile.theme_style as any);
+                     if (cloudProfile.curriculum_suggestions) coordinator.setCurriculumSuggestions(cloudProfile.curriculum_suggestions);
+                     if (cloudProfile.library_suggestions) coordinator.setLibrarySuggestions(cloudProfile.library_suggestions);
+                 }
 
-             // 2. Flashcards (Seulement si le cloud a des données)
-             const cloudSets = await syncService.getFlashcards(user.id);
-             if (cloudSets && Object.keys(cloudSets).length > 0) {
-                 // Si local est quasi vide ou cloud est plus récent
-                 flashcards.setFlashcardSets(cloudSets);
-             }
+                 // 2. Flashcards (Seulement si le cloud a des données)
+                 const cloudSets = await syncService.getFlashcards(user.id);
+                 if (cloudSets && Object.keys(cloudSets).length > 0) {
+                     flashcards.setFlashcardSets(cloudSets);
+                 }
 
-             // 3. Programmes d'étude
-             const cloudPrograms = await syncService.getStudyPrograms(user.id);
-             if (cloudPrograms && cloudPrograms.length > 0) {
-                 coordinator.handleCurriculumGenerated(cloudPrograms[0]); // Trick pour init
-                 if (coordinator.setStudyPrograms) coordinator.setStudyPrograms(cloudPrograms);
-             }
+                 // 3. Programmes d'étude
+                 const cloudPrograms = await syncService.getStudyPrograms(user.id);
+                 if (cloudPrograms && cloudPrograms.length > 0) {
+                     // On remplace toute la liste
+                     if (coordinator.setStudyPrograms) coordinator.setStudyPrograms(cloudPrograms);
+                 }
 
-             coordinator.showToast("☁️ Synchronisation terminée !", "success");
+                 coordinator.showToast("☁️ Synchronisation terminée !", "success");
+             } catch (e) {
+                 console.error("Load Cloud Error:", e);
+             } finally {
+                 // Un petit délai pour laisser les states React se propager avant de réactiver l'auto-sync
+                 setTimeout(() => {
+                    isInitialSyncProgress.current = false;
+                 }, 3000);
+             }
          };
          loadCloudData();
      }
   }, [session]);
+
 
 
 

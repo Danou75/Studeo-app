@@ -649,7 +649,7 @@ Format JSON STRICT (tableau d'objets) :
                         {customSuggestions.map(suggestion => (
                             <div 
                                 key={suggestion.id}
-                                className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-border hover:shadow-xl transition-all group relative"
+                                className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-border hover:shadow-xl transition-all group relative flex flex-col"
                             >
                                 <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button 
@@ -659,14 +659,16 @@ Format JSON STRICT (tableau d'objets) :
                                         <i className="fas fa-trash-alt text-xs"></i>
                                     </button>
                                 </div>
-                                <span className="px-2 py-0.5 bg-accent/10 text-accent text-[10px] font-bold uppercase rounded mb-3 inline-block">
-                                    {suggestion.category}
-                                </span>
-                                <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">{suggestion.title}</h3>
-                                <p className="text-xs text-text-muted mb-6 line-clamp-3">"{suggestion.description}"</p>
+                                <div className="flex-1">
+                                    <span className="px-2 py-0.5 bg-accent/10 text-accent text-[10px] font-bold uppercase rounded mb-3 inline-block">
+                                        {suggestion.category}
+                                    </span>
+                                    <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">{suggestion.title}</h3>
+                                    <p className="text-xs text-text-muted mb-6 line-clamp-3">"{suggestion.description}"</p>
+                                </div>
                                 <Button 
                                     variant="primary" 
-                                    className="w-full rounded-xl"
+                                    className="w-full rounded-xl mt-auto"
                                     onClick={() => onSuggestedProgram(suggestion.title)}
                                 >
                                     <i className="fas fa-magic mr-2"></i> Créer ce parcours

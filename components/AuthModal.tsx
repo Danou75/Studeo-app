@@ -9,9 +9,10 @@ interface AuthModalProps {
     onClose: () => void;
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
+    onForceRefresh?: () => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode, themeStyle }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode, themeStyle, onForceRefresh }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isSignUp, setIsSignUp] = useState(false);
@@ -104,6 +105,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode
                     >
                         {isSignUp ? "Déjà un compte ? Connectez-vous" : "Pas encore de compte ? Inscrivez-vous"}
                     </button>
+
+                    {!isSignUp && onForceRefresh && (
+                        <div className="pt-4 border-t border-border mt-4">
+                            <button
+                                type="button"
+                                onClick={onForceRefresh}
+                                className="w-full text-center text-[10px] font-black uppercase tracking-widest text-primary hover:opacity-70 transition-opacity"
+                            >
+                                <i className="fas fa-sync-alt mr-2"></i> Forcer la récupération Cloud
+                            </button>
+                        </div>
+                    )}
                 </form>
             </div>
         </div>

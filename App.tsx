@@ -62,7 +62,7 @@ const AppContent: React.FC = () => {
   const [isHelpModalOpen, setIsHelpModalOpen] = React.useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
   
-  const { user, session } = useAuth();
+  const { user } = useAuth();
 
 
   
@@ -137,51 +137,53 @@ const AppContent: React.FC = () => {
   ]);
 
 
-  // Récupération des données Cloud au Login (Si local est vide ou premier login)
+  // Récupération des données Cloud (Au login ou au démarrage si déjà connecté)
+  const loadCloudData = async (silent = false) => {
+      if (!user || isInitialSyncProgress.current) return;
+      isInitialSyncProgress.current = true;
+      
+      if (!silent) coordinator.showToast("☁️ Synchronisation Cloud en cours...", "info");
+      
+      try {
+          // 1. Profil & Thème & Suggestions
+          const cloudProfile = await syncService.getProfile(user.id);
+          if (cloudProfile) {
+              if (cloudProfile.theme_mode) theme.setThemeMode(cloudProfile.theme_mode as any);
+              if (cloudProfile.theme_style) theme.setThemeStyle(cloudProfile.theme_style as any);
+              if (cloudProfile.curriculum_suggestions) coordinator.setCurriculumSuggestions(cloudProfile.curriculum_suggestions);
+              if (cloudProfile.library_suggestions) coordinator.setLibrarySuggestions(cloudProfile.library_suggestions);
+          }
+
+          // 2. Flashcards
+          const cloudSets = await syncService.getFlashcards(user.id);
+          if (cloudSets && Object.keys(cloudSets).length > 0) {
+              flashcards.setFlashcardSets(cloudSets);
+          }
+
+          // 3. Programmes d'étude
+          const cloudPrograms = await syncService.getStudyPrograms(user.id);
+          if (cloudPrograms && cloudPrograms.length > 0) {
+              if (coordinator.setStudyPrograms) coordinator.setStudyPrograms(cloudPrograms);
+          }
+
+          if (!silent) coordinator.showToast("☁️ Données cloud récupérées !", "success");
+      } catch (e) {
+          console.error("Load Cloud Error:", e);
+          if (!silent) coordinator.showToast("Erreur de récupération cloud", "error");
+      } finally {
+          setTimeout(() => {
+             isInitialSyncProgress.current = false;
+          }, 3000);
+      }
+  };
+
+  // Déclencher le chargement initial dès que l'utilisateur est disponible
   React.useEffect(() => {
      if (user) {
-         const loadCloudData = async () => {
-             if (isInitialSyncProgress.current) return;
-             isInitialSyncProgress.current = true;
-             
-             coordinator.showToast("☁️ Chargement de vos données cloud...", "info");
-             
-             try {
-                 // 1. Profil & Thème
-                 const cloudProfile = await syncService.getProfile(user.id);
-                 if (cloudProfile) {
-                     if (cloudProfile.theme_mode) theme.setThemeMode(cloudProfile.theme_mode as any);
-                     if (cloudProfile.theme_style) theme.setThemeStyle(cloudProfile.theme_style as any);
-                     if (cloudProfile.curriculum_suggestions) coordinator.setCurriculumSuggestions(cloudProfile.curriculum_suggestions);
-                     if (cloudProfile.library_suggestions) coordinator.setLibrarySuggestions(cloudProfile.library_suggestions);
-                 }
-
-                 // 2. Flashcards (Seulement si le cloud a des données)
-                 const cloudSets = await syncService.getFlashcards(user.id);
-                 if (cloudSets && Object.keys(cloudSets).length > 0) {
-                     flashcards.setFlashcardSets(cloudSets);
-                 }
-
-                 // 3. Programmes d'étude
-                 const cloudPrograms = await syncService.getStudyPrograms(user.id);
-                 if (cloudPrograms && cloudPrograms.length > 0) {
-                     // On remplace toute la liste
-                     if (coordinator.setStudyPrograms) coordinator.setStudyPrograms(cloudPrograms);
-                 }
-
-                 coordinator.showToast("☁️ Synchronisation terminée !", "success");
-             } catch (e) {
-                 console.error("Load Cloud Error:", e);
-             } finally {
-                 // Un petit délai pour laisser les states React se propager avant de réactiver l'auto-sync
-                 setTimeout(() => {
-                    isInitialSyncProgress.current = false;
-                 }, 3000);
-             }
-         };
-         loadCloudData();
+         loadCloudData(true); // Silencieux au démarrage
      }
-  }, [session]);
+  }, [user?.id]);
+
 
 
 
@@ -677,6 +679,7 @@ const AppContent: React.FC = () => {
           onClose={() => setIsAuthModalOpen(false)}
           themeMode={theme.themeMode}
           themeStyle={theme.themeStyle}
+          onForceRefresh={() => loadCloudData(false)}
       />
 
 

@@ -437,6 +437,7 @@ const AppContent: React.FC = () => {
             onStartQuiz={coordinator.handleStartModuleQuiz}
             onDeleteProgram={coordinator.handleDeleteProgram}
             onRenameProgram={coordinator.handleRenameProgram}
+            onSuggestedProgram={coordinator.handleSuggestedProgram}
             onDrawingChallenge={() => setScreen("drawing-challenge")}
             onNewProgram={() => setScreen("tutors-room")}
             themeMode={theme.themeMode}

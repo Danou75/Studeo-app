@@ -11,6 +11,17 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { save } from '@tauri-apps/api/dialog';
 import { writeTextFile } from '@tauri-apps/api/fs';
 import { markdownToRTF } from '../utils/rtfExport';
+import { v4 as uuidv4 } from 'uuid';
+import { ChatService } from '../services/chatService';
+import { useAIConfig } from '../contexts/AIConfigContext';
+import { useLocalStorage } from '../hooks/useLocalStorage';
+
+interface SuggestedProgram {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+}
 
 interface CurriculumScreenProps {
     onBack: () => void;
@@ -23,6 +34,7 @@ interface CurriculumScreenProps {
     onDrawingChallenge?: (module: StudyModule) => void;
     onStartTutorial?: (topic: string) => void;
     onNewProgram?: () => void;
+    onSuggestedProgram: (topic: string) => void;
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
 }
@@ -38,6 +50,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     onStartTutorial,
     onNewProgram,
     onRenameProgram,
+    onSuggestedProgram,
     themeMode, 
     themeStyle 
 }) => {
@@ -46,10 +59,111 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
     const [renameProgramId, setRenameProgramId] = useState<string | null>(null);
     const [newTitle, setNewTitle] = useState('');
+    const [isRenewingCatalog, setIsRenewingCatalog] = useState(false);
+    const [showRenewModal, setShowRenewModal] = useState(false);
+    const [renewPreferences, setRenewPreferences] = useState('');
+    const [customSuggestions, setCustomSuggestions] = useLocalStorage<SuggestedProgram[]>('curriculum_suggestions_catalog', []);
+    
+    const { config } = useAIConfig();
     const { showToast } = useToast();
     const { showConfirmation } = useConfirmation();
     const { t } = useTranslation();
     const [isExporting, setIsExporting] = useState(false);
+
+    const handleRenewCatalog = async (preferences: string = '') => {
+        setIsRenewingCatalog(true);
+        setShowRenewModal(false);
+        try {
+            let apiKey = '';
+            let modelName = '';
+            let apiUrl = '';
+
+            switch (config.provider) {
+                case 'gemini':
+                    apiKey = config.geminiApiKey || '';
+                    modelName = config.geminiModel || '';
+                    break;
+                case 'openai':
+                    apiKey = config.openaiApiKey || '';
+                    modelName = config.openaiModel || 'gpt-4o';
+                    break;
+                case 'anthropic':
+                    apiKey = config.anthropicApiKey || '';
+                    modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620';
+                    break;
+                case 'mistral':
+                    apiKey = config.mistralApiKey || '';
+                    modelName = config.mistralModel || 'mistral-large-latest';
+                    break;
+                case 'local':
+                    apiKey = '';
+                    modelName = config.localModelName || '';
+                    apiUrl = config.localApiUrl || '';
+                    break;
+            }
+
+            if (!apiKey && config.provider !== 'local') {
+                showToast(`Configuration manquante pour ${config.provider}`, "error");
+                setIsRenewingCatalog(false);
+                return;
+            }
+
+            const systemPrompt = "Tu es un expert en éducation et un concepteur de programmes d'études. Ta mission est de suggérer des parcours d'apprentissage réels, structurés et passionnants. NE PARLE JAMAIS de l'IA ou de la génération.";
+            const userPrompt = `Génère 3 suggestions de programmes d'étude thématiques.
+Chaque programme doit être un sujet d'apprentissage structuré (ex: "Les bases du piano", "L'histoire de la Rome Antique", "Apprendre le Python").
+${preferences.trim() ? `L'utilisateur s'intéresse particulièrement à : "${preferences}"` : "Varie les sujets pour couvrir différents domaines du savoir."}
+
+Format JSON STRICT (tableau d'objets) :
+[
+  {"titre": "Nom du Parcours (ex: Astrophysique pour débutants)", "description": "Un résumé du parcours et de ce qu'on y apprend.", "categorie": "Sciences"},
+  {"titre": "Autre Sujet", "description": "Résumé...", "categorie": "Histoire"},
+  {"titre": "Troisième Sujet", "description": "Résumé...", "categorie": "Art"}
+]`;
+
+            const responseText = await ChatService.generateAIResponse({
+                provider: config.provider,
+                apiKey: apiKey || '',
+                apiUrl: apiUrl || '',
+                modelName: modelName || 'gemini-1.5-flash',
+                prompt: userPrompt,
+                systemPrompt
+            });
+
+            const cleanedJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const firstBracket = cleanedJson.indexOf('[');
+            const lastBracket = cleanedJson.lastIndexOf(']');
+            let suggestions = [];
+            
+            if (firstBracket !== -1 && lastBracket !== -1) {
+                suggestions = JSON.parse(cleanedJson.substring(firstBracket, lastBracket + 1));
+            } else {
+                throw new Error("Format JSON invalide");
+            }
+
+            const newItems: SuggestedProgram[] = suggestions.map((s: any) => ({
+                id: uuidv4(),
+                title: s.titre || s.title || 'Sujet inconnu',
+                description: s.description || 'Pas de description disponible',
+                category: s.categorie || s.category || 'IA Suggéré'
+            }));
+
+            setCustomSuggestions(newItems);
+            showToast("Nouveaux parcours suggérés ajoutés au catalogue !", "success");
+
+        } catch (error: any) {
+            console.error("Catalog Renewal Error:", error);
+            showToast("Erreur lors du renouvellement des suggestions.", "error");
+        } finally {
+            setIsRenewingCatalog(false);
+        }
+    };
+
+    const handleDeleteSuggestion = (id: string, title: string) => {
+        if (confirm(`Supprimer la suggestion "${title}" ?`)) {
+            setCustomSuggestions(prev => prev.filter(item => item.id !== id));
+            showToast(`Suggestion "${title}" supprimée`, 'success');
+        }
+    };
 
     const selectedProgram = programs.find(p => p.id === selectedProgramId) || null;
     const setSelectedProgram = (prog: StudyProgram | null) => setSelectedProgramId(prog?.id || null);
@@ -502,6 +616,74 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
                     })}
                 </div>
             )}
+
+            {/* Section Découvrir & Développer */}
+            <div className="mt-16 mb-10">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-background-secondary/50 p-4 md:p-6 rounded-[2rem] border border-border/50">
+                    <div>
+                        <h2 className="text-xl font-black flex items-center gap-2 text-text-secondary uppercase tracking-tighter">
+                            <i className="fas fa-compass text-primary"></i> Découvrir & Développer
+                        </h2>
+                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-1">Parcours d'étude suggérés par l'IA</p>
+                    </div>
+
+                    <div className="flex gap-2">
+                        <Button 
+                            variant="secondary" 
+                            size="sm"
+                            className="rounded-xl py-2 px-4 border-dashed text-[10px] font-bold h-10"
+                            onClick={() => setShowRenewModal(true)}
+                            disabled={isRenewingCatalog}
+                        >
+                            {isRenewingCatalog ? <AILoader size="sm" /> : <><i className="fas fa-sync-alt mr-2"></i> Renouveler</>}
+                        </Button>
+                    </div>
+                </div>
+
+                {customSuggestions.length === 0 ? (
+                    <div className="text-center py-12 bg-primary/5 rounded-[2rem] border border-dashed border-primary/20">
+                        <p className="text-sm text-text-secondary italic mb-4">Cliquez sur Renouveler pour obtenir des suggestions de parcours.</p>
+                        <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            onClick={() => setShowRenewModal(true)}
+                            loading={isRenewingCatalog}
+                        >
+                            Générer des idées
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {customSuggestions.map(suggestion => (
+                            <div 
+                                key={suggestion.id}
+                                className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-border hover:shadow-xl transition-all group relative"
+                            >
+                                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                        onClick={() => handleDeleteSuggestion(suggestion.id, suggestion.title)}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-red-500 transition-colors"
+                                    >
+                                        <i className="fas fa-trash-alt text-xs"></i>
+                                    </button>
+                                </div>
+                                <span className="px-2 py-0.5 bg-accent/10 text-accent text-[10px] font-bold uppercase rounded mb-3 inline-block">
+                                    {suggestion.category}
+                                </span>
+                                <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">{suggestion.title}</h3>
+                                <p className="text-xs text-text-muted mb-6 line-clamp-3">"{suggestion.description}"</p>
+                                <Button 
+                                    variant="primary" 
+                                    className="w-full rounded-xl"
+                                    onClick={() => onSuggestedProgram(suggestion.title)}
+                                >
+                                    <i className="fas fa-magic mr-2"></i> Créer ce parcours
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
 
         {/* Modal de renommage */}
@@ -544,6 +726,49 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
                             }}
                         >
                             Enregistrer
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Modal Preferences de Renouvellement */}
+        {showRenewModal && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-border animate-zoom-in">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            <i className="fas fa-compass text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black">Renouveler les idées</h3>
+                            <p className="text-xs text-text-muted">L'IA va suggérer de nouveaux thèmes d'étude.</p>
+                        </div>
+                    </div>
+                    
+                    <div className="mb-6">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">
+                            Thèmes préférés (Optionnel)
+                        </label>
+                        <textarea
+                            value={renewPreferences}
+                            onChange={(e) => setRenewPreferences(e.target.value)}
+                            placeholder="Ex: Programmation, Histoire Médiévale, Cuisine Japonaise..."
+                            className="w-full p-4 rounded-2xl bg-background-secondary border border-border focus:ring-4 focus:ring-primary/10 outline-none text-sm min-h-[100px] resize-none transition-all"
+                        />
+                    </div>
+
+                    <div className="flex gap-3 justify-end">
+                        <Button variant="secondary" onClick={() => setShowRenewModal(false)} className="rounded-xl">
+                            Annuler
+                        </Button>
+                        <Button 
+                            variant="primary" 
+                            onClick={() => handleRenewCatalog(renewPreferences)} 
+                            className="rounded-xl px-6"
+                            loading={isRenewingCatalog}
+                        >
+                            <i className="fas fa-magic mr-2"></i> Générer
                         </Button>
                     </div>
                 </div>

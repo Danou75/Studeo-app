@@ -139,6 +139,13 @@ export const useAppCoordinator = () => {
         navigation.setScreen("ai-generator");
     };
 
+    const handleSuggestedProgram = (topic: string) => {
+        setAiModalInitialTopic(topic);
+        setAiModalInitialMode("curriculum");
+        setSelectedTutor(null);
+        navigation.setScreen("ai-generator");
+    };
+
     const handleLessonSuggestion = (topic: string) => {
         setAiModalInitialTopic(topic);
         setAiModalInitialMode("lesson");
@@ -677,6 +684,7 @@ export const useAppCoordinator = () => {
         handleCurriculumGenerated,
         handleLessonGenerated,
         handleLessonSuggestion,
+        handleSuggestedProgram,
         handleSaveLesson: studyContent.handleSaveLesson,
         handleSelectLesson,
         onStartQuiz,

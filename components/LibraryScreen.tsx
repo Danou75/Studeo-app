@@ -11,6 +11,7 @@ import { DEFAULT_FLASHCARD_SET_NAME } from '../constants';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
 import { ChatService } from '../services/chatService';
+import { useConfirmation } from '../contexts/ConfirmationContext';
 
 interface LibraryItem {
     id: string;
@@ -93,11 +94,13 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
 }) => {
     const { t, language } = useTranslation();
     const { showToast } = useToast();
+    const { showConfirmation } = useConfirmation();
     const { config } = useAIConfig();
     const [search, setSearch] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isRenewingCatalog, setIsRenewingCatalog] = useState(false);
     const [cardCount, setCardCount] = useState(20);
+    const [generatingId, setGeneratingId] = useState<string | null>(null);
     const [isAppending, setIsAppending] = useState<string | null>(null);
     const [customCollections, setCustomCollections] = useLocalStorage<LibraryItem[]>('library_custom_catalog', []);
     const [showRenewModal, setShowRenewModal] = useState(false);
@@ -119,8 +122,9 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
         item.category.toLowerCase().includes(search.toLowerCase())
     );
 
-    const generateCompleteCollection = async (topicToGen: string, countToGen: number) => {
-        setIsGenerating(true);
+    const generateCompleteCollection = async (topicToGen: string, countToGen: number, itemId?: string) => {
+        if (itemId) setGeneratingId(itemId);
+        else setIsGenerating(true);
         try {
             let apiKey = '';
             let modelName = '';
@@ -152,7 +156,8 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
 
             if (!apiKey && config.provider !== 'local') {
                 showToast(`Configuration manquante pour ${config.provider}`, "error");
-                setIsGenerating(false);
+                if (itemId) setGeneratingId(null);
+                else setIsGenerating(false);
                 return;
             }
 
@@ -171,13 +176,13 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
 
             onImport(topicToGen, response);
             showToast(`Collection "${topicToGen}" (${response.length} fiches) ajoutée !`, 'success');
-            onBack();
         } catch (error: any) {
             console.error("Library Generation Error:", error);
             const errorMessage = typeof error === 'string' ? error : (error.message || "Erreur lors de la génération");
             showToast(errorMessage, "error");
         } finally {
             setIsGenerating(false);
+            setGeneratingId(null);
         }
     };
 
@@ -246,15 +251,29 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     };
 
     const handleImport = async (item: LibraryItem) => {
-        // Si c'est une collection système (ID '1', '2', '3') ou une AI suggérée sans cartes
-        const isSkeleton = item.cards.length < item.cardsCount || item.cards.length === 0;
-        
-        if (isSkeleton) {
-            showToast(`Génération de la collection complète "${item.title}"...`, 'info');
-            await generateCompleteCollection(item.title, item.cardsCount);
+        const executeImport = async () => {
+            // Si c'est une collection système (ID '1', '2', '3') ou une AI suggérée sans cartes
+            const isSkeleton = item.cards.length < item.cardsCount || item.cards.length === 0;
+            
+            if (isSkeleton) {
+                showToast(`Génération de la collection complète "${item.title}"...`, 'info');
+                await generateCompleteCollection(item.title, item.cardsCount, item.id);
+            } else {
+                onImport(item.title, item.cards);
+                showToast(t('library.importSuccess', { name: item.title }), 'success');
+            }
+        };
+
+        if (userSets[item.title]) {
+            showConfirmation({
+                title: "Liste déjà existante",
+                message: `Une liste nommée "${item.title}" existe déjà. Voulez-vous l'écraser par cette nouvelle version ?`,
+                confirmText: "Écraser",
+                variant: 'warning',
+                onConfirm: executeImport
+            });
         } else {
-            onImport(item.title, item.cards);
-            showToast(t('library.importSuccess', { name: item.title }), 'success');
+            await executeImport();
         }
     };
 
@@ -381,7 +400,21 @@ Format JSON STRICT (tableau d'objets) :
     };
 
     const handleEnrich = async (item: LibraryItem) => {
-        await generateCompleteCollection(item.title, cardCount);
+        const executeEnrich = async () => {
+            await generateCompleteCollection(item.title, cardCount, item.id);
+        };
+
+        if (userSets[item.title]) {
+            showConfirmation({
+                title: "Liste déjà existante",
+                message: `Une liste nommée "${item.title}" existe déjà. Voulez-vous l'écraser par la version enrichie par l'IA ?`,
+                confirmText: "Écraser",
+                variant: 'warning',
+                onConfirm: executeEnrich
+            });
+        } else {
+            await executeEnrich();
+        }
     };
 
     const userSetsList = Object.entries(userSets).map(([name, cards]) => ({
@@ -601,34 +634,54 @@ Format JSON STRICT (tableau d'objets) :
 
                     {curatedList.length > 0 && (
                         <div>
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-black flex items-center gap-2 text-text-secondary uppercase tracking-tighter">
-                                    <i className="fas fa-compass"></i> Découvrir & Développer
-                                </h2>
-                                <Button 
-                                    variant="secondary" 
-                                    size="sm"
-                                    className="rounded-xl border-dashed py-1 text-[10px] relative overflow-hidden"
-                                    onClick={() => setShowRenewModal(true)}
-                                    disabled={isRenewingCatalog}
-                                >
-                                    {isRenewingCatalog ? (
-                                        <div className="flex items-center gap-2">
-                                            <AILoader size="sm" />
-                                            <span>IA travaille...</span>
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-background-secondary/50 p-4 md:p-6 rounded-[2rem] border border-border/50">
+                                <div>
+                                    <h2 className="text-xl font-black flex items-center gap-2 text-text-secondary uppercase tracking-tighter">
+                                        <i className="fas fa-compass text-primary"></i> Découvrir & Développer
+                                    </h2>
+                                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-1">Sujets d'étude suggérés par l'IA</p>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                                    {/* Sélecteur de Densité Global */}
+                                    <div className="flex items-center gap-4 bg-background px-4 py-2 rounded-2xl border border-border shadow-sm min-w-[200px]">
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-black uppercase text-primary leading-none mb-1">Densité IA</span>
+                                            <input 
+                                                type="range" 
+                                                min="5" 
+                                                max="30" 
+                                                step="5"
+                                                value={cardCount}
+                                                onChange={(e) => setCardCount(parseInt(e.target.value))}
+                                                className="w-24 h-1.5 bg-primary/20 rounded-lg appearance-none cursor-pointer accent-primary"
+                                            />
                                         </div>
-                                    ) : (
-                                        <><i className="fas fa-sync-alt mr-2"></i> Renouveler le catalogue</>
-                                    )}
-                                </Button>
-                                <Button 
-                                    variant="secondary" 
-                                    size="sm"
-                                    className="rounded-xl border-dashed py-1 text-[10px]"
-                                    onClick={() => setIsAddModalOpen(true)}
-                                >
-                                    <i className="fas fa-plus mr-2"></i> Ajouter un sujet
-                                </Button>
+                                        <div className="bg-primary text-white text-xs font-black min-w-[28px] h-7 flex items-center justify-center rounded-lg shadow-sm">
+                                            {cardCount}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <Button 
+                                            variant="secondary" 
+                                            size="sm"
+                                            className="rounded-xl py-2 px-4 border-dashed text-[10px] font-bold h-10"
+                                            onClick={() => setShowRenewModal(true)}
+                                            disabled={isRenewingCatalog}
+                                        >
+                                            {isRenewingCatalog ? <AILoader size="sm" /> : <><i className="fas fa-sync-alt mr-2"></i> Renouveler</>}
+                                        </Button>
+                                        <Button 
+                                            variant="secondary" 
+                                            size="sm"
+                                            className="rounded-xl py-2 px-4 border-dashed text-[10px] font-bold h-10"
+                                            onClick={() => setIsAddModalOpen(true)}
+                                        >
+                                            <i className="fas fa-plus mr-2"></i> Ajouter
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
                             <div className={viewMode === 'grid' 
                                 ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
@@ -794,6 +847,7 @@ Format JSON STRICT (tableau d'objets) :
                                                 variant="primary" 
                                                 className={`rounded-xl py-1.5 text-xs font-bold ${viewMode === 'grid' ? 'w-full' : 'flex-1'}`}
                                                 onClick={() => handleImport(item)}
+                                                loading={generatingId === item.id}
                                             >
                                                 <i className="fas fa-download mr-1 md:mr-2"></i> {viewMode === 'grid' ? 'Importer' : ''}
                                             </Button>
@@ -801,7 +855,7 @@ Format JSON STRICT (tableau d'objets) :
                                                 variant="secondary" 
                                                 className={`rounded-xl py-1.5 text-[10px] font-medium border-dashed ${viewMode === 'grid' ? 'w-full' : 'flex-1'}`}
                                                 onClick={() => handleEnrich(item)}
-                                                loading={isGenerating && search === item.title}
+                                                loading={generatingId === item.id}
                                             >
                                                 <i className="fas fa-plus-circle mr-1.5"></i> {viewMode === 'grid' ? 'Enrichir via IA' : 'Enrichir'}
                                             </Button>
@@ -821,23 +875,8 @@ Format JSON STRICT (tableau d'objets) :
                             Nous n'avons pas de collection "{search}" en rayon, mais notre bibliothécaire IA peut vous en créer une complète en quelques secondes.
                         </p>
 
-                        <div className="flex flex-col items-center gap-4 mb-10 bg-white/50 dark:bg-black/20 p-6 rounded-3xl border border-primary/10 max-w-sm mx-auto shadow-inner">
-                            <label className="text-xs font-black uppercase tracking-widest text-primary italic">Densité de la collection</label>
-                            <div className="flex items-center gap-6 w-full px-4">
-                                <input 
-                                    type="range" 
-                                    min="5" 
-                                    max="30" 
-                                    step="5"
-                                    value={cardCount}
-                                    onChange={(e) => setCardCount(parseInt(e.target.value))}
-                                    className="flex-1 h-2 bg-primary/20 rounded-lg appearance-none cursor-pointer accent-primary"
-                                />
-                                <span className="bg-primary text-white w-12 h-12 flex items-center justify-center rounded-2xl font-black shadow-lg shadow-primary/30">
-                                    {cardCount}
-                                </span>
-                            </div>
-                            <p className="text-[10px] text-text-muted">Nombre de fiches à générer pour ce sujet</p>
+                        <div className="text-[10px] text-text-muted italic">
+                            Ajustez la densité en haut de la section pour changer le nombre de fiches.
                         </div>
 
                         <Button 

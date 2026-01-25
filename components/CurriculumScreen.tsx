@@ -34,7 +34,7 @@ interface CurriculumScreenProps {
     onDrawingChallenge?: (module: StudyModule) => void;
     onStartTutorial?: (topic: string) => void;
     onNewProgram?: () => void;
-    onSuggestedProgram: (topic: string) => void;
+    onSuggestedProgram: (topic: string, category: string) => void;
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
 }
@@ -669,7 +669,7 @@ Format JSON STRICT (tableau d'objets) :
                                 <Button 
                                     variant="primary" 
                                     className="w-full rounded-xl mt-auto"
-                                    onClick={() => onSuggestedProgram(suggestion.title)}
+                                    onClick={() => onSuggestedProgram(suggestion.title, suggestion.category)}
                                 >
                                     <i className="fas fa-magic mr-2"></i> Créer ce parcours
                                 </Button>

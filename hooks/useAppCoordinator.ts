@@ -139,10 +139,41 @@ export const useAppCoordinator = () => {
         navigation.setScreen("ai-generator");
     };
 
-    const handleSuggestedProgram = (topic: string) => {
+    const handleSuggestedProgram = (topic: string, category: string) => {
         setAiModalInitialTopic(topic);
         setAiModalInitialMode("curriculum");
-        setSelectedTutor(null);
+        
+        // Sélection d'un tuteur adapté à la catégorie (Ordre de priorité : Spécifique -> Général)
+        let tutorId = 'prof-curio'; // Par défaut
+        const lowerCat = category.toLowerCase();
+        const lowerTopic = topic.toLowerCase();
+
+        // 1. Détection de thèmes spécifiques
+        if (lowerTopic.includes('renaissance') || lowerCat.includes('renaissance')) tutorId = 'maitre-leonard';
+        else if (lowerTopic.includes('italien') || lowerCat.includes('italien')) tutorId = 'maestro-italiano';
+        else if (lowerTopic.includes('anglais') || lowerTopic.includes('english') || lowerCat.includes('english')) tutorId = 'mister-english';
+        else if (lowerTopic.includes('échecs') || lowerCat.includes('échecs')) tutorId = 'gm-kaspar';
+        else if (lowerTopic.includes('astrophysique') || lowerTopic.includes('cosmos') || lowerCat.includes('cosmos')) tutorId = 'prof-cosmos';
+        
+        // 2. Détection par catégorie générale (si non trouvé au dessus)
+        else if (lowerCat.includes('histoire')) tutorId = 'prof-chronos';
+        else if (lowerCat.includes('géo') || lowerCat.includes('atlas')) tutorId = 'prof-atlas';
+        else if (lowerCat.includes('art') || lowerCat.includes('peinture') || lowerCat.includes('dessin')) tutorId = 'prof-muse';
+        else if (lowerCat.includes('science')) tutorId = 'prof-eureka';
+        else if (lowerCat.includes('math') || lowerCat.includes('algèbre') || lowerCat.includes('calcul')) tutorId = 'prof-newton';
+        else if (lowerCat.includes('physique')) tutorId = 'prof-volt';
+        else if (lowerCat.includes('chimie')) tutorId = 'prof-molecula';
+        else if (lowerCat.includes('programmation') || lowerCat.includes('code') || lowerCat.includes('python')) tutorId = 'prof-turing';
+        else if (lowerCat.includes('littérature')) tutorId = 'prof-plume';
+        else if (lowerCat.includes('philoso')) tutorId = 'prof-sofia';
+        else if (lowerCat.includes('cuisine') || lowerCat.includes('gastro')) tutorId = 'chef-gaston';
+        else if (lowerCat.includes('sport') || lowerCat.includes('fitness')) tutorId = 'coach-vita';
+        else if (lowerCat.includes('vin') || lowerCat.includes('oenologie')) tutorId = 'sommelier-bacchus';
+        else if (lowerCat.includes('droit') || lowerCat.includes('justice')) tutorId = 'maitre-lexis';
+        
+        const tutor = TUTORS.find(t => t.id === tutorId) || null;
+        setSelectedTutor(tutor);
+        
         navigation.setScreen("ai-generator");
     };
 

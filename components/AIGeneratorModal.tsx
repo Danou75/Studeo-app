@@ -115,13 +115,14 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
         if (saved) {
             try {
                 const data = JSON.parse(saved);
-                if (data.topic) setTopic(data.topic);
+                // On ne charge le brouillon que si aucune valeur initiale n'est fournie via les props
+                if (data.topic && !initialTopic) setTopic(data.topic);
                 if (data.count) setCount(data.count);
                 if (data.difficulty) setDifficulty(data.difficulty);
                 if (data.context) setContext(data.context);
                 if (data.sourceLang) setSourceLang(data.sourceLang);
                 if (data.targetLang) setTargetLang(data.targetLang);
-                if (data.generationType) setGenerationType(data.generationType);
+                if (data.generationType && !initialMode) setGenerationType(data.generationType);
             } catch (e) {
                 console.error("Failed to load AI Generator draft", e);
             }

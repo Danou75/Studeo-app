@@ -9,6 +9,9 @@ export const useStudyContent = () => {
     const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
     const [savedLessons, setSavedLessons] = useLocalStorage<Lesson[]>('savedLessons', []);
     const [studyPrograms, setStudyPrograms] = useLocalStorage<StudyProgram[]>('studyPrograms', []);
+    const [curriculumSuggestions, setCurriculumSuggestions] = useLocalStorage<any[]>('curriculum_suggestions_catalog', []);
+    const [librarySuggestions, setLibrarySuggestions] = useLocalStorage<any[]>('library_custom_catalog', []);
+
 
     const handleLessonGenerated = (lesson: Lesson, setScreen: (s: Screen) => void) => {
         if (!lesson.id) lesson.id = uuidv4();
@@ -152,6 +155,10 @@ export const useStudyContent = () => {
         savedLessons,
         studyPrograms,
         setStudyPrograms,
+        curriculumSuggestions,
+        setCurriculumSuggestions,
+        librarySuggestions,
+        setLibrarySuggestions,
         handleLessonGenerated,
         handleCurriculumGenerated,
         handleSaveLesson,

@@ -693,6 +693,10 @@ export const useAppCoordinator = () => {
         savedLessons: studyContent.savedLessons,
         studyPrograms: studyContent.studyPrograms,
         setStudyPrograms: studyContent.setStudyPrograms,
+        curriculumSuggestions: studyContent.curriculumSuggestions,
+        setCurriculumSuggestions: studyContent.setCurriculumSuggestions,
+        librarySuggestions: studyContent.librarySuggestions,
+        setLibrarySuggestions: studyContent.setLibrarySuggestions,
         
         aiModalInitialTopic, aiModalInitialMode,
         

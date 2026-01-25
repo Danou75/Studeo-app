@@ -10,6 +10,8 @@ export const syncService = {
         theme_style?: string;
         gamification_data?: any;
         analytics_data?: any;
+        curriculum_suggestions?: any[];
+        library_suggestions?: any[];
     }) {
         const { error } = await supabase
             .from('profiles')

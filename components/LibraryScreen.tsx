@@ -77,6 +77,8 @@ interface LibraryScreenProps {
     onStartQuiz?: () => void;
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
+    customCollections?: any[];
+    setCustomCollections?: (collections: any[] | ((prev: any[]) => any[])) => void;
 }
 
 export const LibraryScreen: React.FC<LibraryScreenProps> = ({ 
@@ -90,8 +92,15 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     onSelectSet, 
     onStartQuiz,
     themeMode,
-    themeStyle
+    themeStyle,
+    customCollections: propsCustomCollections = [],
+    setCustomCollections: propsSetCustomCollections
 }) => {
+    // Sync Fallback
+    const [localCollections, setLocalCollections] = useLocalStorage<LibraryItem[]>('library_custom_catalog', []);
+    const customCollections = propsSetCustomCollections ? propsCustomCollections : localCollections;
+    const setCustomCollections = propsSetCustomCollections || setLocalCollections;
+
     const { t, language } = useTranslation();
     const { showToast } = useToast();
     const { showConfirmation } = useConfirmation();
@@ -102,7 +111,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     const [cardCount, setCardCount] = useState(20);
     const [generatingId, setGeneratingId] = useState<string | null>(null);
     const [isAppending, setIsAppending] = useState<string | null>(null);
-    const [customCollections, setCustomCollections] = useLocalStorage<LibraryItem[]>('library_custom_catalog', []);
+
     const [showRenewModal, setShowRenewModal] = useState(false);
     const [renewPreferences, setRenewPreferences] = useState('');
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
@@ -370,7 +379,7 @@ Format JSON STRICT (tableau d'objets) :
 
     const handleDeleteLibraryItem = (id: string, title: string) => {
         if (confirm(`Supprimer la suggestion "${title}" ?`)) {
-            setCustomCollections(prev => prev.filter(item => item.id !== id));
+            setCustomCollections((prev: LibraryItem[]) => prev.filter((item: LibraryItem) => item.id !== id));
             showToast(`Suggestion "${title}" supprimée`, 'success');
         }
     };
@@ -984,7 +993,7 @@ Format JSON STRICT (tableau d'objets) :
                                         if (renameType === 'user' && onRenameSet) {
                                             onRenameSet(renameTarget, newName.trim());
                                         } else if (renameType === 'curated' && renameId) {
-                                            setCustomCollections(prev => prev.map(item => 
+                                            setCustomCollections((prev: LibraryItem[]) => prev.map((item: LibraryItem) => 
                                                 item.id === renameId ? { ...item, title: newName.trim() } : item
                                             ));
                                         }
@@ -1135,7 +1144,7 @@ Format JSON STRICT (tableau d'objets) :
                                             cardsCount: 20,
                                             cards: []
                                         };
-                                        setCustomCollections(prev => [item, ...prev]);
+                                        setCustomCollections((prev: LibraryItem[]) => [item, ...prev]);
                                         setIsAddModalOpen(false);
                                         setNewItem({ title: '', description: '', category: 'Mes Idées' });
                                         showToast(`Sujet "${item.title}" ajouté !`, 'success');

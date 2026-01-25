@@ -35,6 +35,8 @@ interface CurriculumScreenProps {
     onStartTutorial?: (topic: string) => void;
     onNewProgram?: () => void;
     onSuggestedProgram: (topic: string, category: string) => void;
+    customSuggestions?: any[];
+    setCustomSuggestions?: (suggestions: any[] | ((prev: any[]) => any[])) => void;
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
 }
@@ -51,9 +53,16 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     onNewProgram,
     onRenameProgram,
     onSuggestedProgram,
+    customSuggestions: propsCustomSuggestions = [],
+    setCustomSuggestions: propsSetCustomSuggestions,
     themeMode, 
     themeStyle 
 }) => {
+    // Si on a les props de synchro, on les utilise, sinon fallback sur local (sécurité)
+    const [localSuggestions, setLocalSuggestions] = useLocalStorage<SuggestedProgram[]>('curriculum_suggestions_catalog', []);
+    const customSuggestions = propsSetCustomSuggestions ? propsCustomSuggestions : localSuggestions;
+    const setCustomSuggestions = propsSetCustomSuggestions || setLocalSuggestions;
+
     const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
     const [loadingModuleId, setLoadingModuleId] = useState<string | null>(null);
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
@@ -64,7 +73,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     const [renewPreferences, setRenewPreferences] = useState('');
     const [renewStrategy, setRenewStrategy] = useState<'replace' | 'append'>('replace');
     const [viewMode, setViewMode] = useLocalStorage<'grid' | 'list'>('curriculum_view_mode', 'grid');
-    const [customSuggestions, setCustomSuggestions] = useLocalStorage<SuggestedProgram[]>('curriculum_suggestions_catalog', []);
+
     
     const { config } = useAIConfig();
     const { showToast } = useToast();
@@ -152,7 +161,7 @@ Format JSON STRICT (tableau d'objets) :
             if (renewStrategy === 'replace') {
                 setCustomSuggestions(newItems);
             } else {
-                setCustomSuggestions(prev => [...newItems, ...prev]);
+                setCustomSuggestions((prev: SuggestedProgram[]) => [...newItems, ...prev]);
             }
             showToast(renewStrategy === 'replace' ? "Suggestions renouvelées !" : "Nouvelles suggestions ajoutées !", "success");
 
@@ -166,7 +175,7 @@ Format JSON STRICT (tableau d'objets) :
 
     const handleDeleteSuggestion = (id: string, title: string) => {
         if (confirm(`Supprimer la suggestion "${title}" ?`)) {
-            setCustomSuggestions(prev => prev.filter(item => item.id !== id));
+            setCustomSuggestions((prev: SuggestedProgram[]) => prev.filter((item: SuggestedProgram) => item.id !== id));
             showToast(`Suggestion "${title}" supprimée`, 'success');
         }
     };

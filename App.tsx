@@ -102,7 +102,9 @@ const AppContent: React.FC = () => {
                  theme_mode: theme.themeMode,
                  theme_style: theme.themeStyle,
                  gamification_data: gamification.gamificationData,
-                 analytics_data: analyticsData
+                 analytics_data: analyticsData,
+                 curriculum_suggestions: coordinator.curriculumSuggestions,
+                 library_suggestions: coordinator.librarySuggestions
              });
 
              // 2. Sync Flashcards
@@ -131,7 +133,8 @@ const AppContent: React.FC = () => {
              if (cloudProfile) {
                  if (cloudProfile.theme_mode) theme.setThemeMode(cloudProfile.theme_mode as any);
                  if (cloudProfile.theme_style) theme.setThemeStyle(cloudProfile.theme_style as any);
-                 // On pourrait aussi sync gamification / analytics ici si besoin
+                 if (cloudProfile.curriculum_suggestions) coordinator.setCurriculumSuggestions(cloudProfile.curriculum_suggestions);
+                 if (cloudProfile.library_suggestions) coordinator.setLibrarySuggestions(cloudProfile.library_suggestions);
              }
 
              // 2. Flashcards (Seulement si le cloud a des données)
@@ -478,6 +481,8 @@ const AppContent: React.FC = () => {
             onStartQuiz={() => setScreen("setup")}
             themeMode={theme.themeMode}
             themeStyle={theme.themeStyle}
+            customCollections={coordinator.librarySuggestions}
+            setCustomCollections={coordinator.setLibrarySuggestions}
           />
         );
 
@@ -513,6 +518,8 @@ const AppContent: React.FC = () => {
             onNewProgram={() => setScreen("tutors-room")}
             themeMode={theme.themeMode}
             themeStyle={theme.themeStyle}
+            customSuggestions={coordinator.curriculumSuggestions}
+            setCustomSuggestions={coordinator.setCurriculumSuggestions}
           />
         );
 

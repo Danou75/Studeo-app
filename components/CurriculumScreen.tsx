@@ -635,7 +635,7 @@ Format JSON STRICT (tableau d'objets) :
                                         </div>
                                     )}
                                     
-                                    <h3 className={`font-bold group-hover:text-primary transition-colors truncate ${viewMode === 'grid' ? 'text-xl mb-1' : 'text-base'}`}>
+                                    <h3 className={`font-bold group-hover:text-primary transition-colors ${viewMode === 'grid' ? 'text-xl mb-1' : 'text-base'}`}>
                                         {program.topic}
                                     </h3>
                                     
@@ -726,7 +726,7 @@ Format JSON STRICT (tableau d'objets) :
                                     <span className="px-2 py-0.5 bg-accent/10 text-accent text-[10px] font-bold uppercase rounded mb-3 inline-block">
                                         {suggestion.category}
                                     </span>
-                                    <h3 className={`font-bold group-hover:text-primary transition-colors truncate ${viewMode === 'grid' ? 'text-lg mb-2' : 'text-base mb-0'}`}>
+                                    <h3 className={`font-bold group-hover:text-primary transition-colors ${viewMode === 'grid' ? 'text-lg mb-2' : 'text-base mb-0'}`}>
                                         {suggestion.title}
                                     </h3>
                                     <p className={`text-xs text-text-muted italic opacity-70 ${viewMode === 'grid' ? 'mb-6 line-clamp-3' : 'line-clamp-1'}`}>

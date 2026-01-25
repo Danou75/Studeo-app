@@ -635,7 +635,7 @@ Format JSON STRICT (tableau d'objets) :
                             onClick={() => setShowRenewModal(true)}
                             disabled={isRenewingCatalog}
                         >
-                            {isRenewingCatalog ? <AILoader size="sm" /> : <><i className="fas fa-sync-alt mr-2"></i> Renouveler</>}
+                            {isRenewingCatalog ? <AILoader size="sm" /> : <><i className="fas fa-magic mr-2"></i> Générer des idées</>}
                         </Button>
                     </div>
                 </div>

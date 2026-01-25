@@ -434,49 +434,55 @@ Format JSON STRICT (tableau d'objets) :
                 className={`transition-all duration-500 p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
-                <div className="relative z-10 flex justify-between items-start">
-                    <div className="flex flex-col">
-                        <Button 
-                            variant="secondary" 
-                            onClick={onBack} 
-                            size="sm" 
-                            className={`transition-all mb-2 md:mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
+                {/* Ligne des Boutons de Navigation/Action */}
+                <div className="relative z-20 flex justify-between items-center mb-6">
+                    <Button 
+                        variant="secondary" 
+                        onClick={onBack} 
+                        size="sm" 
+                        className={`transition-all w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
+                    >
+                        <i className="fas fa-home mr-2 text-inherit"></i> Accueil
+                    </Button>
+
+                    {/* Toggle de vue centré */}
+                    <div className="flex items-center gap-1.5 p-1 bg-black/10 dark:bg-white/5 rounded-xl backdrop-blur-sm border border-white/10 shrink-0">
+                        <button
+                            onClick={() => setViewMode('grid')}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-inherit opacity-50 hover:opacity-100'}`}
+                            title="Vue Grille"
                         >
-                            <i className="fas fa-home mr-2 text-inherit"></i> Accueil
-                        </Button>
-                        <h1 className="text-xl md:text-3xl font-black drop-shadow-sm text-inherit">
-                            {t('home.features.library.title')}
-                        </h1>
-                        <p className="opacity-80 mt-1 text-xs md:text-base text-inherit">{t('home.features.library.description')}</p>
+                            <i className="fas fa-th-large text-xs"></i>
+                        </button>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-inherit opacity-50 hover:opacity-100'}`}
+                            title="Vue Liste"
+                        >
+                            <i className="fas fa-list text-xs"></i>
+                        </button>
                     </div>
 
-                        <div className="flex items-center gap-1.5 p-1 bg-black/10 dark:bg-white/5 rounded-xl backdrop-blur-sm border border-white/10">
-                            <button
-                                onClick={() => setViewMode('grid')}
-                                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-inherit opacity-50 hover:opacity-100'}`}
-                                title="Vue Grille"
-                            >
-                                <i className="fas fa-th-large text-xs"></i>
-                            </button>
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-inherit opacity-50 hover:opacity-100'}`}
-                                title="Vue Liste"
-                            >
-                                <i className="fas fa-list text-xs"></i>
-                            </button>
-                        </div>
-
+                    <div className="flex items-center gap-3">
                         {onStartQuiz && (
                             <Button 
                                 variant="secondary" 
                                 onClick={onStartQuiz} 
-                                className={`transition-all border-transparent backdrop-blur-sm rounded-xl px-5 py-2.5 flex items-center gap-2 group ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80`}
+                                className={`transition-all border-transparent backdrop-blur-sm rounded-xl px-4 py-2 flex items-center gap-2 group ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80`}
                             >
                                 <i className="fas fa-play-circle text-lg animate-pulse"></i>
                                 <span className="font-bold uppercase tracking-wider text-[10px]">Lecteur de Quiz</span>
                             </Button>
                         )}
+                    </div>
+                </div>
+
+                {/* Titres du Header */}
+                <div className="relative z-10 flex flex-col">
+                    <h1 className="text-xl md:text-3xl font-black drop-shadow-sm text-inherit">
+                        {t('home.features.library.title')}
+                    </h1>
+                    <p className="opacity-80 mt-1 text-xs md:text-base text-inherit">{t('home.features.library.description')}</p>
                 </div>
              </div>
 

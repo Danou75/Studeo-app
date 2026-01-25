@@ -62,6 +62,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     const [isRenewingCatalog, setIsRenewingCatalog] = useState(false);
     const [showRenewModal, setShowRenewModal] = useState(false);
     const [renewPreferences, setRenewPreferences] = useState('');
+    const [renewStrategy, setRenewStrategy] = useState<'replace' | 'append'>('replace');
     const [viewMode, setViewMode] = useLocalStorage<'grid' | 'list'>('curriculum_view_mode', 'grid');
     const [customSuggestions, setCustomSuggestions] = useLocalStorage<SuggestedProgram[]>('curriculum_suggestions_catalog', []);
     
@@ -148,8 +149,12 @@ Format JSON STRICT (tableau d'objets) :
                 category: s.categorie || s.category || 'IA Suggéré'
             }));
 
-            setCustomSuggestions(newItems);
-            showToast("Nouveaux parcours suggérés ajoutés au catalogue !", "success");
+            if (renewStrategy === 'replace') {
+                setCustomSuggestions(newItems);
+            } else {
+                setCustomSuggestions(prev => [...newItems, ...prev]);
+            }
+            showToast(renewStrategy === 'replace' ? "Suggestions renouvelées !" : "Nouvelles suggestions ajoutées !", "success");
 
         } catch (error: any) {
             console.error("Catalog Renewal Error:", error);
@@ -502,46 +507,50 @@ Format JSON STRICT (tableau d'objets) :
             className={`transition-all duration-500 p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
             style={{ background: getThemeGradient(themeStyle, themeMode) }}
         >
-            <div className="relative z-10 flex justify-between items-start">
-                <div className="flex flex-col">
-                    <Button 
-                        variant="secondary" 
-                        onClick={onBack} 
-                        size="sm" 
-                        className={`transition-all mb-2 md:mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
+            {/* Ligne des Boutons de Navigation/Action */}
+            <div className="relative z-20 flex justify-between items-center mb-6">
+                <Button 
+                    variant="secondary" 
+                    onClick={onBack} 
+                    size="sm" 
+                    className={`transition-all w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
+                >
+                    <i className="fas fa-home mr-2 text-inherit"></i> Accueil
+                </Button>
+
+                {/* Toggle de vue centré */}
+                <div className="flex items-center gap-1.5 p-1 bg-black/10 dark:bg-white/5 rounded-xl backdrop-blur-sm border border-white/10 shrink-0">
+                    <button
+                        onClick={() => setViewMode('grid')}
+                        className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-inherit opacity-50 hover:opacity-100'}`}
+                        title="Vue Grille"
                     >
-                        <i className="fas fa-home mr-2 text-inherit"></i> Accueil
-                    </Button>
-                    <h1 className="text-2xl md:text-3xl font-black drop-shadow-sm flex items-center gap-3 text-inherit">
-                        <span className="text-2xl md:text-3xl text-inherit">🗺️</span> {t('curriculum.title')}
-                    </h1>
-                    <p className="opacity-80 mt-1 text-base text-inherit">{t('curriculum.subtitle')}</p>
+                        <i className="fas fa-th-large text-xs"></i>
+                    </button>
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-inherit opacity-50 hover:opacity-100'}`}
+                        title="Vue Liste"
+                    >
+                        <i className="fas fa-list text-xs"></i>
+                    </button>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 p-1 bg-black/10 dark:bg-white/5 rounded-xl backdrop-blur-sm border border-white/10 shrink-0">
-                        <button
-                            onClick={() => setViewMode('grid')}
-                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-inherit opacity-50 hover:opacity-100'}`}
-                            title="Vue Grille"
-                        >
-                            <i className="fas fa-th-large text-xs"></i>
-                        </button>
-                        <button
-                            onClick={() => setViewMode('list')}
-                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-inherit opacity-50 hover:opacity-100'}`}
-                            title="Vue Liste"
-                        >
-                            <i className="fas fa-list text-xs"></i>
-                        </button>
-                    </div>
-
                     {onNewProgram && (
                         <Button onClick={onNewProgram} size="sm" className="bg-white/90 hover:bg-white text-primary border-none font-bold shadow-lg transform hover:scale-105 active:scale-95 transition-all">
                             <i className="fas fa-plus mr-2"></i> {t('curriculum.new')}
                         </Button>
                     )}
                 </div>
+            </div>
+
+            {/* Titres du Header */}
+            <div className="relative z-10 flex flex-col">
+                <h1 className="text-2xl md:text-3xl font-black drop-shadow-sm flex items-center gap-3 text-inherit">
+                    <span className="text-2xl md:text-3xl text-inherit">🗺️</span> {t('curriculum.title')}
+                </h1>
+                <p className="opacity-80 mt-1 text-base text-inherit">{t('curriculum.subtitle')}</p>
             </div>
         </div>
 
@@ -799,6 +808,26 @@ Format JSON STRICT (tableau d'objets) :
                         </div>
                     </div>
                     
+                    <div className="mb-6">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">
+                            Méthode de génération
+                        </label>
+                        <div className="flex gap-2 p-1 bg-background-secondary rounded-2xl border border-border">
+                            <button
+                                onClick={() => setRenewStrategy('replace')}
+                                className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all ${renewStrategy === 'replace' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm shadow-primary/10' : 'text-text-muted hover:text-text'}`}
+                            >
+                                <i className="fas fa-sync-alt mr-2"></i> Remplacer tout
+                            </button>
+                            <button
+                                onClick={() => setRenewStrategy('append')}
+                                className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all ${renewStrategy === 'append' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm shadow-primary/10' : 'text-text-muted hover:text-text'}`}
+                            >
+                                <i className="fas fa-plus mr-2"></i> Ajouter aux existants
+                            </button>
+                        </div>
+                    </div>
+
                     <div className="mb-6">
                         <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">
                             Thèmes préférés (Optionnel)

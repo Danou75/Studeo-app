@@ -124,16 +124,36 @@ const AppContent: React.FC = () => {
   React.useEffect(() => {
      if (user) {
          const loadCloudData = async () => {
+             coordinator.showToast("☁️ Chargement de vos données cloud...", "info");
+             
+             // 1. Profil & Thème
              const cloudProfile = await syncService.getProfile(user.id);
              if (cloudProfile) {
                  if (cloudProfile.theme_mode) theme.setThemeMode(cloudProfile.theme_mode as any);
                  if (cloudProfile.theme_style) theme.setThemeStyle(cloudProfile.theme_style as any);
-                 // etc... 
+                 // On pourrait aussi sync gamification / analytics ici si besoin
              }
+
+             // 2. Flashcards (Seulement si le cloud a des données)
+             const cloudSets = await syncService.getFlashcards(user.id);
+             if (cloudSets && Object.keys(cloudSets).length > 0) {
+                 // Si local est quasi vide ou cloud est plus récent
+                 flashcards.setFlashcardSets(cloudSets);
+             }
+
+             // 3. Programmes d'étude
+             const cloudPrograms = await syncService.getStudyPrograms(user.id);
+             if (cloudPrograms && cloudPrograms.length > 0) {
+                 coordinator.handleCurriculumGenerated(cloudPrograms[0]); // Trick pour init
+                 if (coordinator.setStudyPrograms) coordinator.setStudyPrograms(cloudPrograms);
+             }
+
+             coordinator.showToast("☁️ Synchronisation terminée !", "success");
          };
          loadCloudData();
      }
   }, [session]);
+
 
 
   const [selectedTutorialTopic, setSelectedTutorialTopic] = React.useState<string | undefined>(undefined);

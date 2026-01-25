@@ -545,7 +545,7 @@ Format JSON STRICT (tableau d'objets) :
                                             
                                             {viewMode === 'list' && (
                                                 <div className="flex-1 min-w-0">
-                                                    <h3 className="text-base font-bold text-text truncate group-hover:text-primary transition-colors">
+                                                    <h3 className="text-base font-bold text-text group-hover:text-primary transition-colors">
                                                         {set.name}
                                                     </h3>
                                                     <p className="text-xs text-text-muted font-medium">
@@ -601,7 +601,7 @@ Format JSON STRICT (tableau d'objets) :
 
                                         {viewMode === 'grid' && (
                                             <div className="flex-1">
-                                                <h3 className="text-base font-bold text-text mb-1 line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                                                <h3 className="text-base font-bold text-text mb-1 leading-tight group-hover:text-primary transition-colors">
                                                     {set.name}
                                                 </h3>
                                                 <p className="text-xs text-text-muted font-medium">
@@ -775,7 +775,7 @@ Format JSON STRICT (tableau d'objets) :
                                             </div>
 
                                             <div className="flex-1 min-w-0">
-                                                <h3 className={`font-bold group-hover:text-primary transition-colors leading-tight truncate ${viewMode === 'grid' ? 'text-base mb-1' : 'text-base'}`}>
+                                                <h3 className={`font-bold group-hover:text-primary transition-colors leading-tight ${viewMode === 'grid' ? 'text-base mb-1' : 'text-base'}`}>
                                                     {item.title}
                                                 </h3>
                                                 <p className={`text-[10px] text-text-secondary line-clamp-2 italic opacity-70 ${viewMode === 'list' && 'hidden sm:block'}`}>

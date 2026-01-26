@@ -160,53 +160,79 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     </p>
                 </div>
 
-                <div className="absolute top-0 right-0 hidden md:flex flex-col items-end gap-3 p-2">
-                    <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md p-1.5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                {/* Zone des Contrôles (Haut de page) */}
+                <div className="flex flex-col md:absolute top-0 right-0 items-center md:items-end gap-3 p-2 mb-4 md:mb-0">
+                    <div className="flex flex-wrap justify-center items-center gap-2 bg-white/40 dark:bg-gray-800/40 backdrop-blur-md p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
                         <select 
                             value={themeStyle}
                             onChange={(e) => onThemeStyleChange(e.target.value as ThemeStyle)}
-                            className="bg-transparent text-xs font-bold outline-none cursor-pointer appearance-none px-3 py-1 text-right hover:opacity-80 transition-opacity"
+                            className="bg-transparent text-[10px] md:text-xs font-black outline-none cursor-pointer appearance-none px-2 py-1 text-center md:text-right hover:opacity-80 transition-opacity"
                             style={{ color: themeColors.primary }}
                         >
-                            <option value="default">🎨 Défaut</option>
-                            <option value="french">🇫🇷 France</option>
-                            <option value="english">🇬🇧 English</option>
-                            <option value="spanish">🇪🇸 España</option>
-                            <option value="italian">🇮🇹 Italia</option>
-                            <option value="german">🇩🇪 Deutsch</option>
-                            <option value="russian">🇷🇺 Pусский</option>
-                            <option value="apple">🍎 Apple</option>
+                            <option value="default">🎨 {window.innerWidth < 640 ? '' : 'Défaut'}</option>
+                            <option value="french">🇫🇷 {window.innerWidth < 640 ? '' : 'France'}</option>
+                            <option value="english">🇬🇧 {window.innerWidth < 640 ? '' : 'English'}</option>
+                            <option value="spanish">🇪🇸 {window.innerWidth < 640 ? '' : 'España'}</option>
+                            <option value="italian">🇮🇹 {window.innerWidth < 640 ? '' : 'Italia'}</option>
+                            <option value="german">🇩🇪 {window.innerWidth < 640 ? '' : 'Deutsch'}</option>
+                            <option value="russian">🇷🇺 {window.innerWidth < 640 ? '' : 'Pусский'}</option>
+                            <option value="apple">🍎 {window.innerWidth < 640 ? '' : 'Apple'}</option>
                         </select>
-                        <div className="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-1"></div>
-                         <div className="flex bg-gray-100 dark:bg-gray-700 rounded-xl p-0.5">
+                        <div className="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5"></div>
+                         <div className="flex bg-gray-100/50 dark:bg-gray-700/50 rounded-xl p-0.5">
                              <button 
                                 onClick={() => setLanguage('fr')} 
-                                className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${language === 'fr' ? 'bg-white dark:bg-gray-600 shadow' : 'text-gray-400 hover:text-gray-600 mb-0.5'}`}
+                                className={`px-2 py-1 rounded-lg text-[9px] font-black transition-all ${language === 'fr' ? 'bg-white dark:bg-gray-600 shadow' : 'text-gray-400'}`}
                                 style={language === 'fr' ? { color: themeColors.primary } : {}}
                              >FR</button>
                              <button 
                                 onClick={() => setLanguage('en')} 
-                                className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${language === 'en' ? 'bg-white dark:bg-gray-600 shadow' : 'text-gray-400 hover:text-gray-600 mb-0.5'}`}
+                                className={`px-2 py-1 rounded-lg text-[9px] font-black transition-all ${language === 'en' ? 'bg-white dark:bg-gray-600 shadow' : 'text-gray-400'}`}
                                 style={language === 'en' ? { color: themeColors.primary } : {}}
                              >EN</button>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+
+                    <div className="flex flex-wrap justify-center items-center gap-2">
                         <div 
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-white shadow-md rounded-xl text-xs font-black"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-white shadow-md rounded-xl text-[10px] font-black"
                             style={{ backgroundColor: themeColors.primary }}
                         >
                             <i className="fas fa-fire"></i> {streak}
                         </div>
-                        <button onClick={onOpenAuth} className={`p-2 rounded-xl shadow-sm transition-all flex items-center gap-2 px-3 ${user ? 'bg-success/10 text-success border border-success/20' : 'bg-white dark:bg-gray-800 text-gray-400 hover:text-primary'}`}>
+                        
+                        <button 
+                            onClick={onOpenAuth} 
+                            className={`p-2 rounded-xl shadow-sm transition-all flex items-center gap-2 px-3 ${user ? 'bg-success/10 text-success border border-success/20' : 'bg-white/60 dark:bg-gray-800/60 text-gray-400 hover:text-primary'}`}
+                            title="Synchronisation Cloud"
+                        >
                             <i className={`fas ${user ? 'fa-cloud-check' : 'fa-cloud-upload-alt'}`}></i>
-                            {user && <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">Synchro ON</span>}
+                            {user && <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Synchro ON</span>}
                         </button>
-                        <button onClick={() => onThemeModeChange(themeMode === 'dark' ? 'light' : 'dark')} className="p-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm text-gray-400 hover:text-violet-500 transition-colors"><i className={`fas fa-${themeMode === 'dark' ? 'sun' : 'moon'}`}></i></button>
-                        <button onClick={onShowHelp} className="p-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm text-gray-400 hover:text-violet-500 transition-colors"><i className="fas fa-question-circle"></i></button>
-                        <button onClick={onNavigateToSettings} className="p-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm text-gray-400 hover:text-violet-500 transition-colors"><i className="fas fa-cog"></i></button>
+
+                        <button 
+                            onClick={() => onThemeModeChange(themeMode === 'dark' ? 'light' : 'dark')} 
+                            className="p-2 bg-white/60 dark:bg-gray-800/60 rounded-xl shadow-sm text-gray-400 hover:text-primary transition-colors"
+                        >
+                            <i className={`fas fa-${themeMode === 'dark' ? 'sun' : 'moon'}`}></i>
+                        </button>
+
+                        <button 
+                            onClick={onShowHelp} 
+                            className="p-2 bg-white/60 dark:bg-gray-800/60 rounded-xl shadow-sm text-gray-400 hover:text-primary transition-colors"
+                        >
+                            <i className="fas fa-question-circle"></i>
+                        </button>
+
+                        <button 
+                            onClick={onNavigateToSettings} 
+                            className="p-2 bg-white/60 dark:bg-gray-800/60 rounded-xl shadow-sm text-gray-400 hover:text-primary transition-colors"
+                        >
+                            <i className="fas fa-cog"></i>
+                        </button>
                     </div>
                 </div>
+
             </div>
 
             {/* GRILLE */}

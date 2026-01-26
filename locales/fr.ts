@@ -997,14 +997,14 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
             ]
         },
         backup: {
-            title: "💾 Sauvegardes",
-            content: "Toutes vos données sont stockées localement. Pensez à utiliser la fonction **'Exporter'** dans les réglages pour sauvegarder vos listes dans un fichier extérieur.",
+            title: "☁️ Synchronisation & Cloud",
+            content: "Synchronisez automatiquement vos données sur tous vos appareils via le Cloud Studeo (icône nuage). Les sauvegardes manuelles restent disponibles dans les paramètres.",
             steps: [
-                "Toutes vos données (fiches, programmes, statistiques) sont stockées localement.",
-                "Pour sauvegarder vos données, allez dans **Paramètres** > **Exporter les données**.",
-                "Un fichier JSON sera créé contenant toutes vos informations.",
-                "Pour restaurer vos données, utilisez **Paramètres** > **Importer les données**.",
-                "Il est recommandé de faire des sauvegardes régulières, surtout avant une mise à jour."
+                "**Cloud Sync** : Cliquez sur l'icône **Nuage** en haut à droite pour créer un compte et activer la synchro auto.",
+                "**Multi-appareils** : Vos fiches, programmes et progrès vous suivent partout une fois connecté.",
+                "**Export manuel** : Allez dans **Paramètres** > **Exporter les données** pour créer un fichier de secours (.json).",
+                "**Confidentialité** : Vos clés API IA restent locales et ne sont jamais envoyées sur le cloud.",
+                "**Récupération** : En cas de besoin, utilisez 'Forcer la récupération Cloud' dans le menu du nuage."
             ]
         },
         userGuide: {

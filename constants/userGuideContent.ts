@@ -14,6 +14,8 @@ Bienvenue dans l'univers de **Studeo**, votre plateforme d'apprentissage intelli
 5. [Algorithme de Révision (SRS)](#algorithme-de-revision-srs)
 6. [Labo Vidéo YouTube](#labo-video-youtube)
 7. [Laboratoire Interactif & Défis](#laboratoire-interactif-defis)
+8. [Sauvegarde & Synchronisation Cloud](#sauvegarde-synchronisation-cloud)
+
 
 ---
 
@@ -305,18 +307,26 @@ Tutoriels interactifs générés par IA :
 
 ---
 
-## Sauvegarde & Sécurité
+## Sauvegarde & Synchronisation Cloud
+
+### ☁️ Synchronisation Cloud ✨
+
+Studeo propose une synchronisation automatique via **Supabase** pour retrouver vos données sur tous vos appareils.
+
+- **Activation** : Cliquez sur le **Nuage** en haut à droite.
+- **Multi-appareils** : Connectez-vous avec le même compte partout.
+- **Sécurisé** : Vos données sont privées et protégées.
 
 ### 🔒 Confidentialité
 
-- Données locales uniquement
-- Clés API privées
-- Aucun tracking
+- Données Cloud stockées de manière anonymisée.
+- Clés API Gemini/OpenAI stockées **localement** (non partagées sur le cloud).
 
-### 💾 Backup
+### 💾 Backup Manuel
 
-**Exporter** : Fichier \`.json\` complet
-**Importer** : Restauration totale
+**Exporter** : Générer un fichier \`.json\` complet.
+**Importer** : Restauration totale depuis un fichier.
+
 
 ---
 

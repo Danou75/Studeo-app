@@ -14,7 +14,7 @@ Bienvenue dans l'univers de **Studeo**, votre plateforme d'apprentissage intelli
 6. [Algorithme de Révision (SRS)](#6-algorithme-de-révision-srs)
 7. [Laboratoire Interactif & Défis](#7-laboratoire-interactif--défis)
 8. [Le Conjugueur & Répétiteur Vocal](#8-le-conjugueur--répétiteur-vocal)
-9. [Sauvegarde & Sécurité](#9-sauvegarde--sécurité)
+9. [Sauvegarde & Synchronisation Cloud](#9-sauvegarde--synchronisation-cloud)
 
 ---
 
@@ -96,13 +96,11 @@ La **Salle des Profs** est le cœur de Studeo. Chaque professeur est un expert I
 Chaque professeur dispose de **3 modes d'interaction** :
 
 1. **💬 Discuter** : Conversation en temps réel avec le professeur
-
    - Posez des questions spécifiques
    - Demandez des explications
    - Obtenez des conseils personnalisés
 
 2. **⚡ Quiz** : Génération de quiz spécialisés
-
    - QCM adaptés au domaine d'expertise
    - Questions de difficulté variable
    - Distracteurs intelligents et pédagogiques
@@ -359,35 +357,29 @@ Outil ultime pour les **polyglottes** et l'apprentissage des langues.
 
 ---
 
-## 9. Sauvegarde & Sécurité
+## 9. Sauvegarde & Synchronisation Cloud
+
+### ☁️ Synchronisation Cloud (Nouveau) ✨
+
+Studeo propose désormais une synchronisation automatique via **Supabase**. Cela vous permet de retrouver vos parcours, vos fiches et votre progression sur tous vos appareils (Mac, iPhone, iPad, Web).
+
+1. **Activation** : Cliquez sur l'icône **Nuage** en haut à droite de l'écran d'accueil.
+2. **Inscription** : Créez un compte avec votre email. Un email de confirmation vous sera envoyé.
+3. **Automatique** : Une fois connecté (nuage vert), Studeo synchronise chaque modification en temps réel.
+4. **Multi-appareils** : Connectez-vous avec le même compte sur un autre appareil pour récupérer instantanément vos données.
 
 ### 🔒 Confidentialité
 
-- **Aucune donnée** ne quitte votre ordinateur, sauf pour interroger l'IA choisie
-- **Clés API** stockées localement uniquement
-- **Historique** et **progression** restent privés
+- **Données Cloud** : Vos données sont stockées dans un espace privé et sécurisé. Seul votre identifiant peut y accéder.
+- **Hors ligne** : L'application continue de fonctionner sans internet. Les changements seront synchronisés dès que la connexion reviendra.
+- **Clés API** : Vos clés API (Gemini, OpenAI) restent stockées localement sur votre appareil pour une sécurité maximale.
 
-### 💾 Backup
+### 💾 Backup Manuel
 
-Dans les paramètres :
+Même avec le Cloud, vous pouvez effectuer des sauvegardes manuelles dans les paramètres :
 
-1. **"Exporter mes données"** : Génère un fichier `.json` complet
-
-   - Toutes vos listes
-   - Votre progression SRS
-   - Vos paramètres
-   - Vos cours sauvegardés
-
-2. **"Importer"** : Restaurez vos données
-   - Changement d'ordinateur
-   - Récupération après réinstallation
-   - Fusion avec des données existantes
-
-### 🔄 Synchronisation
-
-- Les données sont stockées dans `localStorage` du navigateur
-- Pour Tauri (app desktop) : stockage local persistant
-- Pensez à exporter régulièrement pour sécuriser vos données
+1. **"Exporter mes données"** : Génère un fichier `.json` complet de votre base locale.
+2. **"Importer"** : Restaure une sauvegarde précédente ou fusionne des données.
 
 ---
 

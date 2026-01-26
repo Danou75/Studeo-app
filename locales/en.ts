@@ -981,14 +981,14 @@ export const en: typeof fr = {
             ]
         },
         backup: {
-            title: "💾 Backups",
-            content: "All your data is stored locally. Remember to use the **'Export'** function in the settings to save your lists to an external file.",
+            title: "☁️ Sync & Cloud",
+            content: "Automatically synchronize your data across all your devices via the Studeo Cloud (cloud icon). Manual backups remain available in settings.",
             steps: [
-                "All your data (cards, programs, statistics) is stored locally.",
-                "To back up your data, go to **Settings** > **Export Data**.",
-                "A JSON file containing all your information will be created.",
-                "To restore your data, use **Settings** > **Import Data**.",
-                "It is recommended to make regular backups, especially before updating."
+                "**Cloud Sync**: Click the **Cloud** icon at the top right to create an account and enable auto-sync.",
+                "**Multi-device**: Your cards, programs, and progress follow you everywhere once logged in.",
+                "**Manual Export**: Go to **Settings** > **Export Data** to create a backup file (.json).",
+                "**Privacy**: Your AI API keys remain local and are never sent to the cloud.",
+                "**Recovery**: If needed, use 'Force Cloud Recovery' in the cloud menu."
             ]
         },
         userGuide: {

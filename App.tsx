@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { HomeScreen } from "./components/HomeScreen";
 import { SetupScreen } from "./components/SetupScreen";
 import { QuizScreen } from "./components/QuizScreen";
@@ -9,25 +9,28 @@ import { EditCardsModal } from "./components/EditCardsModal";
 import { DashboardScreen } from "./components/DashboardScreen";
 import { AIGeneratorModal } from "./components/AIGeneratorModal";
 import { SRSReviewScreen } from "./components/SRSReviewScreen";
-import { ConjugatorScreen } from "./components/ConjugatorScreen";
-import { LessonScreen } from "./components/LessonScreen";
+import { HelpModal } from "./components/HelpModal";
 import { SetsManagementModal } from './components/SetsManagementModal';
 import { SettingsScreen } from "./components/SettingsScreen";
-import { CurriculumScreen } from "./components/CurriculumScreen";
 import { SavedLessonsModal } from "./components/SavedLessonsModal";
 import { TutorsRoomModal } from "./components/TutorsRoomModal";
 import { TutorSelectionModal } from "./components/TutorSelectionModal";
-import { DrawingChallengeScreen } from "./components/DrawingChallengeScreen";
-import { DrawingTutorialScreen } from "./components/DrawingTutorialScreen";
-import { LanguageLabScreen } from "./components/LanguageLabScreen";
-import { MusicChallengeScreen } from "./components/MusicChallengeScreen";
-import { ChessChallengeScreen } from "./components/ChessChallengeScreen";
-import { CodingChallengeScreen } from "./components/CodingChallengeScreen";
-import { HelpModal } from "./components/HelpModal";
-import { KnowledgeMapScreen } from "./components/KnowledgeMapScreen";
-import { LibraryScreen } from "./components/LibraryScreen";
-import { VideoLabScreen } from "./components/VideoLabScreen";
 import { ExerciseScreen } from "./components/ExerciseScreen";
+
+// Lazy loaded components (non-critical, loaded on demand)
+const ConjugatorScreen = lazy(() => import("./components/ConjugatorScreen").then(m => ({ default: m.ConjugatorScreen })));
+const LessonScreen = lazy(() => import("./components/LessonScreen").then(m => ({ default: m.LessonScreen })));
+const CurriculumScreen = lazy(() => import("./components/CurriculumScreen").then(m => ({ default: m.CurriculumScreen })));
+const DrawingChallengeScreen = lazy(() => import("./components/DrawingChallengeScreen").then(m => ({ default: m.DrawingChallengeScreen })));
+const DrawingTutorialScreen = lazy(() => import("./components/DrawingTutorialScreen").then(m => ({ default: m.DrawingTutorialScreen })));
+const LanguageLabScreen = lazy(() => import("./components/LanguageLabScreen").then(m => ({ default: m.LanguageLabScreen })));
+const MusicChallengeScreen = lazy(() => import("./components/MusicChallengeScreen").then(m => ({ default: m.MusicChallengeScreen })));
+const ChessChallengeScreen = lazy(() => import("./components/ChessChallengeScreen").then(m => ({ default: m.ChessChallengeScreen })));
+const CodingChallengeScreen = lazy(() => import("./components/CodingChallengeScreen").then(m => ({ default: m.CodingChallengeScreen })));
+const KnowledgeMapScreen = lazy(() => import("./components/KnowledgeMapScreen").then(m => ({ default: m.KnowledgeMapScreen })));
+const LibraryScreen = lazy(() => import("./components/LibraryScreen").then(m => ({ default: m.LibraryScreen })));
+const VideoLabScreen = lazy(() => import("./components/VideoLabScreen").then(m => ({ default: m.VideoLabScreen })));
+
 import { AuthModal } from "./components/AuthModal";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { syncService } from "./services/syncService";
@@ -650,7 +653,16 @@ const AppContent: React.FC = () => {
             ? 'w-full max-w-6xl flex-1 min-h-0 p-0' 
             : 'w-[95%] max-w-4xl flex-initial p-6'
         }`}>
-          {renderScreen()}
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-text-secondary">Chargement...</p>
+              </div>
+            </div>
+          }>
+            {renderScreen()}
+          </Suspense>
         </main>
 
         <EditCardsModal

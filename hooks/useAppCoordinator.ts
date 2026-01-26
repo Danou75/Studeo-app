@@ -319,10 +319,27 @@ export const useAppCoordinator = () => {
     };
 
     const handleGenerateBonusExercises = async () => {
-        if (!studyContent.currentLesson || !config.selectedTutor) return;
+        if (!studyContent.currentLesson) return;
         
+        // Trouver le tuteur si non sélectionné (cas d'une leçon chargée depuis l'historique)
+        let activeTutor = config.selectedTutor;
+        if (!activeTutor && studyContent.currentLesson.tutorId) {
+            const tutorId = studyContent.currentLesson.tutorId;
+            activeTutor = TUTORS.find(t => t.id === tutorId) || guestTutors.find(t => t.id === tutorId) || null;
+            // Si on a trouvé le tuteur, on le définit comme actif pour la suite
+            if (activeTutor) setSelectedTutor(activeTutor);
+        }
+
+        if (!activeTutor) {
+            showToast("Impossible de trouver le professeur associé à cette leçon.", 'warning');
+            navigation.setScreen('tutors-room');
+            return;
+        }
+        
+        showToast("✨ Génération d'exercices plus difficiles...", 'info', 3000);
+
         try {
-            // SETUP CONFIG (Dupliqué pour l'instant, pourrait être dans useContentGenerator)
+            // SETUP CONFIG
             let apiKey: string | undefined;
             let modelName: string = config.geminiModel;
             let apiUrl: string | undefined;
@@ -354,7 +371,7 @@ export const useAppCoordinator = () => {
             }
 
             const newCards = await generateBonusExercises(
-                config.selectedTutor,
+                activeTutor,
                 studyContent.currentLesson.topic,
                 studyContent.currentLesson.content,
                 config.provider,
@@ -370,7 +387,11 @@ export const useAppCoordinator = () => {
                     voiceGender: "female",
                     mode: "classic",
                     gameMode: "normal",
+                    tutorId: activeTutor.id,
+                    tutorCategory: activeTutor.category
                  });
+            } else {
+                showToast("Désolé, je n'ai pas pu générer de nouveaux exercices.", 'warning');
             }
         } catch (e) {
             showToast("Erreur lors de la génération des exercices bonus.", 'error');

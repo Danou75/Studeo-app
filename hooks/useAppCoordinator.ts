@@ -16,6 +16,8 @@ import { generateModuleContent, generateBonusExercises } from '../services/curri
 import { generateExercisesFromLesson } from '../services/exerciseGenerationService';
 import { generateFlashcardsWithAI } from '../services/aiCardGenerator';
 import { TUTORS } from '../constants';
+import { getAIClientConfig } from '../utils/aiConfigHelper';
+
 
 
 export const useAppCoordinator = () => {

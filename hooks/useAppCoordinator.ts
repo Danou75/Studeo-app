@@ -210,35 +210,13 @@ export const useAppCoordinator = () => {
 
             showToast(`✨ Génération du contenu pour "${module.title}" en cours...`, 'info', 3000);
 
-            // SETUP CONFIG
-            let apiKey: string | undefined;
-            let modelName: string = config.geminiModel;
-            let apiUrl: string | undefined;
-
-             switch (config.provider) {
-                case 'gemini':
-                    apiKey = config.geminiApiKey;
-                    modelName = config.geminiModel;
-                    break;
-                case 'openai':
-                    apiKey = config.openaiApiKey;
-                    if (!apiKey) { showToast("Clé API OpenAI manquante !", "error"); return; }
-                    modelName = config.openaiModel || 'gpt-4o';
-                    break;
-                case 'anthropic':
-                    apiKey = config.anthropicApiKey;
-                    if (!apiKey) { showToast("Clé API Claude manquante !", "error"); return; }
-                    modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620';
-                    break;
-                 case 'mistral':
-                    apiKey = config.mistralApiKey;
-                    if (!apiKey) { showToast("Clé API Mistral manquante ! Vérifiez les paramètres.", "error"); return; }
-                    modelName = config.mistralModel || 'mistral-large-latest';
-                    break;
-                 case 'local':
-                     apiUrl = config.localApiUrl;
-                     modelName = config.localModelName;
-                     break;
+            // Configuration IA
+            let aiConfig;
+            try {
+                aiConfig = getAIClientConfig(config);
+            } catch (error) {
+                showToast(error instanceof Error ? error.message : 'Configuration IA invalide', 'error');
+                return;
             }
 
             const content = await generateModuleContent(
@@ -246,10 +224,11 @@ export const useAppCoordinator = () => {
                 program,
                 module,
                 config.provider,
-                apiKey,
-                modelName,
-                apiUrl
+                aiConfig.apiKey,
+                aiConfig.modelName,
+                aiConfig.apiUrl
             );
+
 
             // Mise à jour du module avec le contenu généré
             const updatedModule: StudyModule = {
@@ -341,35 +320,13 @@ export const useAppCoordinator = () => {
         showToast("✨ Génération d'exercices plus difficiles...", 'info', 3000);
 
         try {
-            // SETUP CONFIG
-            let apiKey: string | undefined;
-            let modelName: string = config.geminiModel;
-            let apiUrl: string | undefined;
-
-             switch (config.provider) {
-                case 'gemini':
-                    apiKey = config.geminiApiKey;
-                    modelName = config.geminiModel;
-                    break;
-                case 'openai':
-                    apiKey = config.openaiApiKey;
-                    if (!apiKey) { showToast("Clé API OpenAI manquante !", "error"); return; }
-                    modelName = config.openaiModel || 'gpt-4o';
-                    break;
-                case 'anthropic':
-                    apiKey = config.anthropicApiKey;
-                    if (!apiKey) { showToast("Clé API Claude manquante !", "error"); return; }
-                    modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620';
-                    break;
-                 case 'mistral':
-                    apiKey = config.mistralApiKey;
-                    if (!apiKey) { showToast("Clé API Mistral manquante !", "error"); return; }
-                    modelName = config.mistralModel || 'mistral-large-latest';
-                    break;
-                 case 'local':
-                     apiUrl = config.localApiUrl;
-                     modelName = config.localModelName;
-                     break;
+            // Configuration IA
+            let aiConfig;
+            try {
+                aiConfig = getAIClientConfig(config);
+            } catch (error) {
+                showToast(error instanceof Error ? error.message : 'Configuration IA invalide', 'error');
+                return;
             }
 
             const newCards = await generateBonusExercises(
@@ -377,9 +334,11 @@ export const useAppCoordinator = () => {
                 studyContent.currentLesson.topic,
                 studyContent.currentLesson.content,
                 config.provider,
-                apiKey,
-                modelName,
-                apiUrl
+                aiConfig.apiKey,
+
+                aiConfig.modelName,
+
+                aiConfig.apiUrl
             );
             
             if (newCards && newCards.length > 0) {
@@ -548,35 +507,13 @@ export const useAppCoordinator = () => {
         try {
             showToast("✨ Génération des exercices interactifs en cours...", "info", 3000);
 
-            // SETUP CONFIG (similaire à handleGenerateModuleContent)
-            let apiKey: string | undefined;
-            let modelName: string = config.geminiModel;
-            let apiUrl: string | undefined;
-
-             switch (config.provider) {
-                case 'gemini':
-                    apiKey = config.geminiApiKey;
-                    modelName = config.geminiModel;
-                    break;
-                case 'openai':
-                    apiKey = config.openaiApiKey;
-                    if (!apiKey) { showToast("Clé API OpenAI manquante !", "error"); return; }
-                    modelName = config.openaiModel || 'gpt-4o';
-                    break;
-                case 'anthropic':
-                    apiKey = config.anthropicApiKey;
-                    if (!apiKey) { showToast("Clé API Claude manquante !", "error"); return; }
-                    modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620';
-                    break;
-                 case 'mistral':
-                    apiKey = config.mistralApiKey;
-                    if (!apiKey) { showToast("Clé API Mistral manquante !", "error"); return; }
-                    modelName = config.mistralModel || 'mistral-large-latest';
-                    break;
-                 case 'local':
-                     apiUrl = config.localApiUrl;
-                     modelName = config.localModelName;
-                     break;
+            // Configuration IA
+            let aiConfig;
+            try {
+                aiConfig = getAIClientConfig(config);
+            } catch (error) {
+                showToast(error instanceof Error ? error.message : 'Configuration IA invalide', 'error');
+                return;
             }
 
             const exerciseSet = await generateExercisesFromLesson({
@@ -584,10 +521,11 @@ export const useAppCoordinator = () => {
                 lessonTopic: lesson.topic,
                 lessonId: lesson.id,
                 provider: config.provider,
-                apiKey,
-                modelName,
-                apiUrl,
+                apiKey: aiConfig.apiKey,
+                modelName: aiConfig.modelName,
+                apiUrl: aiConfig.apiUrl,
                 count: 8, // Par défaut
+
                 difficulty: 'medium'
             });
 
@@ -637,34 +575,13 @@ export const useAppCoordinator = () => {
         try {
             showToast("🧠 Génération du quiz de révision...", "info", 3000);
 
-            let apiKey: string | undefined;
-            let modelName: string = config.geminiModel;
-            let apiUrl: string | undefined;
-
-             switch (config.provider) {
-                case 'gemini':
-                    apiKey = config.geminiApiKey;
-                    modelName = config.geminiModel;
-                    break;
-                case 'openai':
-                    apiKey = config.openaiApiKey;
-                    if (!apiKey) { showToast("Clé API OpenAI manquante !", "error"); return; }
-                    modelName = config.openaiModel || 'gpt-4o';
-                    break;
-                case 'anthropic':
-                    apiKey = config.anthropicApiKey;
-                    if (!apiKey) { showToast("Clé API Claude manquante !", "error"); return; }
-                    modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620';
-                    break;
-                 case 'mistral':
-                    apiKey = config.mistralApiKey;
-                    if (!apiKey) { showToast("Clé API Mistral manquante !", "error"); return; }
-                    modelName = config.mistralModel || 'mistral-large-latest';
-                    break;
-                 case 'local':
-                     apiUrl = config.localApiUrl;
-                     modelName = config.localModelName;
-                     break;
+            // Configuration IA
+            let aiConfig;
+            try {
+                aiConfig = getAIClientConfig(config);
+            } catch (error) {
+                showToast(error instanceof Error ? error.message : 'Configuration IA invalide', 'error');
+                return;
             }
 
             const cards = await generateFlashcardsWithAI({
@@ -675,10 +592,11 @@ export const useAppCoordinator = () => {
                 difficulty: 'intermediate',
                 context: lesson.content,
                 provider: config.provider,
-                apiKey,
-                modelName,
-                apiUrl
+                apiKey: aiConfig.apiKey,
+                modelName: aiConfig.modelName,
+                apiUrl: aiConfig.apiUrl
             });
+
 
             if (!cards || cards.length === 0) {
                  throw new Error("Aucune carte générée");

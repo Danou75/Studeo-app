@@ -7,6 +7,7 @@ import { writeTextFile, readTextFile } from '@tauri-apps/api/fs';
 import { useConfirmation } from '../contexts/ConfirmationContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { InstallButton } from './InstallButton';
+import { PWAHelpModal } from './PWAHelpModal';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -19,6 +20,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
   const { t } = useTranslation();
   const [showApiKey, setShowApiKey] = useState(false);
   const [backupStatus, setBackupStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+  const [isPWAHelpOpen, setIsPWAHelpOpen] = useState(false);
 
   const DEFAULT_GEMINI_MODELS = [
     { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash (Expérimental 🚀)' },
@@ -407,7 +409,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
           <div className="flex flex-col sm:flex-row gap-3">
             <InstallButton variant="primary" size="md" className="flex-1 justify-center" />
             <button
-              onClick={() => window.open('/docs/SERVICE_WORKER_PWA.md', '_blank')}
+              onClick={() => setIsPWAHelpOpen(true)}
               className="px-4 py-2 rounded-xl bg-background-secondary text-text-primary hover:bg-background-tertiary border border-border transition-all flex items-center justify-center gap-2"
             >
               <i className="fas fa-book"></i>
@@ -691,6 +693,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
         </div>
       </div>
     </div>
+    
+    {/* PWA Help Modal */}
+    <PWAHelpModal 
+      isOpen={isPWAHelpOpen}
+      onClose={() => setIsPWAHelpOpen(false)}
+    />
   </div>
   );
 };

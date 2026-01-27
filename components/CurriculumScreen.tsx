@@ -593,7 +593,7 @@ Format JSON STRICT (tableau d'objets) :
                             >
                                 {/* Actions Overlay (Grid) or Inline (List) */}
                                 <div className={viewMode === 'grid' 
-                                    ? "absolute bottom-[70px] right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                                    ? "absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20"
                                     : "flex gap-2 order-last"
                                 }>
                                     <button

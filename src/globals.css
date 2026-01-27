@@ -29,3 +29,19 @@ body {
   --color-background: #111827;
   --color-text: #f9fafb;
 }
+
+/* Animation pour le prompt d'installation PWA */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}

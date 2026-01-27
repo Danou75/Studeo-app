@@ -6,6 +6,7 @@ import { save, open } from '@tauri-apps/api/dialog';
 import { writeTextFile, readTextFile } from '@tauri-apps/api/fs';
 import { useConfirmation } from '../contexts/ConfirmationContext';
 import { useTranslation } from '../contexts/LanguageContext';
+import { InstallButton } from './InstallButton';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -375,6 +376,46 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-background/50 min-h-0 pb-32">
         <div className="max-w-4xl mx-auto space-y-8">
+        
+        {/* PWA Section */}
+        <div className="bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-2xl p-6 border border-primary/20">
+          <div className="flex items-center gap-3 mb-4">
+            <i className="fas fa-mobile-alt text-2xl text-primary"></i>
+            <div>
+              <h2 className="text-xl font-bold">Application Progressive (PWA)</h2>
+              <p className="text-sm text-text-muted">Installez Studeo comme une application native</p>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div className="flex items-center gap-2">
+                <i className="fas fa-bolt text-yellow-500"></i>
+                <span>Lancement instantané</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <i className="fas fa-wifi-slash text-blue-500"></i>
+                <span>Fonctionne hors ligne</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <i className="fas fa-window-maximize text-green-500"></i>
+                <span>Fenêtre dédiée</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <InstallButton variant="primary" size="md" className="flex-1 justify-center" />
+            <button
+              onClick={() => window.open('/docs/SERVICE_WORKER_PWA.md', '_blank')}
+              className="px-4 py-2 rounded-xl bg-background-secondary text-text-primary hover:bg-background-tertiary border border-border transition-all flex items-center justify-center gap-2"
+            >
+              <i className="fas fa-book"></i>
+              <span>Documentation</span>
+            </button>
+          </div>
+        </div>
+
         <div className="flex items-center gap-3 border-b border-border pb-4">
           <i className="fas fa-save text-2xl text-primary"></i>
           <div>

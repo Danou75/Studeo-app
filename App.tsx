@@ -31,6 +31,8 @@ const KnowledgeMapScreen = lazy(() => import("./components/KnowledgeMapScreen").
 const LibraryScreen = lazy(() => import("./components/LibraryScreen").then(m => ({ default: m.LibraryScreen })));
 const VideoLabScreen = lazy(() => import("./components/VideoLabScreen").then(m => ({ default: m.VideoLabScreen })));
 
+import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
+
 import { AuthModal } from "./components/AuthModal";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { syncService } from "./services/syncService";
@@ -694,8 +696,8 @@ const AppContent: React.FC = () => {
           onForceRefresh={() => loadCloudData(false)}
       />
 
-
-
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
 
     </div>
   );

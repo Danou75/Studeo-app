@@ -884,6 +884,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                             <option value="it-IT">Italien (IT)</option>
                             <option value="de-DE">Allemand (DE)</option>
                             <option value="pt-PT">Portugais (PT)</option>
+                            <option value="pl-PL">Polonais (PL)</option>
                             <option value="tr-TR">Turc (TR)</option>
                             <option value="ru-RU">Russe (RU)</option>
                             <option value="zh-CN">Chinois (CN)</option>

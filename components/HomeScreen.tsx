@@ -175,6 +175,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             <option value="spanish">🇪🇸 {window.innerWidth < 640 ? '' : 'España'}</option>
                             <option value="italian">🇮🇹 {window.innerWidth < 640 ? '' : 'Italia'}</option>
                             <option value="german">🇩🇪 {window.innerWidth < 640 ? '' : 'Deutsch'}</option>
+                            <option value="polish">🇵🇱 {window.innerWidth < 640 ? '' : 'Polski'}</option>
                             <option value="russian">🇷🇺 {window.innerWidth < 640 ? '' : 'Pусский'}</option>
                             <option value="apple">🍎 {window.innerWidth < 640 ? '' : 'Apple'}</option>
                         </select>

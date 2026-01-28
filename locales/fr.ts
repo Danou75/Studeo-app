@@ -23,6 +23,7 @@ export const fr = {
         it: "Italien",
         pt: "Portugais",
         de: "Allemand",
+        pl: "Polonais",
         ru: "Russe",
         tr: "Turc",
         la: "Latin",

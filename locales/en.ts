@@ -25,6 +25,7 @@ export const en: typeof fr = {
         it: "Italian",
         pt: "Portuguese",
         de: "German",
+        pl: "Polish",
         ru: "Russian",
         tr: "Turkish",
         la: "Latin",

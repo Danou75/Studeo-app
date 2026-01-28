@@ -66,6 +66,9 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
         case 'it': return 'it-IT';
         case 'de': return 'de-DE';
         case 'pt': return 'pt-PT';
+        case 'pl': return 'pl-PL';
+        case 'ru': return 'ru-RU';
+        case 'tr': return 'tr-TR';
         default: return 'en-US';
     }
   };
@@ -80,6 +83,9 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
     { code: 'it', name: t('languages.it'), flag: '🇮🇹' },
     { code: 'de', name: t('languages.de'), flag: '🇩🇪' },
     { code: 'pt', name: t('languages.pt'), flag: '🇵🇹' },
+    { code: 'pl', name: t('languages.pl'), flag: '🇵🇱' },
+    { code: 'ru', name: t('languages.ru'), flag: '🇷🇺' },
+    { code: 'tr', name: t('languages.tr'), flag: '🇹🇷' },
   ];
 
   const handleConjugate = async (e?: React.FormEvent) => {

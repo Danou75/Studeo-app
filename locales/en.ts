@@ -439,6 +439,7 @@ export const en: typeof fr = {
             'herr-deutsch': "German expert: declensions, genders, Germanic culture",
             'master-russe': "Russian expert: Cyrillic alphabet, cases, Slavic culture",
             'efendi-turco': "Turkish expert: vocal harmony, suffixes, Anatolian culture",
+            'nauczyciel-polski': "Polish expert: declensions, verbal aspects, Slavic culture",
             'prof-curio': "General knowledge: arts, sciences, society, sports",
             'prof-chronos': "History: chronology, events, historical figures",
             'prof-atlas': "Geography: countries, capitals, geopolitics",

@@ -455,6 +455,7 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
             'herr-deutsch': "Expert en allemand : déclinaisons, genres, culture germanique",
             'master-russe': "Expert en russe : alphabet cyrillique, cas, culture slave",
             'efendi-turco': "Expert en turc : harmonie vocale, suffixes, culture anatolienne",
+            'nauczyciel-polski': "Expert en polonais : déclinaisons, aspects verbaux, culture slave",
             'prof-curio': "Culture générale : arts, sciences, society, sports",
             'prof-chronos': "Histoire : chronologie, events, figures historiques",
             'prof-atlas': "Géographie : pays, capitales, géopolitique",

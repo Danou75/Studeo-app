@@ -154,6 +154,7 @@ export const useAppCoordinator = () => {
         if (lowerTopic.includes('renaissance') || lowerCat.includes('renaissance')) tutorId = 'maitre-leonard';
         else if (lowerTopic.includes('italien') || lowerCat.includes('italien')) tutorId = 'maestro-italiano';
         else if (lowerTopic.includes('anglais') || lowerTopic.includes('english') || lowerCat.includes('english')) tutorId = 'mister-english';
+        else if (lowerTopic.includes('polonais') || lowerTopic.includes('polish') || lowerTopic.includes('polski') || lowerCat.includes('polonais')) tutorId = 'nauczyciel-polski';
         else if (lowerTopic.includes('échecs') || lowerCat.includes('échecs')) tutorId = 'gm-kaspar';
         else if (lowerTopic.includes('astrophysique') || lowerTopic.includes('cosmos') || lowerCat.includes('cosmos')) tutorId = 'prof-cosmos';
         

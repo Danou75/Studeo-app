@@ -8,7 +8,7 @@ const getLessonPromptForTutor = (tutorId: string | undefined, topic: string, tar
 
     // Détection robuste si c'est un prof de langue (basé sur la catégorie ou l'ID)
     const isLanguageTutor = tutor.category === 'languages' || 
-                           (tutorId && ['mister-english', 'maestro-italiano', 'maestro-espanol', 'mestre-portugues', 'herr-deutsch'].includes(tutorId));
+                           (tutorId && ['mister-english', 'maestro-italiano', 'maestro-espanol', 'mestre-portugues', 'herr-deutsch', 'master-russe', 'efendi-turco', 'nauczyciel-polski'].includes(tutorId));
 
     let languageInstruction = "";
 

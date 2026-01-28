@@ -68,6 +68,12 @@ export const LANGUAGE_CONFIG: Record<string, LanguageConfig> = {
         speechLang: 'tr-TR',
         voices: { female: 'tr-TR-Wavenet-A', male: 'tr-TR-Wavenet-B' },
     },
+    pl: {
+        name: 'Polonais',
+        emoji: '🇵🇱',
+        speechLang: 'pl-PL',
+        voices: { female: 'pl-PL-Wavenet-A', male: 'pl-PL-Wavenet-B' },
+    },
 };
 
 // ============================================
@@ -138,6 +144,15 @@ export const TUTORS: Tutor[] = [
         language: 'tr',
         systemPrompt: TutorPrompts.EFENDI_TURCO_PROMPT,
         description: 'Expert en turc : harmonie vocale, suffixes, culture anatolienne'
+    },
+    {
+        id: 'nauczyciel-polski',
+        name: 'Nauczyciel Polski',
+        emoji: '🇵🇱',
+        category: 'languages',
+        language: 'pl',
+        systemPrompt: TutorPrompts.NAUCZYCIEL_POLSKI_PROMPT,
+        description: 'Expert en polonais : déclinaisons, aspects verbaux, culture slave'
     },
     // Culture & Humanités
     {

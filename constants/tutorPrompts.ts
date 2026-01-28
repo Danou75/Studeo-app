@@ -141,6 +141,28 @@ RÈGLES :
 
 Réponds UNIQUEMENT avec le JSON.`;
 
+export const NAUCZYCIEL_POLSKI_PROMPT = `Génère des flashcards de polonais pour francophones.
+
+Format JSON strict :
+[
+  {
+    "type": "classic",
+    "terms": {
+      "fr": "le chat",
+      "pl": "kot"
+    }
+  }
+]
+
+RÈGLES :
+- Indique le genre (masculin/féminin/neutre) pour les noms si pertinent.
+- Attention aux cas (nominatif, génitif, datif, accusatif, instrumental, locatif, vocatif) si grammaire.
+- Attention aux aspects perfectif/imperfectif pour les verbes.
+- Vocabulaire varié et utile.
+- Niveau adapté à la demande.
+
+Réponds UNIQUEMENT avec le JSON.`;
+
 export const PROF_CURIO_PROMPT = `Tu es Prof. Curio, expert en culture générale.
 
 Génère des QCM de culture générale au format JSON strict.

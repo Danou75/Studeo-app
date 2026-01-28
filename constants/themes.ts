@@ -507,7 +507,58 @@ const appleTheme: Theme = {
   },
 };
 
-export type ThemeStyle = 'default' | 'french' | 'english' | 'italian' | 'spanish' | 'portuguese' | 'german' | 'russian' | 'apple';
+// Thème Polonais (Blanc-Rouge)
+const polishTheme: Theme = {
+  name: 'Polski',
+  emoji: '🇵🇱',
+  description: 'Inspirowany kolorami Polski',
+  colors: {
+    light: {
+      primary: '#DC143C',       // Rouge drapeau (crimson)
+      primaryHover: '#B8102E',
+      primaryLight: '#FF6B6B',
+      secondary: '#FFFFFF',     // Blanc drapeau
+      secondaryHover: '#F5F5F5',
+      background: '#FFFFFF',
+      backgroundSecondary: '#FFF5F5',
+      backgroundTertiary: '#FFE8E8',
+      text: '#1A1A1A',
+      textSecondary: '#424242',
+      textMuted: '#757575',
+      border: '#FFD6D6',
+      borderHover: '#DC143C',
+      success: '#10B981',
+      error: '#DC143C',
+      warning: '#F59E0B',
+      info: '#2196F3',
+      accent: '#DC143C',
+      accentLight: '#FFB3B3',
+    },
+    dark: {
+      primary: '#FF6B6B',
+      primaryHover: '#FF8787',
+      primaryLight: '#FFA3A3',
+      secondary: '#E0E0E0',
+      secondaryHover: '#F5F5F5',
+      background: '#1A0A0A',
+      backgroundSecondary: '#2A1515',
+      backgroundTertiary: '#3A2020',
+      text: '#F5F5F5',
+      textSecondary: '#E0E0E0',
+      textMuted: '#9E9E9E',
+      border: '#3A2020',
+      borderHover: '#FF6B6B',
+      success: '#34D399',
+      error: '#FF6B6B',
+      warning: '#FBBF24',
+      info: '#42A5F5',
+      accent: '#FF6B6B',
+      accentLight: '#FFCCCB',
+    },
+  },
+};
+
+export type ThemeStyle = 'default' | 'french' | 'english' | 'italian' | 'spanish' | 'portuguese' | 'german' | 'russian' | 'polish' | 'apple';
  
  export const THEMES: Record<ThemeStyle, Theme> = {
    default: defaultTheme,
@@ -518,10 +569,11 @@ export type ThemeStyle = 'default' | 'french' | 'english' | 'italian' | 'spanish
    portuguese: portugueseTheme,
    german: germanTheme,
    russian: russianTheme,
+   polish: polishTheme,
    apple: appleTheme,
  };
  
- export const THEME_STYLES: ThemeStyle[] = ['default', 'french', 'english', 'italian', 'spanish', 'portuguese', 'german', 'russian', 'apple'];
+ export const THEME_STYLES: ThemeStyle[] = ['default', 'french', 'english', 'italian', 'spanish', 'portuguese', 'german', 'russian', 'polish', 'apple'];
  
  export const getThemeGradient = (style: ThemeStyle, mode: ThemeMode): string => {
    const isDark = mode === 'dark'; 
@@ -548,6 +600,11 @@ export type ThemeStyle = 'default' | 'french' | 'english' | 'italian' | 'spanish
        return isDark
          ? 'linear-gradient(135deg, #60A5FA 0%, #F87171 100%)' // Bleu clair vers Rouge clair (Mode Sombre)
          : 'linear-gradient(135deg, #012169 0%, #C8102E 100%)'; // Bleu marine vers Rouge (Mode Clair)
+     case 'polish':
+       // Blanc-Rouge (drapeau polonais)
+       return isDark
+         ? 'linear-gradient(135deg, #F5F5F5 0%, #FF6B6B 100%)'
+         : 'linear-gradient(135deg, #FFFFFF 0%, #DC143C 100%)';
      case 'apple':
       return isDark 
         ? 'linear-gradient(135deg, #1D1D1F 0%, #000000 100%)' 

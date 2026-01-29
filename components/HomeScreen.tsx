@@ -166,18 +166,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         <select 
                             value={themeStyle}
                             onChange={(e) => onThemeStyleChange(e.target.value as ThemeStyle)}
-                            className="bg-transparent text-[10px] md:text-xs font-black outline-none cursor-pointer appearance-none px-2 py-1 text-center md:text-right hover:opacity-80 transition-opacity"
+                            className="bg-transparent text-[10px] md:text-sm font-black outline-none cursor-pointer appearance-none px-2 py-1 text-center md:text-right hover:opacity-80 transition-opacity"
                             style={{ color: themeColors.primary }}
                         >
-                            <option value="default">🎨 {window.innerWidth < 640 ? '' : 'Défaut'}</option>
-                            <option value="french">🇫🇷 {window.innerWidth < 640 ? '' : 'France'}</option>
-                            <option value="english">🇬🇧 {window.innerWidth < 640 ? '' : 'English'}</option>
-                            <option value="spanish">🇪🇸 {window.innerWidth < 640 ? '' : 'España'}</option>
-                            <option value="italian">🇮🇹 {window.innerWidth < 640 ? '' : 'Italia'}</option>
-                            <option value="german">🇩🇪 {window.innerWidth < 640 ? '' : 'Deutsch'}</option>
-                            <option value="polish">🇵🇱 {window.innerWidth < 640 ? '' : 'Polski'}</option>
-                            <option value="russian">🇷🇺 {window.innerWidth < 640 ? '' : 'Pусский'}</option>
-                            <option value="apple">🍎 {window.innerWidth < 640 ? '' : 'Apple'}</option>
+                            <option value="default">🎨 Défaut</option>
+                            <option value="french">🇫🇷 France</option>
+                            <option value="english">🇬🇧 English</option>
+                            <option value="spanish">🇪🇸 España</option>
+                            <option value="italian">🇮🇹 Italia</option>
+                            <option value="german">🇩🇪 Deutsch</option>
+                            <option value="polish">🇵🇱 Polski</option>
+                            <option value="russian">🇷🇺 Pусский</option>
+                            <option value="apple">🍎 Apple</option>
                         </select>
                         <div className="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-0.5"></div>
                          <div className="flex bg-gray-100/50 dark:bg-gray-700/50 rounded-xl p-0.5">

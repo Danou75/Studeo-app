@@ -331,8 +331,15 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 : config.config.provider === 'mistral' ? config.config.mistralModel
                 : config.config.localModelName;
 
-            if (!apiKey && config.config.provider !== 'local') {
-                throw new Error(`Clé API ${config.config.provider} manquante. Configurez-la dans les paramètres.`);
+            // Nettoyage et validation de la clé API
+            const cleanApiKey = (apiKey || '').trim();
+            
+            if (!cleanApiKey && config.config.provider !== 'local') {
+                throw new Error(`Clé API de ${config.config.provider} manquante. Veuillez la configurer dans les paramètres.`);
+            }
+
+            if (cleanApiKey === 'undefined' || cleanApiKey === 'null') {
+                throw new Error(`Clé API de ${config.config.provider} invalide. Veuillez la vérifier dans les paramètres.`);
             }
 
             const response = await ChatService.sendMessage(
@@ -342,7 +349,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 currentSession.tutorSubject,
                 tutorStyle,
                 config.config.provider,
-                apiKey,
+                cleanApiKey,
                 modelName || ''
             );
 

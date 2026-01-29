@@ -464,8 +464,9 @@ Réponds UNIQUEMENT avec le JSON.`;
             }];
         }
 
-        if (!apiKey && provider !== 'local') {
-            throw new Error('Clé API manquante');
+        const cleanKey = (apiKey || '').trim();
+        if (provider !== 'local' && (!cleanKey || cleanKey === 'undefined' || cleanKey === 'null')) {
+            throw new Error(`La clé API pour ${provider} est vide ou invalide ("${cleanKey}").`);
         }
 
         // Construire le prompt système du tuteur
@@ -497,7 +498,7 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
             let response = '';
 
             if (provider === 'gemini') {
-                response = await this.callGemini(systemPrompt, conversationHistory, apiKey!, modelName);
+                response = await this.callGemini(systemPrompt, conversationHistory, cleanKey, modelName);
             } else if (provider === 'openai') {
                 response = await this.callOpenAI(systemPrompt, conversationHistory, apiKey!, modelName);
             } else if (provider === 'anthropic') {

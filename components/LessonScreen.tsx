@@ -396,45 +396,44 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
       `}</style>
 
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-background-secondary shadow-sm z-10 no-print">
-        <div className="flex items-center gap-3">
-            <div className="flex gap-2">
-                <Button variant="secondary" onClick={onBack} size="sm" className="text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800">
-                    <i className="fas fa-arrow-left mr-2"></i> Retour
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 border-b border-border bg-background-secondary shadow-sm z-10 no-print gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+            <div className="flex gap-1.5 shrink-0">
+                <Button variant="secondary" onClick={onBack} size="sm" className="h-8 text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800 px-2 md:px-3 text-xs md:text-sm">
+                    <i className="fas fa-arrow-left mr-1 md:mr-2"></i> <span className="hidden xs:inline">Retour</span>
                 </Button>
                 {onHome && (
-                    <Button variant="secondary" onClick={onHome} size="sm" className="text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800">
-                        <i className="fas fa-home mr-2"></i> Accueil
+                    <Button variant="secondary" onClick={onHome} size="sm" className="h-8 text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800 px-2 md:px-3 text-xs md:text-sm">
+                        <i className="fas fa-home mr-1 md:mr-2"></i> <span className="hidden xs:inline">Accueil</span>
                     </Button>
                 )}
             </div>
-            <div className="flex flex-col">
-                <h1 className="text-xl font-bold text-text truncate max-w-md">{lesson.topic}</h1>
-                <div className="flex items-center gap-2 text-sm text-text-muted">
-                    <span>{tutor?.emoji} {tutor?.name}</span>
-                    <span>•</span>
-                    <span>{new Date(lesson.createdAt || new Date()).toLocaleDateString()}</span>
+            <div className="flex flex-col min-w-0">
+                <h1 className="text-sm md:text-xl font-bold text-text truncate md:max-w-md">{lesson.topic}</h1>
+                <div className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-sm text-text-muted">
+                    <span className="truncate">{tutor?.emoji} {tutor?.name}</span>
+                    <span className="shrink-0">•</span>
+                    <span className="shrink-0">{new Date(lesson.createdAt || new Date()).toLocaleDateString()}</span>
                 </div>
             </div>
         </div>
         
-        <div className="flex gap-2 items-center">
-
-            <div className="flex gap-1 bg-black/5 p-1 rounded-lg border border-black/10">
+        <div className="flex gap-2 items-center justify-end shrink-0">
+            <div className="flex gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-lg border border-black/10 dark:border-white/10">
                 <button 
                     onClick={() => handleExport('md')}
                     disabled={isExporting}
-                    className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider hover:bg-black/5 rounded flex items-center gap-1.5 transition-colors text-text/70 hover:text-text disabled:opacity-50"
+                    className="px-2 md:px-3 py-1 text-[9px] md:text-[10px] font-bold uppercase tracking-wider hover:bg-black/5 dark:hover:bg-white/5 rounded flex items-center gap-1 md:gap-1.5 transition-colors text-text/70 hover:text-text disabled:opacity-50"
                 >
-                    {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fab fa-markdown"></i>} MD
+                    {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fab fa-markdown text-xs md:text-sm"></i>} MD
                 </button>
-                <div className="w-px h-4 bg-text/20 self-center"></div>
+                <div className="w-px h-3 md:h-4 bg-text/20 self-center"></div>
                 <button 
                     onClick={() => handleExport('rtf')}
                     disabled={isExporting}
-                    className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider hover:bg-black/5 rounded flex items-center gap-1.5 transition-colors text-text/70 hover:text-text disabled:opacity-50"
+                    className="px-2 md:px-3 py-1 text-[9px] md:text-[10px] font-bold uppercase tracking-wider hover:bg-black/5 dark:hover:bg-white/5 rounded flex items-center gap-1 md:gap-1.5 transition-colors text-text/70 hover:text-text disabled:opacity-50"
                 >
-                    {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-file-word"></i>} RTF
+                    {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-file-word text-xs md:text-sm"></i>} RTF
                 </button>
             </div>
         </div>

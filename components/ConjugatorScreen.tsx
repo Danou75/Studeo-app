@@ -601,21 +601,26 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
 
       {/* Translation Results */}
       {translationResult && (
-        <div className="space-y-6 animate-slide-up">
-            <div className="bg-background-tertiary p-6 rounded-xl border-l-4 border-primary shadow-sm">
+        <div className="space-y-4 md:space-y-6 animate-slide-up">
+            <div className="bg-background-tertiary p-4 md:p-6 rounded-xl border-l-4 border-primary shadow-sm">
                 <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="flex-1">
-                                <p className="text-sm text-text-muted uppercase tracking-wider mb-1">Original</p>
-                                <h2 className="text-3xl font-bold">{translationResult.original}</h2>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 mb-4">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[10px] md:text-sm text-text-muted uppercase tracking-wider mb-1">Original</p>
+                                <h2 className="text-xl md:text-3xl font-bold break-words">{translationResult.original}</h2>
                             </div>
-                            <i className="fas fa-arrow-right text-2xl text-primary"></i>
-                            <div className="flex-1">
-                                <p className="text-sm text-text-muted uppercase tracking-wider mb-1">{translationResult.language}</p>
-                                <h2 className="text-3xl font-bold text-primary">{translationResult.translated}</h2>
-                                <button onClick={() => speak(translationResult.translated)} className="mt-2 text-sm hover:text-primary transition-colors">
-                                    <i className="fas fa-volume-up mr-1"></i> Écouter
+                            <div className="hidden md:block">
+                                <i className="fas fa-arrow-right text-2xl text-primary"></i>
+                            </div>
+                            <div className="md:hidden flex justify-center py-1">
+                                <i className="fas fa-arrow-down text-xl text-primary"></i>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[10px] md:text-sm text-text-muted uppercase tracking-wider mb-1">{translationResult.language}</p>
+                                <h2 className="text-xl md:text-3xl font-bold text-primary break-words">{translationResult.translated}</h2>
+                                <button onClick={() => speak(translationResult.translated)} className="mt-2 text-sm hover:text-primary transition-colors inline-flex items-center gap-1.5">
+                                    <i className="fas fa-volume-up"></i> <span>Écouter</span>
                                 </button>
                             </div>
                         </div>

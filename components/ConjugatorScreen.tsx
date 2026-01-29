@@ -430,7 +430,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                   </p>
                   
                   {/* Mode Selector */}
-                  <div className={`flex gap-1 mt-3 p-1 rounded-xl backdrop-blur-sm shadow-inner border ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'}`}>
+                  <div className={`inline-flex gap-0.5 mt-2 p-0.5 rounded-lg backdrop-blur-sm shadow-inner border ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'}`}>
                       <button
                           onClick={() => {
                               setMode('conjugate');
@@ -438,13 +438,13 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                               setTranslationResult(null);
                               setError(null);
                           }}
-                          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                          className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
                               mode === 'conjugate'
                                   ? 'bg-white text-primary shadow-md'
                                   : 'text-white/70 hover:text-white'
                           }`}
                       >
-                          <i className="fas fa-book mr-2"></i>Conjugaison
+                          <i className="fas fa-book mr-1.5"></i>Conjugaison
                       </button>
                       <button
                           onClick={() => {
@@ -453,13 +453,13 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                               setTranslationResult(null);
                               setError(null);
                           }}
-                          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                          className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
                               mode === 'translate'
                                   ? 'bg-white text-primary shadow-md'
                                   : 'text-white/70 hover:text-white'
                           }`}
                       >
-                          <i className="fas fa-language mr-2"></i>Traduction
+                          <i className="fas fa-language mr-1.5"></i>Traduction
                       </button>
                   </div>
               </div>
@@ -548,13 +548,13 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
         <form onSubmit={mode === 'conjugate' ? handleConjugate : handleTranslate} className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1 w-full">
                 <label className="block text-sm font-medium mb-1 text-text-secondary">
-                    {mode === 'conjugate' ? t('conjugator.verbLabel') : 'Texte à traduire'}
+                    {mode === 'conjugate' ? t('conjugator.verbLabel') : t('conjugator.textToTranslate')}
                 </label>
                 <input
                     type="text"
                     value={verb}
                     onChange={(e) => setVerb(e.target.value)}
-                    placeholder={mode === 'conjugate' ? t('conjugator.verbPlaceholder') : 'Ex: bonjour, merci, comment allez-vous...'}
+                    placeholder={mode === 'conjugate' ? t('conjugator.verbPlaceholder') : t('conjugator.translatePlaceholder')}
                     className="w-full p-3 rounded-lg bg-background border border-border focus:ring-2 focus:ring-primary outline-none transition-all text-lg text-text"
                     autoFocus
                 />
@@ -586,7 +586,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                         <span className="animate-pulse">Analyse...</span>
                     </div>
                 ) : (
-                    <><i className={`fas ${mode === 'conjugate' ? 'fa-magic' : 'fa-language'} mr-2`}></i> {mode === 'conjugate' ? t('conjugator.conjugate') : 'Traduire'}</>
+                    <><i className={`fas ${mode === 'conjugate' ? 'fa-magic' : 'fa-language'} mr-2`}></i> {mode === 'conjugate' ? t('conjugator.conjugate') : t('conjugator.translate')}</>
                 )}
             </Button>
         </form>

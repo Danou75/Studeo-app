@@ -105,8 +105,8 @@ export const fr = {
                 description: "Créez et passez des quiz personnalisés dans plusieurs langues"
             },
             conjugator: {
-                title: "Conjugueur",
-                description: "Conjuguez et apprenez les verbes dans plusieurs langues"
+                title: "Conjugueur & Traducteur",
+                description: "Conjuguez des verbes et traduisez dans plusieurs langues"
             },
             curriculum: {
                 title: "Mes Programmes",
@@ -781,7 +781,11 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
         exampleLabel: "Ex :",
         exportMD: "Exporter MD",
         exportWord: "Exporter RTF",
-        exportTooltip: "Exporter cette conjugaison (MD ou RTF)"
+        exportTooltip: "Exporter cette conjugaison (MD ou RTF)",
+        // Mode traduction
+        textToTranslate: "Texte à traduire",
+        translatePlaceholder: "Ex: bonjour, merci, comment allez-vous...",
+        translate: "Traduire"
     },
     curriculum: {
         title: "Vos Parcours d'Étude",

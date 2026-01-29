@@ -108,8 +108,8 @@ export const en: typeof fr = {
                 description: "Create and take custom quizzes in multiple languages"
             },
             conjugator: {
-                title: "Conjugator",
-                description: "Conjugate and learn verbs in multiple languages"
+                title: "Conjugator & Translator",
+                description: "Conjugate verbs and translate in multiple languages"
             },
             curriculum: {
                 title: "My Curriculums",
@@ -765,7 +765,11 @@ export const en: typeof fr = {
         exampleLabel: "E.g.:",
         exportMD: "Export MD",
         exportWord: "Export RTF",
-        exportTooltip: "Export this conjugation (MD or RTF)"
+        exportTooltip: "Export this conjugation (MD or RTF)",
+        // Translation mode
+        textToTranslate: "Text to translate",
+        translatePlaceholder: "E.g. hello, thank you, how are you...",
+        translate: "Translate"
     },
     curriculum: {
         title: "Your Study Programs",

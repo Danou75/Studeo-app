@@ -422,9 +422,19 @@ Réponds UNIQUEMENT avec le JSON.`;
         apiKey?: string,
         modelName?: string
     ): Promise<string> {
+        console.log('[ChatService] sendMessage appelé:', {
+            sessionId,
+            tutorName,
+            provider,
+            hasApiKey: !!apiKey,
+            historyLength: history.length,
+            userMessage: userMessage.substring(0, 50)
+        });
+
         // Validation CRITIQUE de la clé API
         const cleanKey = (apiKey || '').trim();
         if (provider !== 'local' && (!cleanKey || cleanKey === 'undefined' || cleanKey === 'null' || cleanKey.length < 5)) {
+            console.error('[ChatService] Clé API invalide:', cleanKey);
             throw new Error(`Clé API ${provider} manquante ou invalide. Veuillez la vérifier dans les paramètres.`);
         }
 
@@ -436,6 +446,7 @@ Réponds UNIQUEMENT avec le JSON.`;
             
             const alreadyHasMessage = conversationHistory.some(m => m.content === userMessage && m.role === 'user');
             if (!alreadyHasMessage) {
+                console.log('[ChatService] Ajout du message utilisateur à l\'historique');
                 conversationHistory.push({
                     id: 'temp-' + Date.now(),
                     role: 'user',
@@ -446,8 +457,12 @@ Réponds UNIQUEMENT avec le JSON.`;
         }
 
         if (conversationHistory.length === 0) {
+            console.error('[ChatService] Historique vide après vérification');
             throw new Error("Impossible d'envoyer un message vide. Veuillez réessayer.");
         }
+
+        console.log('[ChatService] Historique final:', conversationHistory.length, 'messages');
+        console.log('[ChatService] Dernier message:', conversationHistory[conversationHistory.length - 1]);
 
         // Construire le prompt système du tuteur
         const systemPrompt = `Tu es ${tutorName}, un tuteur personnel expert en ${tutorSubject}.
@@ -477,6 +492,8 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
         try {
             let response = '';
 
+            console.log(`[ChatService] Appel au provider: ${provider}`);
+
             if (provider === 'gemini') {
                 response = await this.callGemini(systemPrompt, conversationHistory, cleanKey, modelName);
             } else if (provider === 'openai') {
@@ -491,10 +508,12 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
                 throw new Error(`Provider ${provider} non supporté`);
             }
 
+            console.log('[ChatService] Réponse du provider:', response?.substring(0, 100));
             return response;
 
         } catch (error: any) {
-            console.error('Chat error:', error);
+            console.error('[ChatService] Erreur lors de l\'appel IA:', error);
+            console.error('[ChatService] Stack:', error.stack);
             throw new Error(`Erreur de communication avec le tuteur: ${error.message}`);
         }
     }
@@ -544,6 +563,12 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
         const model = modelName || 'gemini-1.5-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
+        console.log('[callGemini] Début appel Gemini:', {
+            model,
+            historyLength: history.length,
+            apiKeyLength: apiKey.length
+        });
+
         // Nettoyer l'historique pour Gemini (alternance stricte et rôles corrects)
         const contents: any[] = [];
         let lastRole = '';
@@ -562,6 +587,9 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
             }
         });
 
+        console.log('[callGemini] Contents préparés:', contents.length, 'messages');
+        console.log('[callGemini] Premier message:', contents[0]);
+
         const payload: any = {
             contents,
             system_instruction: {
@@ -573,6 +601,7 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
         const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
 
         try {
+            console.log('[callGemini] Envoi requête à Gemini...');
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -582,20 +611,28 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
 
             clearTimeout(timeoutId);
 
+            console.log('[callGemini] Statut réponse:', response.status);
+
             if (!response.ok) {
                 const errorText = await response.text();
+                console.error('[callGemini] Erreur Gemini:', errorText);
                 throw new Error(`Gemini API Error: ${errorText}`);
             }
 
             const data = await response.json();
+            console.log('[callGemini] Réponse JSON reçue:', data);
+            
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
             
             if (!text) {
+                console.error('[callGemini] Pas de texte dans la réponse:', data);
                 throw new Error("L'IA n'a pas renvoyé de réponse textuelle.");
             }
             
+            console.log('[callGemini] Texte extrait:', text.substring(0, 100));
             return text;
         } catch (err: any) {
+            console.error('[callGemini] Exception:', err);
             if (err.name === 'AbortError') {
                 throw new Error("L'IA est trop longue à répondre. Vérifiez votre connexion ou réessayez.");
             }

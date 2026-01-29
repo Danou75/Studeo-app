@@ -331,6 +331,15 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 : config.config.provider === 'mistral' ? config.config.mistralModel
                 : config.config.localModelName;
 
+            console.log('[ChatScreen] Envoi message:', {
+                provider: config.config.provider,
+                model: modelName,
+                hasApiKey: !!apiKey,
+                apiKeyLength: apiKey?.length || 0,
+                tutorName: currentSession.tutorName,
+                historyLength: updatedSession ? updatedSession.messages.length : currentSession.messages.length
+            });
+
             // Nettoyage et validation de la clé API
             const cleanApiKey = (apiKey || '').trim();
             
@@ -342,6 +351,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 throw new Error(`Clé API de ${config.config.provider} invalide. Veuillez la vérifier dans les paramètres.`);
             }
 
+            console.log('[ChatScreen] Appel ChatService.sendMessage...');
             const response = await ChatService.sendMessage(
                 currentSession.id,
                 updatedSession ? updatedSession.messages : currentSession.messages,
@@ -354,13 +364,16 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 modelName || ''
             );
 
+            console.log('[ChatScreen] Réponse reçue:', response?.substring(0, 100));
+
             const finalSession = ChatService.addMessage(currentSession.id, 'assistant', response);
             if (finalSession) {
                 setCurrentSession(finalSession);
             }
 
         } catch (error: any) {
-            console.error('Chat error:', error);
+            console.error('[ChatScreen] ERREUR CHAT:', error);
+            console.error('[ChatScreen] Stack:', error.stack);
             showToast(error.message || 'Erreur lors de l\'envoi du message', 'error');
         } finally {
             setIsLoading(false);

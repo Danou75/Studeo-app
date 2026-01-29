@@ -222,22 +222,35 @@ const AppContent: React.FC = () => {
               }
           }
           
-          // 5. Chat Sessions
+          // 5. Chat Sessions (Bidirectional Sync)
+          const localSessions = ChatService.getSessions();
           const cloudChat = await syncService.getChatSessions(user.id);
-          if (cloudChat && cloudChat.length > 0) {
-              const localSessions = ChatService.getSessions();
+          
+          if (cloudChat) {
               const merged = [...localSessions];
+              let hasChanges = false;
               
               cloudChat.forEach(cs => {
                   const existingIndex = merged.findIndex(m => m.id === cs.id);
                   if (existingIndex === -1) {
                       merged.push(cs);
+                      hasChanges = true;
                   } else if (new Date(cs.updatedAt).getTime() > new Date(merged[existingIndex].updatedAt).getTime()) {
                       merged[existingIndex] = cs;
+                      hasChanges = true;
                   }
               });
               
-              ChatService.saveSessions(merged);
+              // Si on a récupéré des trucs du cloud qu'on n'avait pas localement
+              if (hasChanges) {
+                  ChatService.saveSessions(merged);
+              }
+              
+              // On repousse immédiatement vers le cloud pour s'assurer que le cloud a aussi 
+              // ce qu'on avait localement mais qu'il n'avait pas encore (Sync Mac -> Cloud)
+              if (merged.length > 0) {
+                  await syncService.syncChatSessions(user.id, merged);
+              }
           }
 
           if (!silent) coordinator.showToast("☁️ Données cloud récupérées !", "success");

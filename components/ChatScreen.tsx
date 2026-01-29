@@ -451,8 +451,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                     </div>
                 </div>
 
-                <div className="p-4 md:p-6 flex-1 flex flex-col overflow-y-auto min-h-0">
-                    <div className="bg-background-secondary p-8 rounded-2xl shadow-lg border border-border w-full">
+                <div className="p-2 sm:p-4 md:p-6 flex-1 flex flex-col overflow-y-auto min-h-0">
+                    <div className="bg-background-secondary p-4 sm:p-8 rounded-2xl shadow-lg border border-border w-full max-w-2xl mx-auto">
 
                         <div className="space-y-6">
                             <div>
@@ -546,7 +546,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     if (!currentSession) return null;
 
     return (
-        <div className="flex flex-1 min-h-0 bg-background overflow-hidden">
+        <div className="flex flex-1 min-h-0 bg-background overflow-hidden w-full max-w-full">
             {/* Sidebar - Historique (Overlay on mobile, aside on desktop) */}
             {showSidebar && (
                 <div className="fixed inset-0 z-50 md:relative md:inset-auto md:z-auto flex">
@@ -557,7 +557,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                     />
                     
                     {/* Sidebar Content */}
-                    <div className="w-72 md:w-80 bg-background-secondary border-r border-border flex flex-col min-h-0 relative z-10 animate-slide-in-left md:animate-none h-full shadow-2xl md:shadow-none">
+                    <div className="w-64 sm:w-72 md:w-80 bg-background-secondary border-r border-border flex flex-col min-h-0 relative z-10 animate-slide-in-left md:animate-none h-full shadow-2xl md:shadow-none">
                         <div className="p-4 border-b border-border flex justify-between items-center bg-background-secondary/80 backdrop-blur-md sticky top-0">
                             <h3 className="font-black text-lg">Historique</h3>
                             <div className="flex gap-2">
@@ -623,8 +623,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col min-h-0 relative">
                 {/* Header responsive */}
-                <div className="bg-background-secondary border-b border-border px-3 py-2 md:p-4 flex justify-between items-center shadow-sm z-20">
-                    <div className="flex items-center gap-1 md:gap-3">
+                <div className="bg-background-secondary border-b border-border px-2 py-2 md:p-4 flex justify-between items-center shadow-sm z-20 overflow-hidden">
+                    <div className="flex items-center gap-0.5 md:gap-3 shrink-0">
                         <Button 
                             onClick={onBack} 
                             variant="secondary" 
@@ -635,37 +635,37 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                         </Button>
                         <button 
                             onClick={onBack}
-                            className="p-2 sm:hidden hover:bg-background rounded-lg transition-colors"
+                            className="p-1.5 sm:hidden hover:bg-background rounded-lg transition-colors"
                         >
-                            <i className="fas fa-home text-lg"></i>
+                            <i className="fas fa-home text-base"></i>
                         </button>
                         
                         <button
                             onClick={() => setShowSidebar(!showSidebar)}
-                            className={`p-2 hover:bg-background rounded-lg transition-colors ${showSidebar ? 'text-primary' : ''}`}
+                            className={`p-1.5 hover:bg-background rounded-lg transition-colors ${showSidebar ? 'text-primary' : ''}`}
                             title="Historique"
                         >
-                            <i className="fas fa-history text-lg"></i>
+                            <i className="fas fa-history text-base"></i>
                         </button>
 
                         <button
                             onClick={handleNewChat}
-                            className="p-2 hover:bg-background rounded-lg transition-colors text-primary"
+                            className="p-1.5 hover:bg-background rounded-lg transition-colors text-primary"
                             title="Nouvelle conversation"
                         >
-                            <i className="fas fa-plus-circle text-lg"></i>
+                            <i className="fas fa-plus-circle text-base"></i>
                         </button>
                     </div>
                     
-                    <div className="text-center flex-1 mx-2 min-w-0">
-                        <h2 className="text-base md:text-xl font-black text-primary flex items-center justify-center gap-1 md:gap-2 truncate">
+                    <div className="text-center flex-1 mx-1 md:mx-4 min-w-0">
+                        <h2 className="text-sm sm:text-base md:text-xl font-black text-primary flex items-center justify-center gap-1 md:gap-2 truncate">
                             <span className="hidden sm:inline">🎓</span>
                             {currentSession.tutorName}
                         </h2>
-                        <p className="text-[10px] md:text-sm text-text-secondary truncate">{currentSession.tutorSubject}</p>
+                        <p className="hidden xs:block text-[9px] md:text-sm text-text-secondary truncate">{currentSession.tutorSubject}</p>
                     </div>
 
-                    <div className="flex gap-1 md:gap-2">
+                    <div className="flex gap-1 md:gap-2 shrink-0">
                         {/* Sélecteur de personnalité (compact on mobile) */}
                         <select
                             value={tutorPersonality}
@@ -686,22 +686,22 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                         <button
                             onClick={handleGenerateFlashcards}
                             disabled={isGeneratingCards || currentSession.messages.length < 2}
-                            className="p-2 md:px-3 md:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm flex items-center justify-center"
+                            className="p-1.5 md:px-3 md:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm flex items-center justify-center"
                             title="Créer un Quiz"
                         >
                             {isGeneratingCards ? (
                                 <i className="fas fa-spinner fa-spin"></i>
                             ) : (
-                                <><i className="fas fa-layer-group md:mr-2 text-lg md:text-sm"></i> <span className="hidden md:inline">Quiz</span></>
+                                <><i className="fas fa-layer-group md:mr-2 text-base md:text-sm"></i> <span className="hidden md:inline">Quiz</span></>
                             )}
                         </button>
                         
                         <button
                             onClick={handleExportMarkdown}
-                            className="p-2 md:px-3 md:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm flex items-center justify-center"
+                            className="p-1.5 md:px-3 md:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm flex items-center justify-center"
                             title="Exporter"
                         >
-                            <i className="fas fa-download text-lg md:text-sm"></i> <span className="hidden md:inline ml-2">Export</span>
+                            <i className="fas fa-download text-base md:text-sm"></i> <span className="hidden md:inline ml-2">Export</span>
                         </button>
                     </div>
                 </div>

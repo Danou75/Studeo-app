@@ -686,17 +686,17 @@ const AppContent: React.FC = () => {
 
   return (
     <div 
-      className={`h-full w-full overflow-hidden flex flex-col p-1 md:p-2.5 font-sans transition-colors duration-500 ${theme.themeStyle === 'apple' ? 'bg-[#E8E8ED] dark:bg-black' : 'bg-gray-100 dark:bg-gray-900'}`}
+      className={`h-full w-full overflow-hidden flex flex-col font-sans transition-colors duration-500 ${theme.themeStyle === 'apple' ? 'bg-[#E8E8ED] dark:bg-black' : 'bg-gray-100 dark:bg-gray-900'}`}
       style={{ height: '100dvh' }}
     >
-        <main className={`mx-auto rounded-3xl shadow-2xl transition-all duration-500 relative flex flex-col overflow-hidden ${
+        <main className={`mx-auto transition-all duration-500 relative flex flex-col overflow-hidden ${
           theme.themeStyle === 'apple' 
-            ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-3xl border border-white/10' 
-            : 'bg-white dark:bg-gray-800'
+            ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-3xl border-none md:border border-white/10' 
+            : 'bg-white dark:bg-gray-800 border-none md:border border-border'
         } ${
           ['home', 'drawing-tutorial', 'srs-preview', 'tutors-room', 'ai-generator', 'conjugator', 'curriculum', 'setup', 'chat', 'tutor-selection', 'language-lab', 'knowledge-map', 'video-lab', 'dashboard', 'library', 'reviewAll', 'completion', 'lesson', 'exercises', 'drawing-challenge', 'music-challenge', 'chess-challenge', 'progress', 'revision', 'settings', 'saved-lessons', 'quiz'].includes(screen)
-            ? 'w-full max-w-6xl flex-1 min-h-0 p-0' 
-            : 'w-[95%] max-w-4xl flex-initial p-6'
+            ? 'w-full max-w-6xl flex-1 min-h-0 p-0 md:rounded-3xl md:my-2 shadow-2xl' 
+            : 'w-[95%] max-w-4xl flex-initial p-6 rounded-3xl shadow-2xl my-auto'
         }`}>
           <Suspense fallback={
             <div className="flex items-center justify-center h-full">

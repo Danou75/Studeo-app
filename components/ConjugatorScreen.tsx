@@ -420,13 +420,13 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                       size="sm" 
                       className={`transition-all mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
                   >
-                      <i className="fas fa-home mr-2 text-inherit"></i> Accueil
+                      <i className="fas fa-home mr-2 text-inherit"></i> {t('common.home')}
                   </Button>
                   <h1 className="text-3xl font-black drop-shadow-sm text-inherit">
-                      Conjugueur & Traducteur IA
+                      {t('conjugator.title')}
                   </h1>
                   <p className="opacity-80 mt-1 text-base text-inherit">
-                      {mode === 'conjugate' ? 'Conjuguez n\'importe quel verbe instantanément' : 'Traduisez mots, phrases et expressions'}
+                      {mode === 'conjugate' ? t('conjugator.conjugateSubtitle') : t('conjugator.translateSubtitle')}
                   </p>
                   
                   {/* Mode Selector */}

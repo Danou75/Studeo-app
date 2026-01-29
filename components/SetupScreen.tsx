@@ -232,12 +232,12 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                             size="sm" 
                             className={`mb-2 md:mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm transition-all`}
                         >
-                            <i className="fas fa-home mr-2"></i> Accueil
+                            <i className="fas fa-home mr-2"></i> {t('common.home')}
                         </Button>
                         <h1 className="text-xl md:text-3xl font-black drop-shadow-sm text-inherit">
                             {t('setup.title')}
                         </h1>
-                        <p className="opacity-80 mt-1 text-xs md:text-base text-inherit line-clamp-1">Prêt pour votre séance d'apprentissage ?</p>
+                        <p className="opacity-80 mt-1 text-xs md:text-base text-inherit line-clamp-1">{t('setup.readySubtitle')}</p>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -283,7 +283,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                 <h3 className="text-center text-lg md:text-xl font-black mb-4 md:mb-6 text-gray-800 dark:text-gray-200">{t('setup.directionLabel')}</h3>
                 <div className="flex items-center justify-center gap-2 md:gap-12">
                     <div className="flex-1 max-w-[240px]">
-                        <p className="text-center text-[10px] md:text-xs font-bold text-gray-400 uppercase mb-1 md:mb-2">Question</p>
+                        <p className="text-center text-[10px] md:text-xs font-bold text-gray-400 uppercase mb-1 md:mb-2">{t('languages.question')}</p>
                         <select 
                             value={questionLang} 
                             onChange={e => setQuestionLang(e.target.value)} 
@@ -302,7 +302,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                     </div>
 
                     <div className="flex-1 max-w-[240px]">
-                        <p className="text-center text-[10px] md:text-xs font-bold text-gray-400 uppercase mb-1 md:mb-2">Réponse</p>
+                        <p className="text-center text-[10px] md:text-xs font-bold text-gray-400 uppercase mb-1 md:mb-2">{t('languages.answer')}</p>
                         <select 
                             value={answerLang} 
                             onChange={e => setAnswerLang(e.target.value)} 

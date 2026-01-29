@@ -685,7 +685,8 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
             numCards: "Nombre de fiches"
         },
         statsLabel: "STATS",
-        footerTagline: "Studeo • Conçu pour l'apprentissage avancé"
+        footerTagline: "Studeo • Conçu pour l'apprentissage avancé",
+        readySubtitle: "Prêt pour votre séance d'apprentissage ?"
     },
     sets: {
         title: "Gestion des Listes",
@@ -785,7 +786,9 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
         // Mode traduction
         textToTranslate: "Texte à traduire",
         translatePlaceholder: "Ex: bonjour, merci, comment allez-vous...",
-        translate: "Traduire"
+        translate: "Traduire",
+        conjugateSubtitle: "Conjuguez n'importe quel verbe instantanément",
+        translateSubtitle: "Traduisez mots, phrases et expressions"
     },
     curriculum: {
         title: "Vos Parcours d'Étude",

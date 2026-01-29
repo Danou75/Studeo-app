@@ -669,7 +669,8 @@ export const en: typeof fr = {
             numCards: "Number of cards"
         },
         statsLabel: "STATS",
-        footerTagline: "Studeo • Designed for Advanced Learning"
+        footerTagline: "Studeo • Designed for Advanced Learning",
+        readySubtitle: "Ready for your learning session?"
     },
     sets: {
         title: "Manage Lists",
@@ -769,7 +770,9 @@ export const en: typeof fr = {
         // Translation mode
         textToTranslate: "Text to translate",
         translatePlaceholder: "E.g. hello, thank you, how are you...",
-        translate: "Translate"
+        translate: "Translate",
+        conjugateSubtitle: "Conjugate any verb instantly",
+        translateSubtitle: "Translate words, phrases and expressions"
     },
     curriculum: {
         title: "Your Study Programs",

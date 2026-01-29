@@ -154,27 +154,37 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
             <div className="flex-1 overflow-hidden flex flex-col">
                 {/* Header */}
                 <div 
-                    className={`transition-all duration-500 p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                    className={`transition-all duration-500 p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                     style={{ background: getThemeGradient(themeStyle, themeMode) }}
                 >
-                    <div className="flex justify-between items-center">
-                        <button
-                            onClick={onClose}
-                            className={`hover:opacity-80 rounded-lg px-4 py-2 transition-all flex items-center gap-2 ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'}`}
-                        >
-                            <i className="fas fa-home text-inherit"></i> Accueil
-                        </button>
+                    <div className="flex flex-col md:flex-row md:justify-between items-center gap-4">
+                        <div className="flex justify-between w-full md:w-auto md:justify-start items-center gap-2">
+                             <button
+                                onClick={onClose}
+                                className={`hover:opacity-80 rounded-lg px-3 py-1.5 md:px-4 md:py-2 transition-all flex items-center gap-2 text-sm md:text-base ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'}`}
+                            >
+                                <i className="fas fa-home"></i> 
+                                <span className="hidden sm:inline">Accueil</span>
+                            </button>
+
+                            <button
+                                onClick={onNavigateToSettings}
+                                className={`md:hidden hover:opacity-80 rounded-lg px-3 py-1.5 transition-all bg-white/20 text-white`}
+                            >
+                                <i className="fas fa-cog"></i>
+                            </button>
+                        </div>
                         
-                        <div className="flex-1 text-center">
-                            <h2 className="text-xl md:text-3xl font-bold flex items-center justify-center gap-2 md:gap-3 text-inherit">
+                        <div className="text-center flex-1 px-4">
+                            <h2 className="text-lg md:text-3xl font-bold flex items-center justify-center gap-2 text-inherit leading-tight">
                                 🎓 {t('tutors.title')}
                             </h2>
-                            <p className="opacity-90 mt-1 md:mt-2 text-[10px] md:text-base text-inherit">
+                            <p className="opacity-90 mt-1 text-[10px] md:text-base text-inherit max-w-lg mx-auto leading-tight">
                                 {t('tutors.subtitle')}
                             </p>
                         </div>
                         
-                        <div className="w-auto flex justify-end gap-2">
+                        <div className="hidden md:flex justify-end gap-2">
                             <button
                                 onClick={onNavigateToSettings}
                                 className={`hover:opacity-80 rounded-lg px-3 py-2 transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'}`}
@@ -192,14 +202,16 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                         <button
                             key={cat.id}
                             onClick={() => onSelectCategory(cat.id)}
-                            className={`flex-1 py-3 md:py-4 px-3 md:px-6 font-semibold transition-all whitespace-nowrap flex items-center justify-center min-w-[120px] md:min-w-0 ${
+                            className={`flex-1 py-4 px-2 md:px-6 font-semibold transition-all flex flex-col items-center justify-center min-w-[100px] md:min-w-[140px] text-center gap-1 ${
                                 selectedCategory === cat.id
                                     ? 'bg-white dark:bg-gray-800 text-primary border-b-2 border-primary'
                                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                             }`}
                         >
-                            <span className="text-2xl mr-2">{cat.emoji}</span>
-                            {cat.name}
+                            <span className="text-xl md:text-2xl">{cat.emoji}</span>
+                            <span className="text-[10px] md:text-sm whitespace-normal leading-tight h-8 flex items-center justify-center">
+                                {cat.name}
+                            </span>
                         </button>
                     ))}
                 </div>

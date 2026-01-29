@@ -737,7 +737,7 @@ export const en: typeof fr = {
         exercisesCount: "{count} exercises"
     },
     conjugator: {
-        title: "AI Conjugator",
+        title: "AI Conjugator & Translator",
         verbLabel: "Verb to conjugate",
         verbPlaceholder: "E.g. eat, be, have...",
         targetLang: "Target language",

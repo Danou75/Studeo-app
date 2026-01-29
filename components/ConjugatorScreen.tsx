@@ -832,11 +832,9 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
         </div>
       )}
       
-      {!result && !loading && !error && (
-        <div className="flex-1 flex flex-col items-center justify-center text-text-muted opacity-50 min-h-[300px]">
-            <i className="fas fa-book-open text-6xl mb-4"></i>
-            <p className="mt-4 text-lg">{t('conjugator.emptyState')}</p>
-            <p className="text-sm">{t('conjugator.exampleInfo')}</p>
+      {!result && !translationResult && !loading && !error && (
+        <div className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
+            {/* L'utilisateur veut cet espace vide par défaut */}
         </div>
       )}
       </div>

@@ -753,7 +753,7 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
         exercisesCount: "{count} exercices"
     },
     conjugator: {
-        title: "Conjugueur IA",
+        title: "Conjugueur & Traducteur",
         verbLabel: "Verbe à conjuguer",
         verbPlaceholder: "Ex: manger, être, avoir...",
         targetLang: "Langue cible",

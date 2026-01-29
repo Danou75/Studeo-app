@@ -33,21 +33,15 @@ export class ChatService {
             let sessions = JSON.parse(stored);
             if (!Array.isArray(sessions)) return [];
 
-            // Sécurité et Stabilisation : On ne touche aux IDs QUE s'ils sont manquants
-            const validSessions = sessions.map((s: any) => {
-                return {
-                    ...s,
-                    id: s.id || `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    createdAt: new Date(s.createdAt || Date.now()),
-                    updatedAt: new Date(s.updatedAt || Date.now()),
-                    messages: Array.isArray(s.messages) ? s.messages.map((m: any) => ({
-                        ...m,
-                        timestamp: new Date(m.timestamp || Date.now())
-                    })) : []
-                };
-            });
-
-            return validSessions.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+            return sessions.map((s: any) => ({
+                ...s,
+                createdAt: new Date(s.createdAt),
+                updatedAt: new Date(s.updatedAt),
+                messages: Array.isArray(s.messages) ? s.messages.map((m: any) => ({
+                    ...m,
+                    timestamp: new Date(m.timestamp)
+                })) : []
+            })).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
         } catch (e) {
             console.error('Error in getSessions', e);
             return [];
@@ -153,7 +147,7 @@ export class ChatService {
             let session = sessions.find(s => s.id === sessionId);
             
             if (!session) {
-                console.warn(`Session ${sessionId} non trouvée. Création d'une session de secours.`);
+                console.warn(`Session ${sessionId} non trouvée.`);
                 return null;
             }
 
@@ -438,8 +432,7 @@ Réponds UNIQUEMENT avec le JSON.`;
 
         // Sécurité : S'assurer que le dernier message de l'utilisateur est présent
         if (conversationHistory.length === 0 || 
-            (conversationHistory[conversationHistory.length - 1].role !== 'user') ||
-            (conversationHistory[conversationHistory.length - 1].content !== userMessage && conversationHistory.length < 2)) {
+            (conversationHistory[conversationHistory.length - 1].role !== 'user')) {
             
             const alreadyHasMessage = conversationHistory.some(m => m.content === userMessage && m.role === 'user');
             if (!alreadyHasMessage) {
@@ -595,7 +588,13 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
             }
 
             const data = await response.json();
-            return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Désolé, je n\'ai pas pu générer de réponse.';
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            if (!text) {
+                throw new Error("L'IA n'a pas renvoyé de réponse textuelle.");
+            }
+            
+            return text;
         } catch (err: any) {
             if (err.name === 'AbortError') {
                 throw new Error("L'IA est trop longue à répondre. Vérifiez votre connexion ou réessayez.");

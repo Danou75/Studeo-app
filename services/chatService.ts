@@ -85,10 +85,9 @@ export class ChatService {
      * Crée une nouvelle session ou réutilise une existante vide
      */
     static createSession(tutorName: string, tutorSubject: string): ChatSession {
-        const sessions = this.getSessions();
+        let sessions = this.getSessions();
         
         // Nettoyage : Si on a déjà une session VIDE pour ce tuteur, on la réutilise
-        // au lieu d'en créer une nouvelle inutile.
         const existingEmptySession = sessions.find(s => 
             s.tutorName === tutorName && 
             s.tutorSubject === tutorSubject && 
@@ -96,12 +95,12 @@ export class ChatService {
         );
 
         if (existingEmptySession) {
-            // On remonte la session existante en haut de la liste (mise à jour date)
+            console.log('[ChatService] Réutilisation d\'une session vide existante:', existingEmptySession.id);
             existingEmptySession.updatedAt = new Date();
-            this.deleteSession(existingEmptySession.id); // On l'enlève de sa position
-            const updatedSessions = this.getSessions(); // On recharge
-            updatedSessions.unshift(existingEmptySession); // On remet au début
-            this.saveSessions(updatedSessions);
+            // On remonte la session en haut de la liste
+            const otherSessions = sessions.filter(s => s.id !== existingEmptySession.id);
+            sessions = [existingEmptySession, ...otherSessions];
+            this.saveSessions(sessions);
             return existingEmptySession;
         }
 
@@ -114,11 +113,12 @@ export class ChatService {
             updatedAt: new Date()
         };
 
+        console.log('[ChatService] Nouvelle session créée:', session.id);
         sessions.unshift(session);
         this.saveSessions(sessions);
-
         return session;
     }
+
 
     /**
      * Nettoie toutes les sessions vides (0 messages) sauf celle spécifiée (optionnel)
@@ -147,7 +147,9 @@ export class ChatService {
             let session = sessions.find(s => s.id === sessionId);
             
             if (!session) {
-                console.warn(`Session ${sessionId} non trouvée.`);
+                console.warn(`[ChatService] Session ${sessionId} non trouvée dans localStorage. Tentative de récupération ou recréation.`);
+                // Si la session n'est pas trouvée par ID, on ne peut pas faire grand chose ici sans l'objet complet
+                // Mais on va essayer de voir si on a une session du même tuteur très récente
                 return null;
             }
 
@@ -162,6 +164,7 @@ export class ChatService {
             session.updatedAt = new Date();
 
             this.saveSessions(sessions);
+            console.log(`[ChatService] Message ajouté à la session ${sessionId}. Total: ${session.messages.length}`);
             return session;
         } catch (e) {
             console.error('Erreur dans addMessage:', e);

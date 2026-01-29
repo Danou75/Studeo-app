@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from './ui/Button';
-import { ChatService, ChatSession } from '../services/chatService';
+import { ChatService, ChatSession, ChatMessage } from '../services/chatService';
 import { useAIConfig } from '../contexts/AIConfigContext';
 import { useToast } from '../contexts/ToastContext';
 import { Flashcard } from '../types';
@@ -310,35 +310,51 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         const userMessage = inputMessage.trim();
         setInputMessage('');
 
-        // Ajouter le message utilisateur
-        const updatedSession = ChatService.addMessage(currentSession.id, 'user', userMessage);
-        if (updatedSession) {
-            setCurrentSession(updatedSession);
-        }
-
         setIsLoading(true);
 
         try {
+            // Ajouter le message utilisateur localement d'abord pour garantir qu'on ne le perde pas
+            const newUserMessage: ChatMessage = {
+                id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                role: 'user',
+                content: userMessage,
+                timestamp: new Date()
+            };
+
+            const updatedSession: ChatSession = {
+                ...currentSession,
+                messages: [...currentSession.messages, newUserMessage],
+                updatedAt: new Date()
+            };
+
+            // Mettre à jour l'état React immédiatement pour l'UI
+            setCurrentSession(updatedSession);
+            
+            // Sauvegarder dans localStorage de manière robuste
+            const sessions = ChatService.getSessions();
+            const idx = sessions.findIndex(s => s.id === updatedSession.id);
+            if (idx >= 0) {
+                sessions[idx] = updatedSession;
+            } else {
+                sessions.unshift(updatedSession);
+            }
+            ChatService.saveSessions(sessions);
+
+            console.log('[ChatScreen] Message utilisateur ajouté. Envoi à l\'IA...');
+
+            // Préparation des paramètres pour l'envoi
+            const currentTutorStyle = tutorPersonality ? getStyleFromPersonality(tutorPersonality) : tutorStyle || 'Doux';
             const apiKey = config.config.provider === 'gemini' ? config.config.geminiApiKey
                 : config.config.provider === 'openai' ? config.config.openaiApiKey
                 : config.config.provider === 'anthropic' ? config.config.anthropicApiKey
                 : config.config.provider === 'mistral' ? config.config.mistralApiKey
-                : config.config.localApiUrl || '';
+                : '';
 
             const modelName = config.config.provider === 'gemini' ? config.config.geminiModel
                 : config.config.provider === 'openai' ? config.config.openaiModel
                 : config.config.provider === 'anthropic' ? config.config.anthropicModel
                 : config.config.provider === 'mistral' ? config.config.mistralModel
                 : config.config.localModelName;
-
-            console.log('[ChatScreen] Envoi message:', {
-                provider: config.config.provider,
-                model: modelName,
-                hasApiKey: !!apiKey,
-                apiKeyLength: apiKey?.length || 0,
-                tutorName: currentSession.tutorName,
-                historyLength: updatedSession ? updatedSession.messages.length : currentSession.messages.length
-            });
 
             // Nettoyage et validation de la clé API
             const cleanApiKey = (apiKey || '').trim();
@@ -347,29 +363,51 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 throw new Error(`Clé API de ${config.config.provider} manquante. Veuillez la configurer dans les paramètres.`);
             }
 
-            if (cleanApiKey === 'undefined' || cleanApiKey === 'null') {
-                throw new Error(`Clé API de ${config.config.provider} invalide. Veuillez la vérifier dans les paramètres.`);
-            }
-
             console.log('[ChatScreen] Appel ChatService.sendMessage...');
+            
             const response = await ChatService.sendMessage(
-                currentSession.id,
-                updatedSession ? updatedSession.messages : currentSession.messages,
+                updatedSession.id,
+                updatedSession.messages,
                 userMessage,
-                currentSession.tutorName,
-                currentSession.tutorSubject,
-                tutorStyle,
+                updatedSession.tutorName,
+                updatedSession.tutorSubject,
+                currentTutorStyle,
                 config.config.provider,
                 cleanApiKey,
-                modelName || ''
+                modelName
             );
 
             console.log('[ChatScreen] Réponse reçue:', response?.substring(0, 100));
 
-            const finalSession = ChatService.addMessage(currentSession.id, 'assistant', response);
-            if (finalSession) {
-                setCurrentSession(finalSession);
+            // Ajouter la réponse de l'assistant directement à la session en mémoire
+            const assistantMessage: ChatMessage = {
+                id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                role: 'assistant',
+                content: response,
+                timestamp: new Date()
+            };
+
+            const finalSession: ChatSession = {
+                ...updatedSession,
+                messages: [...updatedSession.messages, assistantMessage],
+                updatedAt: new Date()
+            };
+
+            // Sauvegarder à nouveau dans localStorage
+            const allSessions = ChatService.getSessions();
+            const sessionIndex = allSessions.findIndex(s => s.id === finalSession.id);
+            
+            if (sessionIndex >= 0) {
+                allSessions[sessionIndex] = finalSession;
+            } else {
+                allSessions.unshift(finalSession);
             }
+            
+            ChatService.saveSessions(allSessions);
+            
+            // Mettre à jour l'état React final
+            setCurrentSession(finalSession);
+            console.log('[ChatScreen] Session mise à jour avec la réponse de l\'IA');
 
         } catch (error: any) {
             console.error('[ChatScreen] ERREUR CHAT:', error);

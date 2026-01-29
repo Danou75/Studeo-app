@@ -547,75 +547,105 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
     return (
         <div className="flex flex-1 min-h-0 bg-background overflow-hidden">
-            {/* Sidebar - Historique */}
+            {/* Sidebar - Historique (Overlay on mobile, aside on desktop) */}
             {showSidebar && (
-                <div className="w-80 bg-background-secondary border-r border-border flex flex-col min-h-0">
-                    <div className="p-4 border-b border-border flex justify-between items-center">
-                        <h3 className="font-bold">Historique</h3>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={handleNewChat}
-                                className="text-primary hover:text-primary-dark p-1"
-                                title="Nouvelle discussion"
-                            >
-                                <i className="fas fa-plus-circle"></i>
-                            </button>
-                            <button
-                                onClick={() => setShowSidebar(false)}
-                                className="text-text-secondary hover:text-text p-1"
-                            >
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                        {allSessions.map(session => (
-                            <div
-                                key={session.id}
-                                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                                    currentSession && session.id === currentSession.id
-                                        ? 'bg-primary/10 border-primary'
-                                        : 'bg-background border-border hover:border-primary'
-                                }`}
-                                onClick={() => handleLoadSession(session)}
-                            >
-                                <div className="flex justify-between items-start mb-1">
-                                    <div className="font-semibold text-sm">{session.tutorName}</div>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDeleteSession(session.id);
-                                        }}
-                                        className="text-red-500 hover:text-red-700 text-xs"
-                                    >
-                                        <i className="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                                <div className="text-xs text-text-secondary">{session.tutorSubject}</div>
-                                <div className="text-xs text-text-secondary mt-1">
-                                    {session.messages.length} msg • {new Date(session.updatedAt).toLocaleDateString()}
-                                </div>
+                <div className="fixed inset-0 z-50 md:relative md:inset-auto md:z-auto flex">
+                    {/* Backdrop for mobile */}
+                    <div 
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm md:hidden" 
+                        onClick={() => setShowSidebar(false)} 
+                    />
+                    
+                    {/* Sidebar Content */}
+                    <div className="w-72 md:w-80 bg-background-secondary border-r border-border flex flex-col min-h-0 relative z-10 animate-slide-in-left md:animate-none h-full shadow-2xl md:shadow-none">
+                        <div className="p-4 border-b border-border flex justify-between items-center bg-background-secondary/80 backdrop-blur-md sticky top-0">
+                            <h3 className="font-black text-lg">Historique</h3>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleNewChat}
+                                    className="text-primary hover:scale-110 p-1.5 transition-transform"
+                                    title="Nouvelle discussion"
+                                >
+                                    <i className="fas fa-plus-circle text-xl"></i>
+                                </button>
+                                <button
+                                    onClick={() => setShowSidebar(false)}
+                                    className="text-text-secondary hover:text-text p-1.5 md:hidden"
+                                >
+                                    <i className="fas fa-times text-xl"></i>
+                                </button>
                             </div>
-                        ))}
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                            {allSessions.length === 0 ? (
+                                <div className="text-center py-8 text-text-secondary text-sm italic">
+                                    Aucun historique
+                                </div>
+                            ) : (
+                                allSessions.map(session => (
+                                    <div
+                                        key={session.id}
+                                        className={`p-3 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
+                                            currentSession && session.id === currentSession.id
+                                                ? 'bg-primary/10 border-primary ring-1 ring-primary/20'
+                                                : 'bg-background border-border hover:border-primary/50'
+                                        }`}
+                                        onClick={() => {
+                                            handleLoadSession(session);
+                                            if (window.innerWidth < 768) setShowSidebar(false);
+                                        }}
+                                    >
+                                        <div className="flex justify-between items-start mb-1">
+                                            <div className="font-bold text-sm truncate pr-2">{session.tutorName}</div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteSession(session.id);
+                                                }}
+                                                className="text-red-500 hover:text-red-700 p-1 transition-colors"
+                                            >
+                                                <i className="fas fa-trash-alt text-xs"></i>
+                                            </button>
+                                        </div>
+                                        <div className="text-xs text-text-secondary truncate">{session.tutorSubject}</div>
+                                        <div className="text-[10px] text-text-secondary/60 mt-2 flex justify-between items-center">
+                                            <span>{session.messages.length} messages</span>
+                                            <span>{new Date(session.updatedAt).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col min-h-0">
-                {/* Header */}
-                <div className="bg-background-secondary border-b border-border p-4 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <Button onClick={onBack} variant="secondary" size="sm">
+            <div className="flex-1 flex flex-col min-h-0 relative">
+                {/* Header responsive */}
+                <div className="bg-background-secondary border-b border-border px-3 py-2 md:p-4 flex justify-between items-center shadow-sm z-20">
+                    <div className="flex items-center gap-1 md:gap-3">
+                        <Button 
+                            onClick={onBack} 
+                            variant="secondary" 
+                            size="sm" 
+                            className="hidden sm:flex"
+                        >
                             <i className="fas fa-home mr-2"></i> Accueil
                         </Button>
+                        <button 
+                            onClick={onBack}
+                            className="p-2 sm:hidden hover:bg-background rounded-lg transition-colors"
+                        >
+                            <i className="fas fa-home text-lg"></i>
+                        </button>
                         
                         <button
                             onClick={() => setShowSidebar(!showSidebar)}
-                            className="p-2 hover:bg-background rounded-lg transition-colors"
+                            className={`p-2 hover:bg-background rounded-lg transition-colors ${showSidebar ? 'text-primary' : ''}`}
                             title="Historique"
                         >
-                            <i className="fas fa-history"></i>
+                            <i className="fas fa-history text-lg"></i>
                         </button>
 
                         <button
@@ -623,29 +653,28 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                             className="p-2 hover:bg-background rounded-lg transition-colors text-primary"
                             title="Nouvelle conversation"
                         >
-                            <i className="fas fa-plus-circle"></i>
+                            <i className="fas fa-plus-circle text-lg"></i>
                         </button>
                     </div>
                     
-                    <div className="text-center flex-1">
-                        <h2 className="text-xl font-bold text-primary flex items-center justify-center gap-2">
-                            <span className="text-2xl">🎓</span>
+                    <div className="text-center flex-1 mx-2 min-w-0">
+                        <h2 className="text-base md:text-xl font-black text-primary flex items-center justify-center gap-1 md:gap-2 truncate">
+                            <span className="hidden sm:inline">🎓</span>
                             {currentSession.tutorName}
                         </h2>
-                        <p className="text-sm text-text-secondary">{currentSession.tutorSubject}</p>
+                        <p className="text-[10px] md:text-sm text-text-secondary truncate">{currentSession.tutorSubject}</p>
                     </div>
 
-                    <div className="flex gap-2">
-                        {/* Sélecteur de personnalité */}
+                    <div className="flex gap-1 md:gap-2">
+                        {/* Sélecteur de personnalité (compact on mobile) */}
                         <select
                             value={tutorPersonality}
                             onChange={(e) => {
                                 setTutorPersonality(e.target.value);
                                 setTutorStyle(getStyleFromPersonality(e.target.value));
-                                showToast(`Personnalité changée : ${personalityOptions.find(p => p.id === e.target.value)?.label}`, 'info');
+                                showToast(`Personnalité : ${personalityOptions.find(p => p.id === e.target.value)?.label}`, 'info');
                             }}
-                            className="px-3 py-2 bg-background-secondary border border-border rounded-lg text-sm hover:border-primary transition-colors outline-none cursor-pointer"
-                            title="Changer la personnalité"
+                            className="hidden lg:block px-3 py-2 bg-background-secondary border border-border rounded-lg text-sm hover:border-primary transition-colors outline-none cursor-pointer"
                         >
                             {personalityOptions.map(option => (
                                 <option key={option.id} value={option.id}>
@@ -656,35 +685,35 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
                         <button
                             onClick={handleGenerateFlashcards}
-                            disabled={isGeneratingCards || currentSession.messages.length < 4}
-                            className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-                            title="Générer des flashcards"
+                            disabled={isGeneratingCards || currentSession.messages.length < 2}
+                            className="p-2 md:px-3 md:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm flex items-center justify-center"
+                            title="Créer un Quiz"
                         >
                             {isGeneratingCards ? (
                                 <i className="fas fa-spinner fa-spin"></i>
                             ) : (
-                                <><i className="fas fa-layer-group mr-2"></i> Quiz</>
+                                <><i className="fas fa-layer-group md:mr-2 text-lg md:text-sm"></i> <span className="hidden md:inline">Quiz</span></>
                             )}
                         </button>
                         
                         <button
                             onClick={handleExportMarkdown}
-                            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                            title="Exporter en Markdown"
+                            className="p-2 md:px-3 md:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm flex items-center justify-center"
+                            title="Exporter"
                         >
-                            <i className="fas fa-download"></i>
+                            <i className="fas fa-download text-lg md:text-sm"></i> <span className="hidden md:inline ml-2">Export</span>
                         </button>
                     </div>
                 </div>
 
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 min-h-0">
+                {/* Messages optimized for mobile */}
+                <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-6 min-h-0 scrollbar-thin">
                     {currentSession.messages.length === 0 && (
-                        <div className="text-center py-12">
-                            <div className="text-6xl mb-4">💬</div>
-                            <h3 className="text-xl font-semibold mb-2">Commencez la conversation</h3>
-                            <p className="text-text-secondary">
-                                Posez une question ou demandez une explication sur {currentSession.tutorSubject}
+                        <div className="text-center py-20 animate-fade-in">
+                            <div className="text-7xl mb-6 bounce-slow">💬</div>
+                            <h3 className="text-2xl font-black mb-2 px-4">Prêt pour apprendre ?</h3>
+                            <p className="text-text-secondary px-6 max-w-sm mx-auto">
+                                Posez n'importe quelle question sur <strong>{currentSession.tutorSubject}</strong> à <strong>{currentSession.tutorName}</strong>.
                             </p>
                         </div>
                     )}
@@ -692,62 +721,63 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                     {currentSession.messages.map((message) => (
                         <div
                             key={message.id}
-                            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-in-up`}
                         >
                             <div
-                                className={`max-w-[70%] rounded-2xl p-4 ${
+                                className={`max-w-[90%] md:max-w-[75%] rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-sm transition-all hover:shadow-md ${
                                     message.role === 'user'
-                                        ? 'bg-primary text-white'
-                                        : 'bg-background-secondary border border-border'
+                                        ? 'bg-primary text-white rounded-tr-none'
+                                        : 'bg-background-secondary border border-border rounded-tl-none'
                                 }`}
                             >
-                                <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-4">
                                     {message.role === 'assistant' && (
-                                        <div className="text-2xl">🎓</div>
+                                        <div className="text-3xl hidden md:block">🎓</div>
                                     )}
-                                    <div className="flex-1">
+                                    <div className="flex-1 min-w-0">
                                         {message.role === 'assistant' ? (
-                                            <div className="prose prose-sm max-w-none dark:prose-invert">
+                                            <div className="prose prose-sm md:prose-base max-w-none dark:prose-invert">
                                                 <ReactMarkdown
                                                     remarkPlugins={[remarkGfm]}
                                                     components={{
-                                                        h1: ({node, ...props}) => <h1 className="text-xl font-bold mb-2 mt-4" {...props} />,
-                                                        h2: ({node, ...props}) => <h2 className="text-lg font-bold mb-2 mt-3" {...props} />,
-                                                        h3: ({node, ...props}) => <h3 className="text-base font-bold mb-1 mt-2" {...props} />,
-                                                        p: ({node, ...props}) => <p className="mb-2" {...props} />,
-                                                        ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 space-y-1" {...props} />,
-                                                        ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 space-y-1" {...props} />,
-                                                        li: ({node, ...props}) => <li className="ml-2" {...props} />,
-                                                        strong: ({node, ...props}) => <strong className="font-bold text-primary" {...props} />,
-                                                        em: ({node, ...props}) => <em className="italic" {...props} />,
+                                                        h1: ({node, ...props}) => <h1 className="text-xl md:text-2xl font-black mb-3 mt-5 text-primary border-b border-border pb-2" {...props} />,
+                                                        h2: ({node, ...props}) => <h2 className="text-lg md:text-xl font-bold mb-3 mt-4" {...props} />,
+                                                        h3: ({node, ...props}) => <h3 className="text-base md:text-lg font-bold mb-2 mt-3" {...props} />,
+                                                        p: ({node, ...props}) => <p className="mb-3 leading-relaxed" {...props} />,
+                                                        ul: ({node, ...props}) => <ul className="list-disc list-outside mb-4 ml-4 space-y-2" {...props} />,
+                                                        ol: ({node, ...props}) => <ol className="list-decimal list-outside mb-4 ml-4 space-y-2" {...props} />,
+                                                        li: ({node, ...props}) => <li className="pl-1" {...props} />,
+                                                        strong: ({node, ...props}) => <strong className="font-black text-primary" {...props} />,
+                                                        em: ({node, ...props}) => <em className="italic opacity-90" {...props} />,
                                                         code: ({node, inline, ...props}: any) => 
                                                             inline ? (
-                                                                <code className="bg-background px-1 py-0.5 rounded text-sm font-mono" {...props} />
+                                                                <code className="bg-background-secondary px-1.5 py-0.5 rounded text-sm font-mono text-primary border border-border" {...props} />
                                                             ) : (
-                                                                <code className="block bg-background p-2 rounded my-2 text-sm font-mono overflow-x-auto" {...props} />
+                                                                <code className="block bg-background-tertiary p-4 rounded-xl my-4 text-xs md:text-sm font-mono overflow-x-auto shadow-inner border border-border" {...props} />
                                                             ),
-                                                        blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-primary pl-3 italic my-2" {...props} />,
-                                                        hr: ({node, ...props}) => <hr className="my-3 border-border" {...props} />,
-                                                        a: ({node, ...props}) => <a className="text-primary underline hover:text-primary-dark" {...props} />,
+                                                        blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-primary/50 pl-4 italic my-4 text-text-secondary bg-primary/5 p-3 rounded-r-lg" {...props} />,
+                                                        hr: ({node, ...props}) => <hr className="my-5 border-border" {...props} />,
+                                                        a: ({node, ...props}) => <a className="text-primary underline font-bold hover:text-primary-dark transition-colors" {...props} />,
                                                         table: ({node, ...props}) => (
-                                                            <div className="overflow-x-auto my-3">
-                                                                <table className="min-w-full border-collapse border border-border" {...props} />
+                                                            <div className="overflow-x-auto my-5 rounded-xl border border-border shadow-sm">
+                                                                <table className="min-w-full border-collapse" {...props} />
                                                             </div>
                                                         ),
-                                                        thead: ({node, ...props}) => <thead className="bg-background-secondary" {...props} />,
-                                                        tbody: ({node, ...props}) => <tbody {...props} />,
-                                                        tr: ({node, ...props}) => <tr className="border-b border-border" {...props} />,
-                                                        th: ({node, ...props}) => <th className="border border-border px-3 py-2 text-left font-bold" {...props} />,
-                                                        td: ({node, ...props}) => <td className="border border-border px-3 py-2" {...props} />
+                                                        thead: ({node, ...props}) => <thead className="bg-background-tertiary text-text-secondary text-xs uppercase tracking-wider" {...props} />,
+                                                        tbody: ({node, ...props}) => <tbody className="bg-background" {...props} />,
+                                                        tr: ({node, ...props}) => <tr className="border-b border-border last:border-0 hover:bg-background-secondary/50 transition-colors" {...props} />,
+                                                        th: ({node, ...props}) => <th className="px-4 py-3 text-left font-black" {...props} />,
+                                                        td: ({node, ...props}) => <td className="px-4 py-3 text-sm" {...props} />
                                                     }}
                                                 >
                                                     {message.content}
                                                 </ReactMarkdown>
                                             </div>
                                         ) : (
-                                            <div className="whitespace-pre-wrap">{message.content}</div>
+                                            <div className="whitespace-pre-wrap text-sm md:text-base leading-relaxed">{message.content}</div>
                                         )}
-                                        <div className={`text-xs mt-2 ${message.role === 'user' ? 'text-white/70' : 'text-text-secondary'}`}>
+                                        <div className={`text-[10px] mt-3 flex items-center gap-1.5 opacity-60 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                            <i className="far fa-clock"></i>
                                             {message.timestamp.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                     </div>
@@ -757,43 +787,48 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                     ))}
 
                     {isLoading && (
-                        <div className="flex justify-start">
-                            <div className="max-w-[70%] rounded-2xl p-4 bg-background-secondary border border-border">
+                        <div className="flex justify-start animate-fade-in">
+                            <div className="max-w-[85%] md:max-w-[70%] rounded-2xl p-4 bg-background-secondary border border-border shadow-sm">
                                 <div className="flex items-center gap-4">
                                     <AILoader size="sm" />
-                                    <span className="text-xs font-bold text-primary animate-pulse">L'IA réfléchit...</span>
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-black text-primary uppercase tracking-widest">{currentSession.tutorName} réfléchit</span>
+                                        <span className="text-[10px] text-text-secondary">Analyse de votre message...</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    <div ref={messagesEndRef} />
+                    <div ref={messagesEndRef} className="h-4" />
                 </div>
 
-                {/* Input */}
-                <div className="bg-background-secondary border-t border-border p-4">
-                    <div className="max-w-4xl mx-auto flex gap-3">
-                        <textarea
-                            value={inputMessage}
-                            onChange={(e) => setInputMessage(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            placeholder="Posez votre question..."
-                            className="flex-1 p-3 rounded-xl bg-background border border-border focus:border-primary outline-none resize-none"
-                            rows={2}
-                            disabled={isLoading}
-                        />
-                        <Button
-                            onClick={handleSendMessage}
-                            disabled={!inputMessage.trim() || isLoading}
-                            size="lg"
-                            className="px-6"
-                        >
-                            <i className="fas fa-paper-plane"></i>
-                        </Button>
+                {/* Input Area (Optimized) */}
+                <div className="bg-background-secondary border-t border-border p-3 md:p-4 z-20">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="flex items-end gap-2 md:gap-3 bg-background border border-border rounded-2xl md:rounded-3xl p-1.5 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+                            <textarea
+                                value={inputMessage}
+                                onChange={(e) => setInputMessage(e.target.value)}
+                                onKeyPress={handleKeyPress}
+                                placeholder="Écrivez votre message..."
+                                className="flex-1 p-3 md:p-4 bg-transparent outline-none resize-none text-sm md:text-base min-h-[50px] max-h-[150px]"
+                                rows={1}
+                                disabled={isLoading}
+                                style={{ height: 'auto' }}
+                            />
+                            <Button
+                                onClick={handleSendMessage}
+                                disabled={!inputMessage.trim() || isLoading}
+                                className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl p-0 flex items-center justify-center shrink-0 mb-0.5 mr-0.5"
+                            >
+                                <i className="fas fa-paper-plane md:text-lg"></i>
+                            </Button>
+                        </div>
+                        <p className="text-[10px] text-text-secondary text-center mt-2 hidden md:block">
+                            <strong>Entrée</strong> pour envoyer • <strong>Shift + Entrée</strong> pour une nouvelle ligne
+                        </p>
                     </div>
-                    <p className="text-xs text-text-secondary text-center mt-2">
-                        Appuyez sur Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne
-                    </p>
                 </div>
             </div>
         </div>

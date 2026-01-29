@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
 import { Button } from './ui/Button';
 import { conjugateVerb } from '../services/conjugationService';
+import { translateText, TranslationResult } from '../services/translationService';
 import { ConjugationResult, Flashcard, ConjugationTable } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { RepetitorScreen } from './RepetitorScreen';
@@ -38,6 +39,10 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
   const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
+  
+  // Mode selection: 'conjugate' or 'translate'
+  const [mode, setMode] = useState<'conjugate' | 'translate'>('conjugate');
+  const [translationResult, setTranslationResult] = useState<TranslationResult | null>(null);
   
   // Selection state
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
@@ -137,6 +142,63 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
       setResult(data);
       // Pré-remplir le nom du set
       setSetName(`${t('conjugator.title')}: ${data.verb} (${data.language})`);
+    } catch (err: any) {
+      console.error(err);
+      setError(`${t('common.error')}: ${err.message || String(err)}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTranslate = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!verb.trim()) return;
+
+    setLoading(true);
+    setError(null);
+    setTranslationResult(null);
+    setResult(null);
+
+    try {
+      // Déterminer la configuration selon le provider
+      let modelName = config.geminiModel;
+      let apiKey: string | undefined = undefined;
+      let apiUrl: string | undefined = undefined;
+
+      switch(config.provider) {
+          case 'gemini':
+              apiKey = config.geminiApiKey;
+              modelName = config.geminiModel;
+              break;
+          case 'openai':
+              apiKey = config.openaiApiKey;
+              modelName = config.openaiModel || 'gpt-4o';
+              break;
+          case 'anthropic':
+              apiKey = config.anthropicApiKey;
+              modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620';
+              break;
+          case 'mistral':
+              apiKey = config.mistralApiKey;
+              modelName = config.mistralModel || 'mistral-large-latest';
+              break;
+          case 'local':
+              apiUrl = config.localApiUrl;
+              modelName = config.localModelName;
+              break;
+      }
+
+      const data = await translateText(
+          verb, 
+          LANGUAGES.find(l => l.code === language)?.name || language,
+          config.provider,
+          modelName,
+          apiUrl,
+          apiKey
+      );
+      setTranslationResult(data);
+      // Pré-remplir le nom du set
+      setSetName(`Traduction: ${data.original} (${data.language})`);
     } catch (err: any) {
       console.error(err);
       setError(`${t('common.error')}: ${err.message || String(err)}`);
@@ -361,9 +423,45 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                       <i className="fas fa-home mr-2 text-inherit"></i> Accueil
                   </Button>
                   <h1 className="text-3xl font-black drop-shadow-sm text-inherit">
-                      {t('conjugator.title')}
+                      Conjugueur & Traducteur IA
                   </h1>
-                  <p className="opacity-80 mt-1 text-base text-inherit">Conjuguez n'importe quel verbe instantanément avec l'IA</p>
+                  <p className="opacity-80 mt-1 text-base text-inherit">
+                      {mode === 'conjugate' ? 'Conjuguez n\'importe quel verbe instantanément' : 'Traduisez mots, phrases et expressions'}
+                  </p>
+                  
+                  {/* Mode Selector */}
+                  <div className={`flex gap-1 mt-3 p-1 rounded-xl backdrop-blur-sm shadow-inner border ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'}`}>
+                      <button
+                          onClick={() => {
+                              setMode('conjugate');
+                              setResult(null);
+                              setTranslationResult(null);
+                              setError(null);
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                              mode === 'conjugate'
+                                  ? 'bg-white text-primary shadow-md'
+                                  : 'text-white/70 hover:text-white'
+                          }`}
+                      >
+                          <i className="fas fa-book mr-2"></i>Conjugaison
+                      </button>
+                      <button
+                          onClick={() => {
+                              setMode('translate');
+                              setResult(null);
+                              setTranslationResult(null);
+                              setError(null);
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                              mode === 'translate'
+                                  ? 'bg-white text-primary shadow-md'
+                                  : 'text-white/70 hover:text-white'
+                          }`}
+                      >
+                          <i className="fas fa-language mr-2"></i>Traduction
+                      </button>
+                  </div>
               </div>
 
               <div className="flex gap-2 items-center">
@@ -447,14 +545,16 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
         
 
         <div className="bg-background-secondary p-6 rounded-xl shadow-lg border border-border/50">
-        <form onSubmit={handleConjugate} className="flex flex-col md:flex-row gap-4 items-end">
+        <form onSubmit={mode === 'conjugate' ? handleConjugate : handleTranslate} className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1 w-full">
-                <label className="block text-sm font-medium mb-1 text-text-secondary">{t('conjugator.verbLabel')}</label>
+                <label className="block text-sm font-medium mb-1 text-text-secondary">
+                    {mode === 'conjugate' ? t('conjugator.verbLabel') : 'Texte à traduire'}
+                </label>
                 <input
                     type="text"
                     value={verb}
                     onChange={(e) => setVerb(e.target.value)}
-                    placeholder={t('conjugator.verbPlaceholder')}
+                    placeholder={mode === 'conjugate' ? t('conjugator.verbPlaceholder') : 'Ex: bonjour, merci, comment allez-vous...'}
                     className="w-full p-3 rounded-lg bg-background border border-border focus:ring-2 focus:ring-primary outline-none transition-all text-lg text-text"
                     autoFocus
                 />
@@ -476,7 +576,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
             </div>
 
             <Button 
-                onClick={handleConjugate} 
+                onClick={mode === 'conjugate' ? handleConjugate : handleTranslate} 
                 disabled={loading || !verb.trim()}
                 className="w-full md:w-auto h-[50px] min-w-[140px] relative overflow-hidden"
             >
@@ -486,7 +586,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                         <span className="animate-pulse">Analyse...</span>
                     </div>
                 ) : (
-                    <><i className="fas fa-magic mr-2"></i> {t('conjugator.conjugate')}</>
+                    <><i className={`fas ${mode === 'conjugate' ? 'fa-magic' : 'fa-language'} mr-2`}></i> {mode === 'conjugate' ? t('conjugator.conjugate') : 'Traduire'}</>
                 )}
             </Button>
         </form>
@@ -496,6 +596,100 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
         <div className="bg-red-500/10 border border-red-500/30 text-red-500 p-4 rounded-lg animate-fade-in">
             <i className="fas fa-exclamation-triangle mr-2"></i>
             {error}
+        </div>
+      )}
+
+      {/* Translation Results */}
+      {translationResult && (
+        <div className="space-y-6 animate-slide-up">
+            <div className="bg-background-tertiary p-6 rounded-xl border-l-4 border-primary shadow-sm">
+                <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="flex-1">
+                                <p className="text-sm text-text-muted uppercase tracking-wider mb-1">Original</p>
+                                <h2 className="text-3xl font-bold">{translationResult.original}</h2>
+                            </div>
+                            <i className="fas fa-arrow-right text-2xl text-primary"></i>
+                            <div className="flex-1">
+                                <p className="text-sm text-text-muted uppercase tracking-wider mb-1">{translationResult.language}</p>
+                                <h2 className="text-3xl font-bold text-primary">{translationResult.translated}</h2>
+                                <button onClick={() => speak(translationResult.translated)} className="mt-2 text-sm hover:text-primary transition-colors">
+                                    <i className="fas fa-volume-up mr-1"></i> Écouter
+                                </button>
+                            </div>
+                        </div>
+
+                        {translationResult.context && (
+                            <div className="bg-background/50 p-3 rounded-lg mb-3">
+                                <p className="text-sm font-semibold text-text-secondary mb-1">
+                                    <i className="fas fa-info-circle mr-1"></i> Contexte
+                                </p>
+                                <p className="text-text">{translationResult.context}</p>
+                            </div>
+                        )}
+
+                        {translationResult.examples && translationResult.examples.length > 0 && (
+                            <div className="bg-background/50 p-3 rounded-lg mb-3">
+                                <p className="text-sm font-semibold text-text-secondary mb-2">
+                                    <i className="fas fa-book mr-1"></i> Exemples
+                                </p>
+                                <ul className="space-y-2">
+                                    {translationResult.examples.map((example, idx) => (
+                                        <li key={idx} className="flex items-start gap-2">
+                                            <span className="text-primary font-bold">•</span>
+                                            <span className="text-text">{example}</span>
+                                            <button onClick={() => speak(example)} className="ml-auto hover:text-primary transition-colors">
+                                                <i className="fas fa-volume-up text-xs"></i>
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {translationResult.notes && (
+                            <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
+                                <p className="text-sm font-semibold text-accent mb-1">
+                                    <i className="fas fa-lightbulb mr-1"></i> Notes
+                                </p>
+                                <p className="text-text-secondary text-sm">{translationResult.notes}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Create Flashcard Button */}
+                <div className="mt-4 pt-4 border-t border-border">
+                    <Button
+                        onClick={() => {
+                            const newCard: Flashcard = {
+                                id: uuidv4(),
+                                type: 'classic',
+                                terms: {
+                                    'fr': translationResult.original,
+                                    [language]: translationResult.translated
+                                },
+                                srsData: {
+                                    interval: 0,
+                                    repetitions: 0,
+                                    easeFactor: 2.5,
+                                    nextReview: new Date().toISOString(),
+                                    lastReviewed: new Date().toISOString()
+                                }
+                            };
+                            if (onAddCards) {
+                                onAddCards([newCard]);
+                                showToast('Flashcard créée avec succès !', 'success');
+                            }
+                        }}
+                        className="w-full md:w-auto"
+                    >
+                        <i className="fas fa-plus-circle mr-2"></i>
+                        Créer une flashcard
+                    </Button>
+                </div>
+            </div>
         </div>
       )}
 

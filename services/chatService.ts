@@ -33,44 +33,21 @@ export class ChatService {
             let sessions = JSON.parse(stored);
             if (!Array.isArray(sessions)) return [];
 
-            // Nettoyage et Migration forcée
-            const uniqueSessions: ChatSession[] = [];
-            const seenIds = new Set<string>();
-            let changed = false;
-
-            sessions.forEach((s: any) => {
-                // Reconstruction propre de l'objet
-                let session = {
+            // Sécurité et Stabilisation : On ne touche aux IDs QUE s'ils sont manquants
+            const validSessions = sessions.map((s: any) => {
+                return {
                     ...s,
-                    createdAt: new Date(s.createdAt),
-                    updatedAt: new Date(s.updatedAt),
+                    id: s.id || `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    createdAt: new Date(s.createdAt || Date.now()),
+                    updatedAt: new Date(s.updatedAt || Date.now()),
                     messages: Array.isArray(s.messages) ? s.messages.map((m: any) => ({
                         ...m,
-                        timestamp: new Date(m.timestamp)
+                        timestamp: new Date(m.timestamp || Date.now())
                     })) : []
                 };
-
-                // Sécurité ID : un ID est obligatoire et unique
-                if (!session.id) {
-                    session.id = `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                    changed = true;
-                } else if (seenIds.has(session.id)) {
-                    session.id = `${session.id}-${Math.random().toString(36).substr(2, 5)}`;
-                    changed = true;
-                }
-
-                seenIds.add(session.id);
-                uniqueSessions.push(session);
             });
 
-            uniqueSessions.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-            
-            if (changed) {
-                console.log('Sessions cleaned and migrated: Saving updates to localStorage');
-                this.saveSessions(uniqueSessions);
-            }
-
-            return uniqueSessions;
+            return validSessions.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
         } catch (e) {
             console.error('Error in getSessions', e);
             return [];
@@ -171,23 +148,31 @@ export class ChatService {
      * Ajoute un message à une session
      */
     static addMessage(sessionId: string, role: 'user' | 'assistant', content: string): ChatSession | null {
-        const sessions = this.getSessions();
-        const session = sessions.find(s => s.id === sessionId);
-        
-        if (!session) return null;
+        try {
+            const sessions = this.getSessions();
+            let session = sessions.find(s => s.id === sessionId);
+            
+            if (!session) {
+                console.warn(`Session ${sessionId} non trouvée. Création d'une session de secours.`);
+                return null;
+            }
 
-        const message: ChatMessage = {
-            id: `msg-${Date.now()}-${Math.random()}`,
-            role,
-            content,
-            timestamp: new Date()
-        };
+            const message: ChatMessage = {
+                id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                role,
+                content: content || '...',
+                timestamp: new Date()
+            };
 
-        session.messages.push(message);
-        session.updatedAt = new Date();
+            session.messages.push(message);
+            session.updatedAt = new Date();
 
-        this.saveSessions(sessions);
-        return session;
+            this.saveSessions(sessions);
+            return session;
+        } catch (e) {
+            console.error('Erreur dans addMessage:', e);
+            return null;
+        }
     }
 
     /**
@@ -434,6 +419,7 @@ Réponds UNIQUEMENT avec le JSON.`;
      */
     static async sendMessage(
         sessionId: string,
+        history: ChatMessage[],
         userMessage: string,
         tutorName: string,
         tutorSubject: string,
@@ -442,31 +428,32 @@ Réponds UNIQUEMENT avec le JSON.`;
         apiKey?: string,
         modelName?: string
     ): Promise<string> {
-        // Récupérer l'historique de la conversation
-        const sessions = this.getSessions();
-        let session = sessions.find(s => s.id === sessionId);
-        
-        // Sécurité : Si la session n'est pas trouvée (e.g. ID vient de changer)
-        // on essaie de trouver par tuteur pour ne pas perdre le fil
-        if (!session) {
-            session = sessions.find(s => s.tutorName === tutorName && s.tutorSubject === tutorSubject);
-        }
-
-        let conversationHistory = session?.messages || [];
-
-        // Assurer que le message actuel est dans l'historique envoyé à l'IA
-        if (conversationHistory.length === 0 || conversationHistory[conversationHistory.length-1].content !== userMessage) {
-            conversationHistory = [...conversationHistory, {
-                id: 'temp-' + Date.now(),
-                role: 'user',
-                content: userMessage,
-                timestamp: new Date()
-            }];
-        }
-
+        // Validation CRITIQUE de la clé API
         const cleanKey = (apiKey || '').trim();
-        if (provider !== 'local' && (!cleanKey || cleanKey === 'undefined' || cleanKey === 'null')) {
-            throw new Error(`La clé API pour ${provider} est vide ou invalide ("${cleanKey}").`);
+        if (provider !== 'local' && (!cleanKey || cleanKey === 'undefined' || cleanKey === 'null' || cleanKey.length < 5)) {
+            throw new Error(`Clé API ${provider} manquante ou invalide. Veuillez la vérifier dans les paramètres.`);
+        }
+
+        let conversationHistory = [...history];
+
+        // Sécurité : S'assurer que le dernier message de l'utilisateur est présent
+        if (conversationHistory.length === 0 || 
+            (conversationHistory[conversationHistory.length - 1].role !== 'user') ||
+            (conversationHistory[conversationHistory.length - 1].content !== userMessage && conversationHistory.length < 2)) {
+            
+            const alreadyHasMessage = conversationHistory.some(m => m.content === userMessage && m.role === 'user');
+            if (!alreadyHasMessage) {
+                conversationHistory.push({
+                    id: 'temp-' + Date.now(),
+                    role: 'user',
+                    content: userMessage,
+                    timestamp: new Date()
+                });
+            }
+        }
+
+        if (conversationHistory.length === 0) {
+            throw new Error("Impossible d'envoyer un message vide. Veuillez réessayer.");
         }
 
         // Construire le prompt système du tuteur
@@ -500,13 +487,13 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
             if (provider === 'gemini') {
                 response = await this.callGemini(systemPrompt, conversationHistory, cleanKey, modelName);
             } else if (provider === 'openai') {
-                response = await this.callOpenAI(systemPrompt, conversationHistory, apiKey!, modelName);
+                response = await this.callOpenAI(systemPrompt, conversationHistory, cleanKey, modelName);
             } else if (provider === 'anthropic') {
-                response = await this.callAnthropic(systemPrompt, conversationHistory, apiKey!, modelName);
+                response = await this.callAnthropic(systemPrompt, conversationHistory, cleanKey, modelName);
             } else if (provider === 'mistral') {
-                response = await this.callMistral(systemPrompt, conversationHistory, apiKey!, modelName);
+                response = await this.callMistral(systemPrompt, conversationHistory, cleanKey, modelName);
             } else if (provider === 'local') {
-                response = await this.callLocal(systemPrompt, conversationHistory, apiKey || '', modelName);
+                response = await this.callLocal(systemPrompt, conversationHistory, cleanKey || '', modelName);
             } else {
                 throw new Error(`Provider ${provider} non supporté`);
             }
@@ -564,36 +551,57 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
         const model = modelName || 'gemini-1.5-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-        // Sécurité : Gemini REQUIERT que contents ne soit pas vide
-        if (history.length === 0) {
-            throw new Error("L'historique de conversation est vide. Impossible d'envoyer la requête à Gemini.");
-        }
+        // Nettoyer l'historique pour Gemini (alternance stricte et rôles corrects)
+        const contents: any[] = [];
+        let lastRole = '';
 
-        // Utiliser system_instruction pour Gemini si disponible
+        history.forEach(msg => {
+            const role = msg.role === 'user' ? 'user' : 'model';
+            if (role === lastRole) {
+                // Fusionner si même rôle consécutif (sécurité Gemini)
+                contents[contents.length - 1].parts[0].text += '\n\n' + msg.content;
+            } else {
+                contents.push({
+                    role,
+                    parts: [{ text: msg.content }]
+                });
+                lastRole = role;
+            }
+        });
+
         const payload: any = {
-            contents: history.map(msg => ({
-                role: msg.role === 'user' ? 'user' : 'model',
-                parts: [{ text: msg.content }]
-            })),
+            contents,
             system_instruction: {
                 parts: [{ text: systemPrompt }]
             }
         };
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Gemini Error Response:', errorText);
-            throw new Error(`Gemini API Error: ${errorText}`);
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Gemini API Error: ${errorText}`);
+            }
+
+            const data = await response.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Désolé, je n\'ai pas pu générer de réponse.';
+        } catch (err: any) {
+            if (err.name === 'AbortError') {
+                throw new Error("L'IA est trop longue à répondre. Vérifiez votre connexion ou réessayez.");
+            }
+            throw err;
         }
-
-        const data = await response.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Désolé, je n\'ai pas pu générer de réponse.';
     }
 
     private static async callOpenAI(

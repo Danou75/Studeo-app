@@ -344,6 +344,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
             const response = await ChatService.sendMessage(
                 currentSession.id,
+                updatedSession ? updatedSession.messages : currentSession.messages,
                 userMessage,
                 currentSession.tutorName,
                 currentSession.tutorSubject,

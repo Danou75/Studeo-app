@@ -50,10 +50,12 @@ export class ChatService {
                     })) : []
                 };
 
-                // Double sécurité : si par miracle le random collisionne, on régénère encore
-                while (seenIds.has(session.id)) {
-                    const extraRandom = Math.random().toString(36).substr(2, 5);
-                    session.id = `${session.id}-${extraRandom}`;
+                // Sécurité ID : un ID est obligatoire et unique
+                if (!session.id) {
+                    session.id = `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    changed = true;
+                } else if (seenIds.has(session.id)) {
+                    session.id = `${session.id}-${Math.random().toString(36).substr(2, 5)}`;
                     changed = true;
                 }
 
@@ -432,6 +434,7 @@ Réponds UNIQUEMENT avec le JSON.`;
      */
     static async sendMessage(
         sessionId: string,
+        userMessage: string,
         tutorName: string,
         tutorSubject: string,
         tutorStyle: string,
@@ -441,11 +444,25 @@ Réponds UNIQUEMENT avec le JSON.`;
     ): Promise<string> {
         // Récupérer l'historique de la conversation
         const sessions = this.getSessions();
-        const session = sessions.find(s => s.id === sessionId);
+        let session = sessions.find(s => s.id === sessionId);
         
-        // Sécurité : Si la session n'est pas trouvée (e.g. ID vient de changer ou pas encore sauvé)
-        // on essaie de charger l'historique par tuteur ou on crée une session temporaire
+        // Sécurité : Si la session n'est pas trouvée (e.g. ID vient de changer)
+        // on essaie de trouver par tuteur pour ne pas perdre le fil
+        if (!session) {
+            session = sessions.find(s => s.tutorName === tutorName && s.tutorSubject === tutorSubject);
+        }
+
         let conversationHistory = session?.messages || [];
+
+        // Assurer que le message actuel est dans l'historique envoyé à l'IA
+        if (conversationHistory.length === 0 || conversationHistory[conversationHistory.length-1].content !== userMessage) {
+            conversationHistory = [...conversationHistory, {
+                id: 'temp-' + Date.now(),
+                role: 'user',
+                content: userMessage,
+                timestamp: new Date()
+            }];
+        }
 
         if (!apiKey && provider !== 'local') {
             throw new Error('Clé API manquante');

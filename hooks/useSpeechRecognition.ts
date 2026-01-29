@@ -125,19 +125,29 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
         return;
       }
       
-      // Gérer spécifiquement l'erreur de service non autorisé (souvent lié à la Dictée macOS désactivée)
+      // Gérer spécifiquement l'erreur de service non autorisé (souvent lié à la Dictée macOS/iOS désactivée)
       if (event.error === 'service-not-allowed') {
         const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
-        setError(isTauri 
-          ? 'Service de dictée bloqué. Vérifiez que la "Dictée" est activée dans Réglages Système > Clavier.' 
-          : 'Service de dictée non autorisé par le navigateur.'
-        );
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (isTauri) {
+          setError('Service de dictée bloqué. Vérifiez que la "Dictée" est activée dans Réglages Système > Clavier.');
+        } else if (isIOS) {
+          setError('Service de dictée non autorisé. Activez la "Dictée" dans les Réglages de l\'iPad (Général > Clavier).');
+        } else {
+          setError('Service de dictée non autorisé par le navigateur ou désactivé sur votre système.');
+        }
+
         setStatus('error');
         isListeningRef.current = false;
         
         setTimeout(() => {
           if (isTauri) {
             showToast('🎙️ SERVICE DE DICTÉE DÉSACTIVÉ. Activez "Dictée" dans Réglages Système > Clavier.', 'error', 10000);
+          } else if (isIOS) {
+            showToast('🎙️ DICTÉE IPAD DÉSACTIVÉE. Allez dans Réglages > Général > Clavier et activez "Activer la Dictée".', 'error', 15000);
+          } else {
+            showToast('🎙️ Service de dictée non autorisé. Vérifiez les paramètres de votre navigateur ou de votre système.', 'error', 8000);
           }
         }, 100);
         return;

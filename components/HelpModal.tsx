@@ -88,14 +88,14 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   const renderOverview = () => (
     <>
       {/* Header */}
-      <div className="p-6 border-b border-border flex justify-between items-center bg-background-tertiary">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-            <i className="fas fa-question-circle text-xl"></i>
+      <div className="p-4 md:p-6 border-b border-border flex justify-between items-center bg-background-tertiary">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
+            <i className="fas fa-question-circle text-lg md:text-xl"></i>
           </div>
           <div>
-            <h2 className="text-xl font-bold text-text">{t('helpCenter.title')}</h2>
-            <p className="text-xs text-text-muted">{t('helpCenter.subtitle')}</p>
+            <h2 className="text-lg md:text-xl font-bold text-text">{t('helpCenter.title')}</h2>
+            <p className="text-[10px] md:text-xs text-text-muted">{t('helpCenter.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -173,21 +173,21 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     return (
       <>
         {/* Header */}
-        <div className="p-6 border-b border-border bg-background-tertiary">
+        <div className="p-4 md:p-6 border-b border-border bg-background-tertiary">
           <button 
             onClick={() => setSelectedSection(null)}
-            className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-4"
+            className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-2 md:mb-4"
           >
             <i className="fas fa-arrow-left"></i>
-            <span className="text-sm font-medium">{t('helpCenter.backToOverview')}</span>
+            <span className="text-xs md:text-sm font-medium">{t('helpCenter.backToOverview')}</span>
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-              <i className={`fas ${section.icon} text-2xl`}></i>
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20 shrink-0">
+              <i className={`fas ${section.icon} text-xl md:text-2xl`}></i>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-text">{section.title}</h2>
-              <p className="text-sm text-text-muted mt-1">{section.content}</p>
+            <div className="min-w-0">
+              <h2 className="text-lg md:text-2xl font-bold text-text truncate">{section.title}</h2>
+              <p className="text-xs md:text-sm text-text-muted mt-0.5 line-clamp-1 md:line-clamp-none">{section.content}</p>
             </div>
           </div>
         </div>
@@ -344,22 +344,22 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     return (
       <div className="flex flex-col h-[85vh] md:h-[80vh] w-full overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-border bg-background-tertiary shrink-0">
+        <div className="p-4 md:p-6 border-b border-border bg-background-tertiary shrink-0">
           <button 
             onClick={() => setShowUserGuide(false)}
-            className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-4"
+            className="flex items-center gap-2 text-primary hover:text-primary-dark transition-colors mb-2 md:mb-4"
           >
             <i className="fas fa-arrow-left"></i>
-            <span className="text-sm font-medium">{t('helpCenter.userGuide.backToAide')}</span>
+            <span className="text-xs md:text-sm font-medium">{t('helpCenter.userGuide.backToAide')}</span>
           </button>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                <i className="fas fa-book text-2xl"></i>
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20 shrink-0">
+                <i className="fas fa-book text-xl md:text-2xl"></i>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-text">{t('helpCenter.userGuide.fullGuide')}</h2>
-                <p className="text-sm text-text-muted mt-1">{t('helpCenter.userGuide.studeoDoc')}</p>
+              <div className="min-w-0">
+                <h2 className="text-lg md:text-2xl font-bold text-text truncate">{t('helpCenter.userGuide.fullGuide')}</h2>
+                <p className="text-xs md:text-sm text-text-muted mt-0.5 line-clamp-1 md:line-clamp-none">{t('helpCenter.userGuide.studeoDoc')}</p>
               </div>
             </div>
           </div>

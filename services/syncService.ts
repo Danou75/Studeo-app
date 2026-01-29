@@ -182,5 +182,52 @@ export const syncService = {
             source: l.source,
             createdAt: l.created_at
         })) as Lesson[];
+    },
+    /**
+     * Synchronise les sessions de chat
+     */
+    async syncChatSessions(userId: string, sessions: any[]) {
+        if (!sessions || sessions.length === 0) return true;
+        
+        const entries = sessions.map(s => ({
+            id: s.id,
+            user_id: userId,
+            tutor_name: s.tutorName,
+            tutor_subject: s.tutorSubject,
+            messages: s.messages,
+            created_at: s.createdAt instanceof Date ? s.createdAt.toISOString() : s.createdAt,
+            updated_at: s.updatedAt instanceof Date ? s.updatedAt.toISOString() : s.updatedAt
+        }));
+
+        const { error } = await supabase
+            .from('chat_sessions')
+            .upsert(entries);
+        
+        if (error) console.error('Sync Chat Error:', error);
+        return !error;
+    },
+
+    /**
+     * Récupère les sessions de chat distantes
+     */
+    async getChatSessions(userId: string) {
+        const { data, error } = await supabase
+            .from('chat_sessions')
+            .select('*')
+            .eq('user_id', userId);
+        
+        if (error) {
+            console.error('Get Chat Error:', error);
+            return null;
+        }
+
+        return data.map(s => ({
+            id: s.id,
+            tutorName: s.tutor_name,
+            tutorSubject: s.tutor_subject,
+            messages: s.messages,
+            createdAt: new Date(s.created_at),
+            updatedAt: new Date(s.updated_at)
+        }));
     }
 };

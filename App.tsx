@@ -46,6 +46,7 @@ import { Screen } from "./types";
 import { ConfirmationProvider } from "./contexts/ConfirmationContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { migrateLocalStorage } from "./utils/migration";
+import { ChatService } from "./services/chatService";
 
 
 const AppContent: React.FC = () => {
@@ -124,6 +125,12 @@ const AppContent: React.FC = () => {
 
              // 4. Sync Lessons
              await syncService.syncSavedLessons(user.id, coordinator.savedLessons);
+
+             // 5. Sync Chat
+             const chatSessions = ChatService.getSessions();
+             if (chatSessions.length > 0) {
+                 await syncService.syncChatSessions(user.id, chatSessions);
+             }
              
              console.log("☁️ Cloud Sync: OK");
          } catch (e) {
@@ -134,6 +141,7 @@ const AppContent: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [
       user, 
+      screen,
       flashcards.flashcardSets, 
       coordinator.studyPrograms, 
       coordinator.savedLessons,
@@ -212,6 +220,24 @@ const AppContent: React.FC = () => {
                       );
                   });
               }
+          }
+          
+          // 5. Chat Sessions
+          const cloudChat = await syncService.getChatSessions(user.id);
+          if (cloudChat && cloudChat.length > 0) {
+              const localSessions = ChatService.getSessions();
+              const merged = [...localSessions];
+              
+              cloudChat.forEach(cs => {
+                  const existingIndex = merged.findIndex(m => m.id === cs.id);
+                  if (existingIndex === -1) {
+                      merged.push(cs);
+                  } else if (new Date(cs.updatedAt).getTime() > new Date(merged[existingIndex].updatedAt).getTime()) {
+                      merged[existingIndex] = cs;
+                  }
+              });
+              
+              ChatService.saveSessions(merged);
           }
 
           if (!silent) coordinator.showToast("☁️ Données cloud récupérées !", "success");

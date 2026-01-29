@@ -444,7 +444,6 @@ Réponds UNIQUEMENT avec le JSON.`;
      */
     static async sendMessage(
         sessionId: string,
-        userMessage: string,
         tutorName: string,
         tutorSubject: string,
         tutorStyle: string,
@@ -490,15 +489,15 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
             let response = '';
 
             if (provider === 'gemini') {
-                response = await this.callGemini(systemPrompt, conversationHistory, userMessage, apiKey!, modelName);
+                response = await this.callGemini(systemPrompt, conversationHistory, apiKey!, modelName);
             } else if (provider === 'openai') {
-                response = await this.callOpenAI(systemPrompt, conversationHistory, userMessage, apiKey!, modelName);
+                response = await this.callOpenAI(systemPrompt, conversationHistory, apiKey!, modelName);
             } else if (provider === 'anthropic') {
-                response = await this.callAnthropic(systemPrompt, conversationHistory, userMessage, apiKey!, modelName);
+                response = await this.callAnthropic(systemPrompt, conversationHistory, apiKey!, modelName);
             } else if (provider === 'mistral') {
-                response = await this.callMistral(systemPrompt, conversationHistory, userMessage, apiKey!, modelName);
+                response = await this.callMistral(systemPrompt, conversationHistory, apiKey!, modelName);
             } else if (provider === 'local') {
-                response = await this.callLocal(systemPrompt, conversationHistory, userMessage, apiKey || '', modelName);
+                response = await this.callLocal(systemPrompt, conversationHistory, apiKey || '', modelName);
             } else {
                 throw new Error(`Provider ${provider} non supporté`);
             }
@@ -524,19 +523,24 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
         apiUrl?: string;
     }): Promise<string> {
         const { provider, apiKey, accessToken, modelName, prompt, systemPrompt, apiUrl } = params;
-        const history: ChatMessage[] = [];
+        const history: ChatMessage[] = [{
+            id: 'temp',
+            role: 'user',
+            content: prompt,
+            timestamp: new Date()
+        }];
         const sysPrompt = systemPrompt || "Tu es une IA utile.";
 
         if (provider === 'gemini') {
-            return this.callGemini(sysPrompt, history, prompt, (apiKey || accessToken)!, modelName);
+            return this.callGemini(sysPrompt, history, (apiKey || accessToken)!, modelName);
         } else if (provider === 'openai') {
-            return this.callOpenAI(sysPrompt, history, prompt, (apiKey || accessToken)!, modelName);
+            return this.callOpenAI(sysPrompt, history, (apiKey || accessToken)!, modelName);
         } else if (provider === 'anthropic') {
-            return this.callAnthropic(sysPrompt, history, prompt, (apiKey || accessToken)!, modelName);
+            return this.callAnthropic(sysPrompt, history, (apiKey || accessToken)!, modelName);
         } else if (provider === 'mistral') {
-            return this.callMistral(sysPrompt, history, prompt, (apiKey || accessToken)!, modelName);
+            return this.callMistral(sysPrompt, history, (apiKey || accessToken)!, modelName);
         } else if (provider === 'local') {
-            return this.callLocal(sysPrompt, history, prompt, apiUrl || 'http://localhost:11434/v1', modelName);
+            return this.callLocal(sysPrompt, history, apiUrl || 'http://localhost:11434/v1', modelName);
         } else {
             throw new Error(`Provider ${provider} non supporté`);
         }
@@ -545,41 +549,33 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
     private static async callGemini(
         systemPrompt: string,
         history: ChatMessage[],
-        userMessage: string,
         apiKey: string,
         modelName?: string
     ): Promise<string> {
         const model = modelName || 'gemini-1.5-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-        // Construire l'historique pour Gemini
-        const contents = [
-            {
-                role: 'user',
-                parts: [{ text: systemPrompt }]
-            },
-            {
-                role: 'model',
-                parts: [{ text: 'Compris. Je suis prêt à t\'aider dans ton apprentissage !' }]
-            },
-            ...history.map(msg => ({
+        // Utiliser system_instruction pour Gemini si disponible, sinon fallback sur le hack de l'historique
+        const payload: any = {
+            contents: history.map(msg => ({
                 role: msg.role === 'user' ? 'user' : 'model',
                 parts: [{ text: msg.content }]
             })),
-            {
-                role: 'user',
-                parts: [{ text: userMessage }]
+            system_instruction: {
+                parts: [{ text: systemPrompt }]
             }
-        ];
+        };
 
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents })
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
-            throw new Error(`Gemini API Error: ${await response.text()}`);
+            const errorText = await response.text();
+            console.error('Gemini Error Response:', errorText);
+            throw new Error(`Gemini API Error: ${errorText}`);
         }
 
         const data = await response.json();
@@ -589,7 +585,6 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
     private static async callOpenAI(
         systemPrompt: string,
         history: ChatMessage[],
-        userMessage: string,
         apiKey: string,
         modelName?: string
     ): Promise<string> {
@@ -601,8 +596,7 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
             ...history.map(msg => ({
                 role: msg.role,
                 content: msg.content
-            })),
-            { role: 'user', content: userMessage }
+            }))
         ];
 
         const response = await fetch(url, {
@@ -625,20 +619,16 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
     private static async callAnthropic(
         systemPrompt: string,
         history: ChatMessage[],
-        userMessage: string,
         apiKey: string,
         modelName?: string
     ): Promise<string> {
         const model = modelName || 'claude-3-5-sonnet-20240620';
         const url = 'https://api.anthropic.com/v1/messages';
 
-        const messages = [
-            ...history.map(msg => ({
-                role: msg.role,
-                content: msg.content
-            })),
-            { role: 'user', content: userMessage }
-        ];
+        const messages = history.map(msg => ({
+            role: msg.role,
+            content: msg.content
+        }));
 
         const response = await fetch(url, {
             method: 'POST',
@@ -666,7 +656,6 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
     private static async callMistral(
         systemPrompt: string,
         history: ChatMessage[],
-        userMessage: string,
         apiKey: string,
         modelName?: string
     ): Promise<string> {
@@ -678,8 +667,7 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
             ...history.map(msg => ({
                 role: msg.role,
                 content: msg.content
-            })),
-            { role: 'user', content: userMessage }
+            }))
         ];
 
         const response = await fetch(url, {
@@ -706,7 +694,6 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
     private static async callLocal(
         systemPrompt: string,
         history: ChatMessage[],
-        userMessage: string,
         apiUrl: string,
         modelName?: string
     ): Promise<string> {
@@ -725,8 +712,7 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
             ...history.map(msg => ({
                 role: msg.role,
                 content: msg.content
-            })),
-            { role: 'user', content: userMessage }
+            }))
         ];
 
         const response = await fetch(endpoint, {

@@ -574,7 +574,7 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                             {/* Pagination - Sous Onglets */}
                             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-8 pt-4 border-t border-gray-100 dark:border-gray-600">
                                 {/* Bouton Progrès (Relocalisé ici pour Arts & Création) */}
-                                {(selectedCategory === 'arts' || selectedCategory === 'practical') ? (
+                                {selectedCategory === 'arts' ? (
                                     <button
                                         onClick={onNavigateToProgress}
                                         className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-primary/20 hover:scale-105 transition-all text-sm"

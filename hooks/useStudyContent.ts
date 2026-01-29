@@ -153,6 +153,7 @@ export const useStudyContent = () => {
         currentLesson,
         setCurrentLesson,
         savedLessons,
+        setSavedLessons,
         studyPrograms,
         setStudyPrograms,
         curriculumSuggestions,

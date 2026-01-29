@@ -633,6 +633,7 @@ export const useAppCoordinator = () => {
         // Study Content (delegated)
         currentLesson: studyContent.currentLesson,
         savedLessons: studyContent.savedLessons,
+        setSavedLessons: studyContent.setSavedLessons,
         studyPrograms: studyContent.studyPrograms,
         setStudyPrograms: studyContent.setStudyPrograms,
         curriculumSuggestions: studyContent.curriculumSuggestions,

@@ -121,6 +121,9 @@ const AppContent: React.FC = () => {
 
              // 3. Sync Programs
              await syncService.syncStudyPrograms(user.id, coordinator.studyPrograms);
+
+             // 4. Sync Lessons
+             await syncService.syncSavedLessons(user.id, coordinator.savedLessons);
              
              console.log("☁️ Cloud Sync: OK");
          } catch (e) {
@@ -133,6 +136,7 @@ const AppContent: React.FC = () => {
       user, 
       flashcards.flashcardSets, 
       coordinator.studyPrograms, 
+      coordinator.savedLessons,
       coordinator.curriculumSuggestions, 
       coordinator.librarySuggestions,
       theme.themeMode,
@@ -169,6 +173,12 @@ const AppContent: React.FC = () => {
           const cloudPrograms = await syncService.getStudyPrograms(user.id);
           if (cloudPrograms && cloudPrograms.length > 0) {
               if (coordinator.setStudyPrograms) coordinator.setStudyPrograms(cloudPrograms);
+          }
+
+          // 4. Lessons
+          const cloudLessons = await syncService.getSavedLessons(user.id);
+          if (cloudLessons && cloudLessons.length > 0) {
+              if (coordinator.setSavedLessons) coordinator.setSavedLessons(cloudLessons);
           }
 
           if (!silent) coordinator.showToast("☁️ Données cloud récupérées !", "success");

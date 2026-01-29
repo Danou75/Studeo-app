@@ -1,5 +1,5 @@
 import { supabase } from '../services/supabaseClient';
-import { StudyProgram } from '../types';
+import { StudyProgram, Lesson } from '../types';
 
 export const syncService = {
     /**
@@ -132,5 +132,55 @@ export const syncService = {
             lastActiveAt: p.last_active_at,
             createdAt: p.created_at || p.last_active_at // Fallback
         })) as StudyProgram[];
+    },
+
+    /**
+     * Synchronise les cours sauvegardés
+     */
+    async syncSavedLessons(userId: string, lessons: Lesson[]) {
+        const entries = lessons.map(l => ({
+            id: l.id,
+            user_id: userId,
+            topic: l.topic,
+            tutor_id: l.tutorId,
+            content: l.content,
+            flashcards: l.flashcards,
+            exercises: l.exercises,
+            source: l.source,
+            created_at: l.createdAt || new Date().toISOString()
+        }));
+
+        const { error } = await supabase
+            .from('saved_lessons')
+            .upsert(entries);
+        
+        if (error) console.error('Sync Lessons Error:', error);
+        return !error;
+    },
+
+    /**
+     * Récupère les cours distants
+     */
+    async getSavedLessons(userId: string) {
+        const { data, error } = await supabase
+            .from('saved_lessons')
+            .select('*')
+            .eq('user_id', userId);
+        
+        if (error) {
+            console.error('Get Lessons Error:', error);
+            return null;
+        }
+
+        return data.map(l => ({
+            id: l.id,
+            topic: l.topic,
+            tutorId: l.tutor_id,
+            content: l.content,
+            flashcards: l.flashcards,
+            exercises: l.exercises,
+            source: l.source,
+            createdAt: l.created_at
+        })) as Lesson[];
     }
 };

@@ -176,14 +176,6 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                         
                         <div className="w-auto flex justify-end gap-2">
                             <button
-                                onClick={onNavigateToProgress}
-                                className={`hover:opacity-80 rounded-lg px-4 py-2 transition-all flex items-center gap-2 font-semibold ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'}`}
-                                title="Mes Progrès"
-                            >
-                                <i className="fas fa-chart-line text-xl text-inherit"></i>
-                                <span className="hidden md:inline text-inherit">Mes Progrès</span>
-                            </button>
-                            <button
                                 onClick={onNavigateToSettings}
                                 className={`hover:opacity-80 rounded-lg px-3 py-2 transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'}`}
                                 title={t('common.settings')}
@@ -200,7 +192,7 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                         <button
                             key={cat.id}
                             onClick={() => onSelectCategory(cat.id)}
-                            className={`flex-1 py-3 md:py-4 px-4 md:px-6 font-semibold transition-all whitespace-nowrap overflow-hidden text-ellipsis ${
+                            className={`flex-1 py-3 md:py-4 px-3 md:px-6 font-semibold transition-all whitespace-nowrap flex items-center justify-center min-w-[120px] md:min-w-0 ${
                                 selectedCategory === cat.id
                                     ? 'bg-white dark:bg-gray-800 text-primary border-b-2 border-primary'
                                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -580,8 +572,21 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                             </div>
 
                             {/* Pagination - Sous Onglets */}
-                            {totalPages > 1 && (
-                                <div className="flex justify-center border-t border-gray-100 dark:border-gray-600 pt-4 mt-6">
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-8 pt-4 border-t border-gray-100 dark:border-gray-600">
+                                {/* Bouton Progrès (Relocalisé ici pour Arts & Création) */}
+                                {(selectedCategory === 'arts' || selectedCategory === 'practical') ? (
+                                    <button
+                                        onClick={onNavigateToProgress}
+                                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-primary/20 hover:scale-105 transition-all text-sm"
+                                    >
+                                        <i className="fas fa-chart-line"></i>
+                                        Mes Progrès Créatifs
+                                    </button>
+                                ) : (
+                                    <div className="hidden md:block w-40"></div>
+                                )}
+
+                                {totalPages > 1 && (
                                     <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1">
                                         {Array.from({ length: totalPages }).map((_, i) => (
                                             <button
@@ -597,8 +602,10 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                             </button>
                                         ))}
                                     </div>
-                                </div>
-                            )}
+                                )}
+                                
+                                <div className="hidden md:block w-40"></div>
+                            </div>
                         </div>
                     )}
                 </div>

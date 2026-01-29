@@ -166,19 +166,52 @@ const AppContent: React.FC = () => {
           // 2. Flashcards
           const cloudSets = await syncService.getFlashcards(user.id);
           if (cloudSets && Object.keys(cloudSets).length > 0) {
-              flashcards.setFlashcardSets(cloudSets);
+              flashcards.setFlashcardSets(prev => {
+                  const merged = { ...prev };
+                  Object.entries(cloudSets).forEach(([setName, cards]) => {
+                      // Si le set n'existe pas ou si le set distant a plus de cartes/est différent
+                      if (!merged[setName] || merged[setName].length < (cards as any[]).length) {
+                          merged[setName] = cards as any[];
+                      }
+                  });
+                  return merged;
+              });
           }
 
           // 3. Programmes d'étude
           const cloudPrograms = await syncService.getStudyPrograms(user.id);
           if (cloudPrograms && cloudPrograms.length > 0) {
-              if (coordinator.setStudyPrograms) coordinator.setStudyPrograms(cloudPrograms);
+              if (coordinator.setStudyPrograms) {
+                  coordinator.setStudyPrograms(prev => {
+                      const map = new Map(prev.map(p => [p.id, p]));
+                      cloudPrograms.forEach(cp => {
+                          const existing = map.get(cp.id);
+                          if (!existing || cp.lastActiveAt > existing.lastActiveAt) {
+                              map.set(cp.id, cp);
+                          }
+                      });
+                      return Array.from(map.values());
+                  });
+              }
           }
 
           // 4. Lessons
           const cloudLessons = await syncService.getSavedLessons(user.id);
           if (cloudLessons && cloudLessons.length > 0) {
-              if (coordinator.setSavedLessons) coordinator.setSavedLessons(cloudLessons);
+              if (coordinator.setSavedLessons) {
+                  coordinator.setSavedLessons(prev => {
+                      const map = new Map(prev.map(l => [l.id, l]));
+                      cloudLessons.forEach(cl => {
+                          if (!map.has(cl.id)) {
+                              map.set(cl.id, cl);
+                          }
+                      });
+                      // On garde l'ordre antichronologique (les plus récents en premier)
+                      return Array.from(map.values()).sort((a, b) => 
+                        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+                      );
+                  });
+              }
           }
 
           if (!silent) coordinator.showToast("☁️ Données cloud récupérées !", "success");

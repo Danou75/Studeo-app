@@ -50,18 +50,6 @@ export class ChatService {
                     })) : []
                 };
 
-                // Vérification ID : format et unicité
-                // Doit avoir au moins 2 tirets (format new) et ne pas être déjà vu
-                const dashCount = (session.id && session.id.match(/-/g) || []).length;
-                
-                if (!session.id || dashCount < 2 || seenIds.has(session.id)) {
-                    // Régénération d'un ID unique
-                    // Ajout d'un random suffixe + index pour garantir l'unicité absolue même dans la boucle
-                    const randomSuffix = Math.random().toString(36).substr(2, 9);
-                    session.id = `chat-${Date.now()}-${randomSuffix}`;
-                    changed = true;
-                }
-
                 // Double sécurité : si par miracle le random collisionne, on régénère encore
                 while (seenIds.has(session.id)) {
                     const extraRandom = Math.random().toString(36).substr(2, 5);
@@ -454,7 +442,10 @@ Réponds UNIQUEMENT avec le JSON.`;
         // Récupérer l'historique de la conversation
         const sessions = this.getSessions();
         const session = sessions.find(s => s.id === sessionId);
-        const conversationHistory = session?.messages || [];
+        
+        // Sécurité : Si la session n'est pas trouvée (e.g. ID vient de changer ou pas encore sauvé)
+        // on essaie de charger l'historique par tuteur ou on crée une session temporaire
+        let conversationHistory = session?.messages || [];
 
         if (!apiKey && provider !== 'local') {
             throw new Error('Clé API manquante');
@@ -555,7 +546,12 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
         const model = modelName || 'gemini-1.5-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-        // Utiliser system_instruction pour Gemini si disponible, sinon fallback sur le hack de l'historique
+        // Sécurité : Gemini REQUIERT que contents ne soit pas vide
+        if (history.length === 0) {
+            throw new Error("L'historique de conversation est vide. Impossible d'envoyer la requête à Gemini.");
+        }
+
+        // Utiliser system_instruction pour Gemini si disponible
         const payload: any = {
             contents: history.map(msg => ({
                 role: msg.role === 'user' ? 'user' : 'model',

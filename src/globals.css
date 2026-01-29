@@ -4,6 +4,7 @@
 
 html, body, #root {
   height: 100% !important;
+  height: 100vh !important; /* Fallback pour anciens navigateurs */
   height: 100dvh !important;
   width: 100% !important;
   margin: 0 !important;

@@ -726,7 +726,7 @@ const AppContent: React.FC = () => {
   return (
     <div 
       className={`h-full w-full overflow-hidden flex flex-col font-sans transition-colors duration-500 ${theme.themeStyle === 'apple' ? 'bg-[#E8E8ED] dark:bg-black' : 'bg-gray-100 dark:bg-gray-900'}`}
-      style={{ height: '100dvh' }}
+      style={{ height: '100vh' }}
     >
         <main className={`mx-auto transition-all duration-500 relative flex flex-col overflow-hidden ${
           theme.themeStyle === 'apple' 

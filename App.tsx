@@ -103,6 +103,7 @@ const AppContent: React.FC = () => {
 
   const isInitialSyncProgress = React.useRef(false);
   const [canAutoPush, setCanAutoPush] = React.useState(false);
+  const [cloudStatus, setCloudStatus] = React.useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
   const userHasModified = React.useRef(false);
 
   // Verrou au démarrage DUR : On bloque l'auto-push pendant 60s sur mobile, 30s sur desktop
@@ -124,6 +125,7 @@ const AppContent: React.FC = () => {
   const pushCloudData = async (silent = false) => {
     if (!user || isInitialSyncProgress.current) return;
     isInitialSyncProgress.current = true;
+    setCloudStatus('syncing');
     const deviceName = getDeviceName();
     
     if (!silent) coordinator.showToast(`☁️ Sauvegarde en cours depuis "${deviceName}"...`, "info", 2000);
@@ -172,10 +174,14 @@ const AppContent: React.FC = () => {
         
         console.log("☁️ Cloud Push: OK");
         setCanAutoPush(true); // Une fois qu'on a poussé ou tiré manuellement, on peut auto-sync
+        setCloudStatus('synced');
+        setTimeout(() => setCloudStatus('idle'), 5000);
+        
         if (!silent) coordinator.showToast(`✅ Sauvegardé avec succès ! (Appareil: ${deviceName})`, "success", 3000);
         return true;
     } catch (e: any) {
         console.error("☁️ Cloud Push Error:", e);
+        setCloudStatus('error');
         if (!silent) {
             const msg = e.message || "Erreur de sauvegarde cloud";
             coordinator.showToast(`❌ ${msg}`, "error", 5000);
@@ -246,6 +252,7 @@ const AppContent: React.FC = () => {
   const loadCloudData = async (silent = false, force = false) => {
       if (!user || isInitialSyncProgress.current) return;
       isInitialSyncProgress.current = true;
+      setCloudStatus('syncing');
       
       // if (!silent) coordinator.showToast("☁️ Synchronisation Cloud en cours...", "info", 1000); // Shorter or removed
       
@@ -397,11 +404,17 @@ const AppContent: React.FC = () => {
               delete (window as any)._lastSyncMsg;
           }
           (window as any)._initialPullDone = true;
+          setCloudStatus('synced');
+          setTimeout(() => setCloudStatus('idle'), 5000);
+          
           setCanAutoPush(true); // Après un pull réussi, on peut auto-sync les futurs changements
           userHasModified.current = false; // On reset car ce qu'on a vient du cloud
-      } catch (e) {
-          console.error("Load Cloud Error:", e);
-          if (!silent) coordinator.showToast("Erreur de récupération cloud", "error");
+      } catch (e: any) {
+          console.error("☁️ Cloud Pull Error:", e);
+          setCloudStatus('error');
+          if (!silent) {
+            coordinator.showToast("Erreur de récupération cloud", "error");
+          }
       } finally {
           // IMPORTANT: Après un pull (chargement), on verrouille toute sauvegarde sortante 
           // pendant 10 secondes pour laisser le temps au state React de se stabiliser
@@ -497,6 +510,7 @@ const AppContent: React.FC = () => {
             onShowHelp={() => setIsHelpModalOpen(true)}
             onOpenAuth={handleOpenAuth}
             onSyncPush={() => pushCloudData(false)}
+            cloudStatus={cloudStatus}
             user={user}
           />
         );
@@ -906,6 +920,7 @@ const AppContent: React.FC = () => {
             flashcardSets={flashcards.flashcardSets}
             themeMode={theme.themeMode}
             themeStyle={theme.themeStyle}
+            cloudStatus={cloudStatus}
           />
         );
     }

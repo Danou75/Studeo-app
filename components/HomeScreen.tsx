@@ -26,6 +26,7 @@ interface HomeScreenProps {
     onShowHelp: () => void;
     onOpenAuth: () => void;
     onSyncPush?: () => void;
+    cloudStatus?: 'idle' | 'syncing' | 'synced' | 'error';
     user: any;
 }
 
@@ -53,6 +54,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     onShowHelp,
     onOpenAuth,
     onSyncPush,
+    cloudStatus,
     user
 }) => {
     const { t, language, setLanguage } = useTranslation();
@@ -210,10 +212,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         {user && onSyncPush && (
                             <button 
                                 onClick={onSyncPush}
-                                className="p-2 bg-blue-500/10 text-blue-600 rounded-xl shadow-sm hover:text-blue-700 transition-colors border border-blue-500/20"
+                                className={`p-2 rounded-xl shadow-sm transition-all border flex items-center gap-2 px-3 ${
+                                    cloudStatus === 'syncing' ? 'bg-blue-500 animate-pulse text-white border-blue-600 shadow-blue-500/50' : 
+                                    cloudStatus === 'synced' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-500/30' :
+                                    cloudStatus === 'error' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-500/30' :
+                                    'bg-blue-500/10 text-blue-600 rounded-xl shadow-sm hover:text-blue-700 transition-colors border border-blue-500/20'
+                                }`}
                                 title="Sauvegarder vers le Cloud"
                             >
-                                <i className="fas fa-cloud-upload-alt"></i>
+                                <i className={`fas ${
+                                    cloudStatus === 'syncing' ? 'fa-sync-alt fa-spin' : 
+                                    cloudStatus === 'synced' ? 'fa-cloud-check text-green-500' :
+                                    cloudStatus === 'error' ? 'fa-exclamation-triangle text-red-500' :
+                                    'fa-cloud-upload-alt'
+                                }`}></i>
+                                {cloudStatus === 'syncing' && <span className="text-[9px] font-black uppercase hidden lg:inline">Synchro...</span>}
+                                {cloudStatus === 'synced' && <span className="text-[9px] font-black uppercase hidden lg:inline">À Jour</span>}
                             </button>
                         )}
                         

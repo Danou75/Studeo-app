@@ -32,6 +32,7 @@ interface SetupScreenProps {
     onManageSets: () => void;
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
+    cloudStatus?: 'idle' | 'syncing' | 'synced' | 'error';
 }
 
 export const SetupScreen: React.FC<SetupScreenProps> = ({ 
@@ -54,7 +55,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
     onShowSettings,
     onManageSets,
     themeMode,
-    themeStyle
+    themeStyle,
+    cloudStatus
 }) => {
     const { config } = useAIConfig();
     const { showToast } = useToast();
@@ -249,6 +251,23 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                             <span className="font-bold text-lg text-inherit">{streak}</span>
                             <span className="text-[10px] font-black ml-1 uppercase opacity-80 text-inherit">{t('setup.statsLabel')}</span>
                         </button>
+
+                        {cloudStatus && cloudStatus !== 'idle' && (
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border-transparent backdrop-blur-sm transition-all ${
+                                cloudStatus === 'syncing' ? 'bg-blue-500/40 text-white animate-pulse' :
+                                cloudStatus === 'synced' ? 'bg-green-500/40 text-white' :
+                                'bg-red-500/40 text-white'
+                            }`}>
+                                <i className={`fas ${
+                                    cloudStatus === 'syncing' ? 'fa-sync-alt fa-spin' : 
+                                    cloudStatus === 'synced' ? 'fa-check' :
+                                    'fa-exclamation-triangle'
+                                }`}></i>
+                                <span className="text-[10px] font-bold uppercase hidden sm:inline">
+                                    {cloudStatus === 'syncing' ? 'Cloud...' : 'Cloud OK'}
+                                </span>
+                            </div>
+                        )}
 
                         {onShowSettings && (
                             <button 

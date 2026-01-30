@@ -298,7 +298,7 @@ const AppContent: React.FC = () => {
 
           if (!silent) {
               const extraInfo = (window as any)._lastSyncMsg || "";
-              coordinator.showToast(`✅ Synchronisation Cloud terminée ! ${extraInfo}`, "success", 20000);
+              coordinator.showToast(`✅ Synchronisation Cloud terminée ! ${extraInfo}`, "success", 10000);
               delete (window as any)._lastSyncMsg;
           }
       } catch (e) {

@@ -10,11 +10,16 @@ interface AuthModalProps {
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
     onForceRefresh?: () => void;
+    user: any;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode, themeStyle, onForceRefresh }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode, themeStyle, onForceRefresh, user }) => {
+    const [email, setEmail] = useState(() => localStorage.getItem('studeo_remember_email') || '');
+    const [password, setPassword] = useState(() => {
+        const saved = localStorage.getItem('studeo_remember_password');
+        return saved ? atob(saved) : '';
+    });
+    const [rememberMe, setRememberMe] = useState(!!localStorage.getItem('studeo_remember_email'));
     const [isSignUp, setIsSignUp] = useState(false);
     const [loading, setLoading] = useState(false);
     const { showToast } = useToast();
@@ -39,6 +44,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode
             } else {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
+
+                if (rememberMe) {
+                    localStorage.setItem('studeo_remember_email', email);
+                    localStorage.setItem('studeo_remember_password', btoa(password));
+                } else {
+                    localStorage.removeItem('studeo_remember_email');
+                    localStorage.removeItem('studeo_remember_password');
+                }
+
                 showToast("Connexion réussie !", "success");
                 onClose();
             }
@@ -61,11 +75,40 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode
                     </button>
                     <h2 className="text-3xl font-black mb-2">Sync Cloud</h2>
                     <p className="opacity-80 text-sm">
-                        {isSignUp ? "Créez un compte pour synchroniser vos données." : "Connectez-vous pour retrouver vos parcours."}
+                        {user ? `Connecté en tant que ${user.email}` : (isSignUp ? "Créez un compte pour synchroniser vos données." : "Connectez-vous pour retrouver vos parcours.")}
                     </p>
                 </div>
 
-                <form onSubmit={handleAuth} className="p-8 space-y-4">
+                {user ? (
+                    <div className="p-8 space-y-6">
+                        <div className="bg-background-secondary p-4 rounded-2xl border border-border">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">ID Utilisateur</div>
+                            <div className="text-xs font-mono break-all">{user.id}</div>
+                        </div>
+
+                        <Button 
+                            onClick={async () => {
+                                await supabase.auth.signOut();
+                                onClose();
+                            }}
+                            variant="secondary"
+                            className="w-full rounded-2xl py-4 font-black uppercase tracking-widest text-red-500 border-red-500/20 hover:bg-red-500/5"
+                        >
+                            Se déconnecter
+                        </Button>
+                        
+                        {onForceRefresh && (
+                            <button
+                                type="button"
+                                onClick={onForceRefresh}
+                                className="w-full text-center text-[10px] font-black uppercase tracking-widest text-primary hover:opacity-70 transition-opacity"
+                            >
+                                <i className="fas fa-sync-alt mr-2"></i> Forcer la récupération Cloud
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <form onSubmit={handleAuth} className="p-8 space-y-4">
                     <div>
                         <label className="block text-[10px] font-black uppercase tracking-widest text-text-secondary mb-2 ml-1">Email</label>
                         <input
@@ -88,6 +131,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode
                             required
                         />
                     </div>
+
+                    {!isSignUp && (
+                        <div>
+                            <label className="flex items-center gap-3 cursor-pointer group select-none py-2">
+                                <input
+                                    type="checkbox"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    className="hidden"
+                                />
+                                <div className={`w-5 h-5 rounded-md flex items-center justify-center border-2 transition-all ${rememberMe ? 'bg-primary border-primary' : 'border-border'}`}>
+                                    {rememberMe && <i className="fas fa-check text-[10px] text-white"></i>}
+                                </div>
+                                <span className="text-xs font-bold text-text-secondary group-hover:text-primary transition-colors">Se souvenir de moi (connexion rapide)</span>
+                            </label>
+                        </div>
+                    )}
 
                     <Button 
                         type="submit"
@@ -118,6 +178,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode
                         </div>
                     )}
                 </form>
+                )}
             </div>
         </div>
     );

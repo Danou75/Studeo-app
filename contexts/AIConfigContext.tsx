@@ -24,6 +24,7 @@ export interface AIConfig {
   mistralApiKey?: string;
   mistralModel?: string;
 
+  deviceName?: string;
   selectedTutor?: Tutor | null;
 }
 
@@ -73,6 +74,9 @@ export const AIConfigProvider: React.FC<{ children: ReactNode }> = ({ children }
   // Sauvegarder dans localStorage à chaque changement
   useEffect(() => {
     localStorage.setItem('aiConfig', JSON.stringify(config));
+    if (config.deviceName) {
+      localStorage.setItem('studeo_device_name', config.deviceName);
+    }
   }, [config]);
 
   const updateConfig = (updates: Partial<AIConfig>) => {

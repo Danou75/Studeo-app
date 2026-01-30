@@ -382,6 +382,33 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onSyncPu
       <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-background/50 min-h-0 pb-32">
         <div className="max-w-4xl mx-auto space-y-6">
         
+          {/* 0. Général / Appareil */}
+          <div className="bg-background-secondary rounded-xl p-4 md:p-6 shadow-lg border border-border space-y-6">
+            <div className="flex items-center gap-3 border-b border-border pb-4">
+              <i className="fas fa-desktop text-2xl text-primary"></i>
+              <div>
+                <h2 className="text-xl font-bold">Général & Appareil</h2>
+                <p className="text-sm text-text-muted">Personnalisez l'identité de cet appareil pour la synchronisation</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-text-secondary">Nom de l'appareil</label>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={config.deviceName || ''} 
+                  onChange={(e) => updateConfig({ deviceName: e.target.value })} 
+                  placeholder="Ex: MacBook Air 11 de Daniel, iPad Pro, etc." 
+                  className="flex-1 p-3 rounded-lg bg-background border border-border focus:border-primary outline-none text-text" 
+                />
+              </div>
+              <p className="text-[11px] text-text-muted mt-2 italic">
+                Ce nom sera utilisé pour identifier cet appareil lors des sauvegardes Cloud.
+              </p>
+            </div>
+          </div>
+
           {/* 1. Configuration IA */}
           <div className="bg-background-secondary rounded-xl p-4 md:p-6 shadow-lg border border-border space-y-6">
             <div className="flex items-center gap-3 border-b border-border pb-4">

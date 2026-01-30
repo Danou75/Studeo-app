@@ -1,4 +1,8 @@
 export const getDeviceName = (): string => {
+    // 0. Vérifier si un nom personnalisé est enregistré dans le localStorage
+    const savedName = localStorage.getItem('studeo_device_name');
+    if (savedName && savedName.trim()) return savedName;
+
     const ua = navigator.userAgent;
     const platform = (navigator as any).platform || '';
     

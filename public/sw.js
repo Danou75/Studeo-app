@@ -1,25 +1,24 @@
-const CACHE_NAME = 'studeo-v1.2.1';
+const CACHE_NAME = 'studeo-v1.2.2';
 const RUNTIME_CACHE = 'studeo-runtime';
 
 // Assets à mettre en cache lors de l'installation
-const STATIC_ASSETS = [
+const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.ico'
+  '/icon-192.png',
+  '/icon-512.png',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
 ];
 
 // Installation du Service Worker
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing Service Worker...');
+  // Forcer l'activation immédiate sans attendre la fermeture des onglets
+  self.skipWaiting();
   
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('[SW] Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
-      })
-      .then(() => self.skipWaiting()) // Active immédiatement
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
   );
 });
 

@@ -156,7 +156,13 @@ const AppContent: React.FC = () => {
         // On garde le verrou un peu plus longtemps pour éviter l'effet rebond
         setTimeout(() => {
             isInitialSyncProgress.current = false;
-        }, 2000);
+        }, 3000);
+    }
+  };
+
+  const reloadApp = () => {
+    if (window.confirm("Voulez-vous recharger l'application pour appliquer les mises à jour ?")) {
+        window.location.reload();
     }
   };
 
@@ -223,7 +229,8 @@ const AppContent: React.FC = () => {
           if (cloudSetsRaw && Array.isArray(cloudSetsRaw) && cloudSetsRaw.length > 0) {
               flashcards.setFlashcardSets(prev => {
                   if (force) {
-                      // Mode FORCE: On remplace tout le local par le cloud
+                      // Mode FORCE: On repart de zéro localement
+                      console.log("[Sync] Force Overwrite: Clearing local sets before applying cloud data");
                       const forcedMerged: Record<string, any[]> = {};
                       cloudSetsRaw.forEach((item: any) => {
                           forcedMerged[item.name] = item.cards;
@@ -541,13 +548,15 @@ const AppContent: React.FC = () => {
       case "settings":
         return (
           <SettingsScreen 
-            onBack={handleBack} 
+            onBack={handleBack}
             onSyncPush={() => pushCloudData(false)}
             onSyncPull={() => {
                 if (window.confirm("Attention : Cette action va remplacer toutes vos données locales (cartes, progrès, historique) par la version du Cloud. Souhaitez-vous continuer ?")) {
+                    console.log("[Sync] Manual Pull Triggered");
                     loadCloudData(false, true);
                 }
             }}
+            onReloadApp={reloadApp}
           />
         );
 

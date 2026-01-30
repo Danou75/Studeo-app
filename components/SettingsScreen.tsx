@@ -13,9 +13,15 @@ interface SettingsScreenProps {
   onBack: () => void;
   onSyncPush?: () => void;
   onSyncPull?: () => void;
+  onReloadApp?: () => void;
 }
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onSyncPush, onSyncPull }) => {
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
+  onBack, 
+  onSyncPush, 
+  onSyncPull,
+  onReloadApp 
+}) => {
   const { config, updateConfig, setGeminiApiKey } = useAIConfig();
   const { showToast } = useToast();
   const { showConfirmation } = useConfirmation();
@@ -749,6 +755,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onSyncPu
                   <span>Fenêtre dédiée</span>
                 </div>
               </div>
+              
+              {onReloadApp && (
+                <div className="mt-4 pt-4 border-t border-primary/10 flex flex-col items-center">
+                    <p className="text-xs text-text-muted mb-3 text-center">
+                        Si vous avez des problèmes de synchronisation ou si l'application ne semble pas à jour :
+                    </p>
+                    <button 
+                        onClick={onReloadApp}
+                        className="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-all flex items-center gap-2 shadow-lg"
+                    >
+                        <i className="fas fa-sync-alt"></i>
+                        Actualiser l'application
+                    </button>
+                    <p className="text-[10px] text-text-muted mt-2 italic">
+                        Ceci forcera le chargement de la toute dernière version et videra le cache temporaire.
+                    </p>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">

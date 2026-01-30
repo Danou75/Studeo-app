@@ -11,9 +11,11 @@ import { PWAHelpModal } from './PWAHelpModal';
 
 interface SettingsScreenProps {
   onBack: () => void;
+  onSyncPush?: () => void;
+  onSyncPull?: () => void;
 }
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onSyncPush, onSyncPull }) => {
   const { config, updateConfig, setGeminiApiKey } = useAIConfig();
   const { showToast } = useToast();
   const { showConfirmation } = useConfirmation();
@@ -417,6 +419,40 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
               <span>Documentation</span>
             </button>
           </div>
+        </div>
+
+        <div className="flex items-center gap-3 border-b border-border pb-4">
+          <i className="fas fa-cloud text-2xl text-blue-500"></i>
+          <div>
+            <h2 className="text-xl font-bold">Synchronisation Cloud</h2>
+            <p className="text-sm text-text-muted">Gérez vos données sur tous vos appareils via le cloud</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+            <button
+                onClick={onSyncPush}
+                disabled={!onSyncPush}
+                className="p-4 rounded-lg border-2 border-border hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group flex flex-col items-center justify-center text-center"
+            >
+                <div className="flex items-center gap-3">
+                    <i className="fas fa-cloud-upload-alt text-xl text-blue-500 group-hover:scale-110 transition-transform"></i>
+                    <div className="font-bold">Envoyer vers le Cloud</div>
+                </div>
+                <div className="text-xs text-text-muted mt-2">Pousse les données de cet appareil vers le serveur</div>
+            </button>
+
+            <button
+                onClick={onSyncPull}
+                disabled={!onSyncPull}
+                className="p-4 rounded-lg border-2 border-border hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all group flex flex-col items-center justify-center text-center"
+            >
+                <div className="flex items-center gap-3">
+                    <i className="fas fa-cloud-download-alt text-xl text-indigo-500 group-hover:scale-110 transition-transform"></i>
+                    <div className="font-bold">Récupérer du Cloud</div>
+                </div>
+                <div className="text-xs text-text-muted mt-2">Récupère les données les plus récentes du serveur</div>
+            </button>
         </div>
 
         <div className="flex items-center gap-3 border-b border-border pb-4">

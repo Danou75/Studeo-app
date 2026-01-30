@@ -16,10 +16,11 @@ interface DashboardScreenProps {
     onBack: () => void;
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
+    onSyncPush?: () => void;
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({ 
-    gamificationData, analyticsData, allFlashcards, onStartQuiz, onBack, themeMode, themeStyle 
+    gamificationData, analyticsData, allFlashcards, onStartQuiz, onBack, themeMode, themeStyle, onSyncPush 
 }) => {
     const { t } = useTranslation();
     
@@ -68,6 +69,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         </h1>
                         <p className="opacity-80 mt-1 text-xs md:text-base text-inherit">Consultez vos progrès et vos succès</p>
                     </div>
+
+                    {onSyncPush && (
+                        <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            onClick={onSyncPush}
+                            className={`w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-blue-500/10 text-blue-600' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm transition-all`}
+                        >
+                            <i className="fas fa-cloud-upload-alt mr-2"></i> Sauvegarder
+                        </Button>
+                    )}
                 </div>
             </div>
 

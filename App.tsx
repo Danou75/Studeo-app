@@ -102,44 +102,56 @@ const AppContent: React.FC = () => {
 
   const isInitialSyncProgress = React.useRef(false);
 
+  // Fonction pour envoyer manuellement les données vers le cloud
+  const pushCloudData = async (silent = false) => {
+    if (!user) return;
+    if (!silent) coordinator.showToast("☁️ Envoi des données vers le cloud...", "info", 2000);
+    
+    try {
+        // 1. Sync Profile
+        await syncService.syncProfile(user.id, {
+            theme_mode: theme.themeMode,
+            theme_style: theme.themeStyle,
+            gamification_data: gamification.gamificationData,
+            analytics_data: analyticsData,
+            curriculum_suggestions: coordinator.curriculumSuggestions,
+            library_suggestions: coordinator.librarySuggestions,
+            quiz_history: quizSession.history,
+            persistent_errors: quizSession.persistentErrors,
+            last_sync_device: getDeviceName()
+        });
+
+        // 2. Sync Flashcards
+        await syncService.syncFlashcards(user.id, flashcards.flashcardSets);
+
+        // 3. Sync Programs
+        await syncService.syncStudyPrograms(user.id, coordinator.studyPrograms);
+
+        // 4. Sync Lessons
+        await syncService.syncSavedLessons(user.id, coordinator.savedLessons);
+
+        // 5. Sync Chat
+        const chatSessions = ChatService.getSessions();
+        if (chatSessions.length > 0) {
+            await syncService.syncChatSessions(user.id, chatSessions);
+        }
+        
+        console.log("☁️ Cloud Push: OK");
+        if (!silent) coordinator.showToast("✅ Données sauvegardées dans le cloud !", "success", 3000);
+        return true;
+    } catch (e) {
+        console.error("☁️ Cloud Push Error:", e);
+        if (!silent) coordinator.showToast("❌ Erreur de sauvegarde cloud", "error");
+        return false;
+    }
+  };
+
   // Synchronisation automatique (Réactive)
   React.useEffect(() => {
     if (!user || isInitialSyncProgress.current) return;
 
-    const timeoutId = setTimeout(async () => {
-         try {
-             // 1. Sync Profile (Incluant suggestions)
-             await syncService.syncProfile(user.id, {
-                 theme_mode: theme.themeMode,
-                 theme_style: theme.themeStyle,
-                 gamification_data: gamification.gamificationData,
-                 analytics_data: analyticsData,
-                 curriculum_suggestions: coordinator.curriculumSuggestions,
-                 library_suggestions: coordinator.librarySuggestions,
-                 quiz_history: quizSession.history,
-                 persistent_errors: quizSession.persistentErrors,
-                 last_sync_device: getDeviceName()
-             });
-
-             // 2. Sync Flashcards
-             await syncService.syncFlashcards(user.id, flashcards.flashcardSets);
-
-             // 3. Sync Programs
-             await syncService.syncStudyPrograms(user.id, coordinator.studyPrograms);
-
-             // 4. Sync Lessons
-             await syncService.syncSavedLessons(user.id, coordinator.savedLessons);
-
-             // 5. Sync Chat
-             const chatSessions = ChatService.getSessions();
-             if (chatSessions.length > 0) {
-                 await syncService.syncChatSessions(user.id, chatSessions);
-             }
-             
-             console.log("☁️ Cloud Sync: OK");
-         } catch (e) {
-             console.error("☁️ Cloud Sync Error:", e);
-         }
+    const timeoutId = setTimeout(() => {
+         pushCloudData(true);
     }, 2000); // Délai de 2 secondes pour éviter de saturer Supabase
     
     return () => clearTimeout(timeoutId);
@@ -469,6 +481,7 @@ const AppContent: React.FC = () => {
             onStartQuiz={coordinator.onStartQuiz}
             themeMode={theme.themeMode}
             themeStyle={theme.themeStyle}
+            onSyncPush={() => pushCloudData(false)}
           />
         );
 
@@ -497,7 +510,13 @@ const AppContent: React.FC = () => {
         );
 
       case "settings":
-        return <SettingsScreen onBack={handleBack} />;
+        return (
+          <SettingsScreen 
+            onBack={handleBack} 
+            onSyncPush={() => pushCloudData(false)}
+            onSyncPull={() => loadCloudData(false)}
+          />
+        );
 
       case "ai-generator":
         return (

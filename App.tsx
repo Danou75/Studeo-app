@@ -101,6 +101,17 @@ const AppContent: React.FC = () => {
   };
 
   const isInitialSyncProgress = React.useRef(false);
+  const canAutoPush = React.useRef(false);
+
+  // On attend 30 secondes au démarrage avant d'autoriser l'envoi AUTOMATIQUE 
+  // Cela évite que les vieilles données d'un appareil qu'on vient d'allumer 
+  // n'écrasent le cloud avant qu'on ait eu le temps de faire un "Pull".
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      canAutoPush.current = true;
+    }, 30000); 
+    return () => clearTimeout(timer);
+  }, []);
 
   const pushCloudData = async (silent = false) => {
     if (!user || isInitialSyncProgress.current) return;
@@ -152,6 +163,7 @@ const AppContent: React.FC = () => {
         }
         
         console.log("☁️ Cloud Push: OK");
+        canAutoPush.current = true; // Une fois qu'on a poussé ou tiré manuellement, on peut auto-sync
         if (!silent) coordinator.showToast(`✅ Sauvegardé avec succès ! (Appareil: ${deviceName})`, "success", 3000);
         return true;
     } catch (e: any) {
@@ -177,7 +189,7 @@ const AppContent: React.FC = () => {
 
   // Synchronisation automatique (Réactive)
   React.useEffect(() => {
-    if (!user || isInitialSyncProgress.current) return;
+    if (!user || isInitialSyncProgress.current || !canAutoPush.current) return;
 
     const timeoutId = setTimeout(() => {
          pushCloudData(true);
@@ -355,6 +367,7 @@ const AppContent: React.FC = () => {
               coordinator.showToast(`✅ Synchronisation Cloud terminée ! ${extraInfo}`, "success", 10000);
               delete (window as any)._lastSyncMsg;
           }
+          canAutoPush.current = true; // Après un pull réussi, on peut auto-sync les futurs changements
       } catch (e) {
           console.error("Load Cloud Error:", e);
           if (!silent) coordinator.showToast("Erreur de récupération cloud", "error");

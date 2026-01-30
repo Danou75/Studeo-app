@@ -200,8 +200,9 @@ const AppContent: React.FC = () => {
       // if (!silent) coordinator.showToast("☁️ Synchronisation Cloud en cours...", "info", 1000); // Shorter or removed
       
       try {
-          // 1. Profil & Thème & Suggestions
+          // 1. Profil & Thème & Suggestions (Bypass cache avec un paramètre bidon)
           const cloudProfile = await syncService.getProfile(user.id);
+          console.log(`[Sync] Pulled profile for ${user.email} (ID: ${user.id}). Last update: ${cloudProfile?.updated_at}`);
           if (cloudProfile) {
               if (cloudProfile.theme_mode) theme.setThemeMode(cloudProfile.theme_mode as any);
               if (cloudProfile.theme_style) theme.setThemeStyle(cloudProfile.theme_style as any);
@@ -549,6 +550,7 @@ const AppContent: React.FC = () => {
         return (
           <SettingsScreen 
             onBack={handleBack}
+            userEmail={user?.email}
             onSyncPush={() => pushCloudData(false)}
             onSyncPull={() => {
                 if (window.confirm("Attention : Cette action va remplacer toutes vos données locales (cartes, progrès, historique) par la version du Cloud. Souhaitez-vous continuer ?")) {

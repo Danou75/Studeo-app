@@ -15,6 +15,7 @@ interface SettingsScreenProps {
   onSyncPull?: () => void;
   onReloadApp?: () => void;
   userEmail?: string;
+  userId?: string;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
@@ -22,7 +23,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onSyncPush, 
   onSyncPull,
   onReloadApp,
-  userEmail
+  userEmail,
+  userId
 }) => {
   const { config, updateConfig, setGeminiApiKey } = useAIConfig();
   const { showToast } = useToast();
@@ -396,7 +398,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <i className="fas fa-desktop text-2xl text-primary"></i>
               <div>
                 <h2 className="text-xl font-bold">Général & Appareil</h2>
-                <p className="text-sm text-text-muted">{userEmail ? `Connecté en tant que : ${userEmail}` : 'Personnalisez cet appareil'}</p>
+                <div className="text-[10px] text-text-muted space-y-0.5">
+                    {userEmail && <div>📧 {userEmail}</div>}
+                    {userId && <div>🆔 {userId.substring(0, 8)}...</div>}
+                </div>
               </div>
             </div>
 

@@ -118,7 +118,7 @@ const AppContent: React.FC = () => {
         const currentHistory = [...quizSession.history];
         
         // 1. Sync Profile
-        await syncService.syncProfile(user.id, {
+        const profileSyncOk = await syncService.syncProfile(user.id, {
             theme_mode: theme.themeMode,
             theme_style: theme.themeStyle,
             gamification_data: gamification.gamificationData,
@@ -129,15 +129,19 @@ const AppContent: React.FC = () => {
             persistent_errors: quizSession.persistentErrors,
             last_sync_device: deviceName
         });
+        if (!profileSyncOk) throw new Error("Échec de la synchronisation du profil");
 
         // 2. Sync Flashcards
-        await syncService.syncFlashcards(user.id, currentSets);
+        const cardsSyncOk = await syncService.syncFlashcards(user.id, currentSets);
+        if (!cardsSyncOk) throw new Error("Échec de la synchronisation des flashcards");
 
         // 3. Sync Programs
-        await syncService.syncStudyPrograms(user.id, currentPrograms);
+        const programsSyncOk = await syncService.syncStudyPrograms(user.id, currentPrograms);
+        if (!programsSyncOk) throw new Error("Échec de la synchronisation des programmes");
 
         // 4. Sync Lessons
-        await syncService.syncSavedLessons(user.id, currentLessons);
+        const lessonsSyncOk = await syncService.syncSavedLessons(user.id, currentLessons);
+        if (!lessonsSyncOk) throw new Error("Échec de la synchronisation des cours");
 
         // 5. Sync Chat
         const chatSessions = ChatService.getSessions();
@@ -200,9 +204,9 @@ const AppContent: React.FC = () => {
       // if (!silent) coordinator.showToast("☁️ Synchronisation Cloud en cours...", "info", 1000); // Shorter or removed
       
       try {
-          // 1. Profil & Thème & Suggestions (Bypass cache avec un paramètre bidon)
+          // 1. Profil & Thème & Suggestions (Bypass cache avec timestamp)
           const cloudProfile = await syncService.getProfile(user.id);
-          console.log(`[Sync] Pulled profile for ${user.email} (ID: ${user.id}). Last update: ${cloudProfile?.updated_at}`);
+          console.log(`[Sync] ${new Date().toLocaleTimeString()} - Pulled profile for ${user.email} (ID: ${user.id}). Last update: ${cloudProfile?.updated_at}`);
           if (cloudProfile) {
               if (cloudProfile.theme_mode) theme.setThemeMode(cloudProfile.theme_mode as any);
               if (cloudProfile.theme_style) theme.setThemeStyle(cloudProfile.theme_style as any);
@@ -551,6 +555,7 @@ const AppContent: React.FC = () => {
           <SettingsScreen 
             onBack={handleBack}
             userEmail={user?.email}
+            userId={user?.id}
             onSyncPush={() => pushCloudData(false)}
             onSyncPull={() => {
                 if (window.confirm("Attention : Cette action va remplacer toutes vos données locales (cartes, progrès, historique) par la version du Cloud. Souhaitez-vous continuer ?")) {

@@ -102,16 +102,20 @@ const AppContent: React.FC = () => {
 
   const isInitialSyncProgress = React.useRef(false);
   const [canAutoPush, setCanAutoPush] = React.useState(false);
+  const userHasModified = React.useRef(false);
 
-  // Verrou au démarrage : On bloque l'auto-push pendant 45s sur mobile, 20s sur desktop
+  // Verrou au démarrage DUR : On bloque l'auto-push pendant 60s sur mobile, 30s sur desktop
   React.useEffect(() => {
     const isMobile = /Android|iPhone/i.test(navigator.userAgent);
-    const delay = isMobile ? 45000 : 20000;
+    const delay = isMobile ? 60000 : 30000;
     
     console.log(`[Sync] App start. Blocking auto-push for ${delay/1000}s`);
     const timer = setTimeout(() => {
-      setCanAutoPush(true);
-      console.log("[Sync] Auto-push unlocked");
+      // On ne débloque l'auto-push que si on a déjà fait un premier chargement (loadCloudData)
+      if (canAutoPush === false && (window as any)._initialPullDone) {
+          setCanAutoPush(true);
+          console.log("[Sync] Auto-push unlocked");
+      }
     }, delay); 
     return () => clearTimeout(timer);
   }, []);
@@ -190,9 +194,30 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Marquer qu'une modification locale a eu lieu (pour autoriser l'auto-push plus tard)
+  React.useEffect(() => {
+    // Si on n'est pas en train de charger du cloud, et que le premier chargement est fait,
+    // toute modification de ces états est considérée comme venant de l'utilisateur.
+    if (!isInitialSyncProgress.current && (window as any)._initialPullDone) {
+        console.log("[Sync] Local modification detected. Auto-push will be allowed.");
+        userHasModified.current = true;
+    }
+  }, [
+      flashcards.flashcardSets, 
+      coordinator.studyPrograms, 
+      coordinator.savedLessons,
+      theme.themeMode,
+      theme.themeStyle,
+      gamification.gamificationData,
+      analyticsData,
+      quizSession.persistentErrors
+  ]);
+
   // Synchronisation automatique (Réactive)
   React.useEffect(() => {
-    if (!user || isInitialSyncProgress.current || !canAutoPush) return;
+    // CONDITION CRITIQUE : N'envoyer au cloud QUE si l'utilisateur a modifié quelque chose LOCALEMENT
+    // et que le verrou initial est levé.
+    if (!user || isInitialSyncProgress.current || !canAutoPush || !userHasModified.current) return;
 
     const timeoutId = setTimeout(() => {
          pushCloudData(true);
@@ -370,7 +395,9 @@ const AppContent: React.FC = () => {
               coordinator.showToast(`✅ Synchronisation Cloud terminée ! ${extraInfo}`, "success", 10000);
               delete (window as any)._lastSyncMsg;
           }
+          (window as any)._initialPullDone = true;
           setCanAutoPush(true); // Après un pull réussi, on peut auto-sync les futurs changements
+          userHasModified.current = false; // On reset car ce qu'on a vient du cloud
       } catch (e) {
           console.error("Load Cloud Error:", e);
           if (!silent) coordinator.showToast("Erreur de récupération cloud", "error");

@@ -38,6 +38,9 @@ export const syncService = {
             .from('profiles')
             .select('*')
             .eq('id', userId)
+            // Cache busting
+            .setHeader('Cache-Control', 'no-cache')
+            .setHeader('Pragma', 'no-cache')
             .single();
         
         if (error) {
@@ -77,7 +80,9 @@ export const syncService = {
         const { data, error } = await supabase
             .from('flashcard_sets')
             .select('*')
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .setHeader('Cache-Control', 'no-cache')
+            .setHeader('Pragma', 'no-cache');
         
         if (error) {
             console.error('Get Flashcards Error:', error);
@@ -116,7 +121,9 @@ export const syncService = {
         const { data, error } = await supabase
             .from('study_programs')
             .select('*')
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .setHeader('Cache-Control', 'no-cache')
+            .setHeader('Pragma', 'no-cache');
         
         if (error) {
             console.error('Get Programs Error:', error);
@@ -165,7 +172,9 @@ export const syncService = {
         const { data, error } = await supabase
             .from('saved_lessons')
             .select('*')
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .setHeader('Cache-Control', 'no-cache')
+            .setHeader('Pragma', 'no-cache');
         
         if (error) {
             console.error('Get Lessons Error:', error);
@@ -215,7 +224,9 @@ export const syncService = {
         const { data, error } = await supabase
             .from('chat_sessions')
             .select('*')
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .setHeader('Cache-Control', 'no-cache')
+            .setHeader('Pragma', 'no-cache');
         
         if (error) {
             console.error('Get Chat Error:', error);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'studeo-v1.1.2';
+const CACHE_NAME = 'studeo-v1.2.0';
 const RUNTIME_CACHE = 'studeo-runtime';
 
 // Assets à mettre en cache lors de l'installation

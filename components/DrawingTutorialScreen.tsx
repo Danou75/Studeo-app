@@ -164,7 +164,7 @@ export const DrawingTutorialScreen: React.FC<DrawingTutorialScreenProps> = ({ on
     return (
         <div className="flex-1 min-h-0 flex flex-col bg-background overflow-hidden">
             {/* Header */}
-            <header className="shrink-0 p-4 md:p-6 border-b bg-background-secondary shadow-sm relative z-10">
+            <header className="shrink-0 pt-safe p-4 md:p-6 border-b bg-background-secondary shadow-sm relative z-10">
                 <div className="max-w-6xl mx-auto w-full flex justify-between items-center">
                     <Button onClick={onBack} variant="secondary" size="sm">
                         <i className="fas fa-home mr-2"></i> Accueil

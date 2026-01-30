@@ -365,7 +365,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden relative text-text">
       {/* Header */}
-      <div className="p-3 md:p-8 shrink-0 border-b border-border bg-background-secondary shadow-sm">
+      <div className="pt-safe p-3 md:p-8 shrink-0 border-b border-border bg-background-secondary shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
           <Button variant="secondary" onClick={onBack} size="sm" className="mb-2 md:mb-0 text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800">
             <i className="fas fa-home mr-2"></i> Accueil

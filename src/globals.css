@@ -4,12 +4,31 @@
 
 html, body, #root {
   height: 100% !important;
-  height: 100vh !important; /* Fallback pour anciens navigateurs */
+  height: 100vh !important;
   height: 100dvh !important;
   width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
+  position: fixed; /* Prévenir le défilement élastique sur iOS */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Utilitaires pour Safe Areas iOS */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.mt-safe {
+  margin-top: env(safe-area-inset-top, 0px);
+}
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Allow scrolling on body only if really needed, but keep it clean for Tauri */

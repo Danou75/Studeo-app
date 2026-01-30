@@ -154,7 +154,7 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
             <div className="flex-1 overflow-hidden flex flex-col">
                 {/* Header */}
                 <div 
-                    className={`transition-all duration-500 p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                    className={`transition-all duration-500 pt-safe p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                     style={{ background: getThemeGradient(themeStyle, themeMode) }}
                 >
                     <div className="flex flex-col md:flex-row md:justify-between items-center gap-4">

@@ -760,7 +760,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
         <div className="flex flex-col h-full bg-background text-text animate-fade-in font-sans relative">
             {/* Header */}
             <div 
-                className={`transition-all duration-500 p-4 shadow-md z-10 space-y-3 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'}`} 
+                className={`transition-all duration-500 pt-safe p-4 shadow-md z-10 space-y-3 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
                 {/* Top Row: Back + Title + Settings */}

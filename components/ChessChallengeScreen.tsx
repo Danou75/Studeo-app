@@ -397,7 +397,7 @@ export const ChessChallengeScreen: React.FC<ChessChallengeScreenProps> = ({ onBa
     return (
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-background">
             {/* Header */}
-            <header className="shrink-0 p-4 md:p-6 border-b bg-background-secondary shadow-sm relative z-10">
+            <header className="shrink-0 pt-safe p-4 md:p-6 border-b bg-background-secondary shadow-sm relative z-10">
                 <div className="max-w-4xl mx-auto w-full">
                     <Button onClick={onBack} variant="secondary" size="sm" className="mb-4">
                         <i className="fas fa-home mr-2"></i> Accueil

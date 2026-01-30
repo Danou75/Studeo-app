@@ -15,7 +15,7 @@ export const ReviewAllScreen: React.FC<ReviewAllScreenProps> = ({ cards, allColu
     const { t } = useTranslation();
     
     return (
-        <div className="flex flex-col h-full text-text overflow-hidden p-4 md:p-6">
+        <div className="flex flex-col h-full text-text overflow-hidden pt-safe p-4 md:p-6">
             <div className="flex justify-between items-center mb-6 shrink-0">
                  <h2 className="text-3xl font-bold text-primary">{t('review.title')}</h2>
                  <Button variant="secondary" onClick={onHome} className="text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800">

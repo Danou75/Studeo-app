@@ -12,6 +12,9 @@ export const syncService = {
         analytics_data?: any;
         curriculum_suggestions?: any[];
         library_suggestions?: any[];
+        quiz_history?: any[];
+        persistent_errors?: any;
+        last_sync_device?: string;
     }) {
         const { error } = await supabase
             .from('profiles')
@@ -80,11 +83,7 @@ export const syncService = {
             return null;
         }
 
-        const sets: Record<string, any[]> = {};
-        data.forEach(item => {
-            sets[item.name] = item.cards;
-        });
-        return sets;
+        return data; // Return full data including name, cards, updated_at
     },
 
     /**

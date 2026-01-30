@@ -62,7 +62,7 @@ export const TutorSelectionModal: React.FC<TutorSelectionModalProps> = ({
         <div className="flex-1 min-h-0 flex flex-col text-text animate-fade-in w-full overflow-hidden">
             {/* Header */}
             <div 
-                className={`p-6 shadow-lg relative overflow-hidden transition-all duration-500 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                className={`pt-safe p-6 shadow-lg relative overflow-hidden transition-all duration-500 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
                 <div className="relative z-10">

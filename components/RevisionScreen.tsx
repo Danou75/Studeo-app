@@ -20,7 +20,7 @@ export const RevisionScreen: React.FC<RevisionScreenProps> = ({ cards, quizConfi
     const answerLangConfig = LANGUAGE_CONFIG[answerLang] || { name: answerLang.toUpperCase(), emoji: '🌐' };
 
     return (
-        <div className="flex-1 min-h-0 flex flex-col text-text overflow-hidden p-6">
+        <div className="flex-1 min-h-0 flex flex-col text-text overflow-hidden pt-safe p-6">
             <div className="flex justify-between items-center mb-6 shrink-0">
                  <h2 className="text-3xl font-bold text-warning">{t('review.errorTitle')}</h2>
                  <Button variant="secondary" onClick={onBack}>

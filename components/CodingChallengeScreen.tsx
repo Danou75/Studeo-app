@@ -132,7 +132,7 @@ export const CodingChallengeScreen: React.FC<{ onBack: () => void }> = ({ onBack
     return (
         <div className="flex flex-col h-full bg-background text-text overflow-hidden relative">
             {/* Header */}
-            <div className="p-4 border-b border-border flex items-center justify-between bg-background-secondary shrink-0">
+            <div className="pt-safe p-4 border-b border-border flex items-center justify-between bg-background-secondary shrink-0">
                 <Button variant="secondary" onClick={onBack}>
                     <i className="fas fa-arrow-left mr-2"></i> {t('common.back')}
                 </Button>

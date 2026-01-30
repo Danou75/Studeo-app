@@ -118,7 +118,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ onBack }) => {
     return (
         <div className="flex-1 min-h-0 flex flex-col bg-background overflow-hidden relative">
             {/* Header */}
-            <div className="p-3 md:p-6 shrink-0 border-b border-border bg-background-secondary shadow-sm">
+            <div className="pt-safe p-3 md:p-6 shrink-0 border-b border-border bg-background-secondary shadow-sm">
                 <div className="max-w-7xl mx-auto flex justify-between items-center gap-2">
                     <Button onClick={onBack} variant="secondary" size="sm" className="shrink-0">
                         <i className="fas fa-home mr-1 md:mr-2"></i> <span className="hidden sm:inline">Accueil</span>

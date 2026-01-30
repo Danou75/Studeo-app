@@ -855,7 +855,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative text-text">
+    <div className="flex-1 min-h-0 flex flex-col pt-safe overflow-hidden relative text-text">
         <div className="flex-1 overflow-y-auto p-3 md:p-8 min-h-0 bg-background/50 pb-32">
             <div className="max-w-2xl mx-auto">
       {onBackToLesson && (

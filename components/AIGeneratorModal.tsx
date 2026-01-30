@@ -509,7 +509,7 @@ CONTEXTE UTILISATEUR : ${context}
         <div className="flex-1 min-h-0 flex flex-col text-text overflow-hidden">
             {/* Header avec gradient */}
             <div 
-                className={`p-6 transition-all duration-500 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                className={`pt-safe p-6 transition-all duration-500 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
                 {/* Ligne 1 : Navigation */}

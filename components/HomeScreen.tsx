@@ -132,7 +132,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
     return (
         <div 
-            className="flex-1 min-h-0 overflow-y-auto p-4 pb-20 w-full mx-auto transition-colors duration-500"
+            className="flex-1 min-h-0 overflow-y-auto pt-safe p-4 pb-20 w-full mx-auto transition-colors duration-500"
             style={{ 
                 background: `linear-gradient(135deg, ${themeColors.background} 0%, ${themeColors.backgroundSecondary} 100%)`
             }}

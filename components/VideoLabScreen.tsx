@@ -433,7 +433,7 @@ ${analysisResult.summary || "Résumé non disponible."}
             )}
             {/* Header Redesign */}
             <header 
-                className={`shrink-0 p-4 md:p-6 shadow-lg relative overflow-hidden transition-all duration-500 z-10 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                className={`shrink-0 pt-safe p-4 md:p-6 shadow-lg relative overflow-hidden transition-all duration-500 z-10 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
                 <div className="max-w-4xl mx-auto w-full relative z-10">

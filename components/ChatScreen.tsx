@@ -430,7 +430,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden relative">
                 {/* Header */}
                 <div 
-                    className={`transition-all duration-500 p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                    className={`transition-all duration-500 pt-safe p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                     style={{ background: getThemeGradient(themeStyle, themeMode) }}
                 >
                     <div className="relative z-10">
@@ -623,7 +623,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col min-h-0 relative">
                 {/* Header responsive */}
-                <div className="bg-background-secondary border-b border-border px-2 py-2 md:p-4 flex justify-between items-center shadow-sm z-20 overflow-hidden">
+                <div className="bg-background-secondary border-b border-border px-2 py-2 md:p-4 pt-safe flex justify-between items-center shadow-sm z-20 overflow-hidden">
                     <div className="flex items-center gap-0.5 md:gap-3 shrink-0">
                         <Button 
                             onClick={onBack} 

@@ -47,6 +47,7 @@ import { ConfirmationProvider } from "./contexts/ConfirmationContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { migrateLocalStorage } from "./utils/migration";
 import { ChatService } from "./services/chatService";
+import { getDeviceName } from "./utils/deviceInfo";
 
 
 const AppContent: React.FC = () => {
@@ -114,7 +115,10 @@ const AppContent: React.FC = () => {
                  gamification_data: gamification.gamificationData,
                  analytics_data: analyticsData,
                  curriculum_suggestions: coordinator.curriculumSuggestions,
-                 library_suggestions: coordinator.librarySuggestions
+                 library_suggestions: coordinator.librarySuggestions,
+                 quiz_history: quizSession.history,
+                 persistent_errors: quizSession.persistentErrors,
+                 last_sync_device: getDeviceName()
              });
 
              // 2. Sync Flashcards
@@ -150,7 +154,9 @@ const AppContent: React.FC = () => {
       theme.themeMode,
       theme.themeStyle,
       gamification.gamificationData,
-      analyticsData
+      analyticsData,
+      quizSession.history,
+      quizSession.persistentErrors
   ]);
 
 
@@ -169,17 +175,58 @@ const AppContent: React.FC = () => {
               if (cloudProfile.theme_style) theme.setThemeStyle(cloudProfile.theme_style as any);
               if (cloudProfile.curriculum_suggestions) coordinator.setCurriculumSuggestions(cloudProfile.curriculum_suggestions);
               if (cloudProfile.library_suggestions) coordinator.setLibrarySuggestions(cloudProfile.library_suggestions);
+              
+              // New: Sync History & Errors
+              if (cloudProfile.quiz_history && Array.isArray(cloudProfile.quiz_history)) {
+                  quizSession.setHistory(cloudProfile.quiz_history);
+              }
+              if (cloudProfile.persistent_errors) {
+                  quizSession.setPersistentErrors(cloudProfile.persistent_errors);
+              }
+
+              // Affichage du message de dernière synchro
+              if (cloudProfile.updated_at && !silent) {
+                  const lastDate = new Date(cloudProfile.updated_at);
+                  const device = cloudProfile.last_sync_device || "Appareil inconnu";
+                  coordinator.showToast(
+                      `☁️ Dernière synchro le ${lastDate.toLocaleDateString()} à ${lastDate.toLocaleTimeString()} (${device})`,
+                      "info",
+                      5000
+                  );
+              }
           }
 
           // 2. Flashcards
-          const cloudSets = await syncService.getFlashcards(user.id);
-          if (cloudSets && Object.keys(cloudSets).length > 0) {
+          const cloudSetsRaw = await syncService.getFlashcards(user.id);
+          if (cloudSetsRaw && Array.isArray(cloudSetsRaw) && cloudSetsRaw.length > 0) {
               flashcards.setFlashcardSets(prev => {
                   const merged = { ...prev };
-                  Object.entries(cloudSets).forEach(([setName, cards]) => {
-                      // Si le set n'existe pas ou si le set distant a plus de cartes/est différent
-                      if (!merged[setName] || merged[setName].length < (cards as any[]).length) {
-                          merged[setName] = cards as any[];
+                  cloudSetsRaw.forEach((item: any) => {
+                      const setName = item.name;
+                      const cloudCards = item.cards as any[];
+                      
+                      if (!merged[setName]) {
+                          merged[setName] = cloudCards;
+                      } else {
+                          // Merge logic: Card by card for matching IDs to preserve SRS progress
+                          const localCards = merged[setName];
+                          const localMap = new Map(localCards.map(c => [c.id, c]));
+                          
+                          cloudCards.forEach(cc => {
+                              const lc = localMap.get(cc.id);
+                              if (!lc) {
+                                  localMap.set(cc.id, cc);
+                              } else {
+                                  // Compare SRS progress - Keep the most recently reviewed version
+                                  const cloudLast = cc.srsData?.lastReviewed ? new Date(cc.srsData.lastReviewed).getTime() : 0;
+                                  const localLast = lc.srsData?.lastReviewed ? new Date(lc.srsData.lastReviewed).getTime() : 0;
+                                  
+                                  if (cloudLast > localLast) {
+                                      localMap.set(cc.id, cc);
+                                  }
+                              }
+                          });
+                          merged[setName] = Array.from(localMap.values());
                       }
                   });
                   return merged;
@@ -726,7 +773,7 @@ const AppContent: React.FC = () => {
   return (
     <div 
       className={`h-full w-full overflow-hidden flex flex-col font-sans transition-colors duration-500 ${theme.themeStyle === 'apple' ? 'bg-[#E8E8ED] dark:bg-black' : 'bg-gray-100 dark:bg-gray-900'}`}
-      style={{ height: '100vh' }}
+      style={{ height: '100dvh' }}
     >
         <main className={`mx-auto transition-all duration-500 relative flex flex-col overflow-hidden ${
           theme.themeStyle === 'apple' 

@@ -396,7 +396,7 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
       `}</style>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 border-b border-border bg-background-secondary shadow-sm z-10 no-print gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 pt-safe border-b border-border bg-background-secondary shadow-sm z-10 no-print gap-3">
         <div className="flex items-center gap-3 min-w-0">
             <div className="flex gap-1.5 shrink-0">
                 <Button variant="secondary" onClick={onBack} size="sm" className="h-8 text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800 px-2 md:px-3 text-xs md:text-sm">

@@ -373,7 +373,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       <div className="pt-safe p-3 md:p-8 shrink-0 border-b border-border bg-background-secondary shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
           <Button variant="secondary" onClick={onBack} size="sm" className="mb-2 md:mb-0 text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800">
-            <i className="fas fa-home mr-2"></i> Accueil
+            <i className="fas fa-home mr-2"></i> {t('common.home')}
           </Button>
           <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
             {t('settings.title')}
@@ -390,37 +390,37 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className="flex items-center gap-3 border-b border-border pb-4">
               <i className="fas fa-desktop text-2xl text-primary"></i>
               <div>
-                <h2 className="text-xl font-bold">Général & Appareil</h2>
+                <h2 className="text-xl font-bold">{t('settings.general.title')}</h2>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2 text-text-secondary">Nom de l'appareil</label>
+              <label className="block text-sm font-medium mb-2 text-text-secondary">{t('settings.general.deviceName')}</label>
               <div className="flex gap-2">
                 <input 
                   type="text" 
                   value={config.deviceName || ''} 
                   onChange={(e) => updateConfig({ deviceName: e.target.value })} 
-                  placeholder="Ex: MacBook Air 11 de Daniel, iPad Pro, etc." 
+                  placeholder={t('settings.general.deviceNamePlaceholder')} 
                   className="flex-1 p-3 rounded-lg bg-background border border-border focus:border-primary outline-none text-text" 
                 />
               </div>
               <p className="text-[11px] text-text-muted mt-2 italic">
-                Ce nom sera utilisé pour identifier cet appareil lors des sauvegardes Cloud.
+                {t('settings.general.deviceNameHint')}
               </p>
             </div>
 
             {onReloadApp && (
                 <div className="pt-4 border-t border-border flex flex-col items-center">
                     <p className="text-xs text-text-muted mb-3 text-center">
-                        Si l'application ne semble pas à jour ou en cas de problème :
+                        {t('settings.general.updateText')}
                     </p>
                     <button 
                         onClick={onReloadApp}
                         className="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-all flex items-center gap-2 shadow-lg"
                     >
                         <i className="fas fa-sync-alt"></i>
-                        Forcer la mise à jour / Actualiser
+                        {t('settings.general.updateButton')}
                     </button>
                 </div>
             )}
@@ -668,8 +668,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className="flex items-center gap-3 border-b border-border pb-4">
               <i className="fas fa-cloud text-2xl text-blue-500"></i>
               <div>
-                <h2 className="text-xl font-bold">Synchronisation Cloud</h2>
-                <p className="text-sm text-text-muted">Gérez vos données sur tous vos appareils via le cloud</p>
+                <h2 className="text-xl font-bold">{t('settings.sync.title')}</h2>
+                <p className="text-sm text-text-muted">{t('settings.sync.subtitle')}</p>
               </div>
             </div>
 
@@ -681,9 +681,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 >
                     <div className="flex items-center gap-3">
                         <i className="fas fa-cloud-upload-alt text-xl text-blue-500 group-hover:scale-110 transition-transform"></i>
-                        <div className="font-bold">Envoyer vers le Cloud</div>
+                        <div className="font-bold">{t('settings.sync.push')}</div>
                     </div>
-                    <div className="text-xs text-text-muted mt-2">Pousse les données de cet appareil vers le serveur</div>
+                    <div className="text-xs text-text-muted mt-2">{t('settings.sync.pushDesc')}</div>
                 </button>
 
                 <button
@@ -693,9 +693,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 >
                     <div className="flex items-center gap-3">
                         <i className="fas fa-cloud-download-alt text-xl text-indigo-500 group-hover:scale-110 transition-transform"></i>
-                        <div className="font-bold">Récupérer du Cloud</div>
+                        <div className="font-bold">{t('settings.sync.pull')}</div>
                     </div>
-                    <div className="text-xs text-text-muted mt-2">Récupère les données les plus récentes du serveur</div>
+                    <div className="text-xs text-text-muted mt-2">{t('settings.sync.pullDesc')}</div>
                 </button>
             </div>
           </div>

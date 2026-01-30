@@ -113,7 +113,7 @@ export const fr = {
                 description: "Suivez vos parcours d'étude de manière structurée"
             },
             srs: {
-                title: "Révision SRS",
+                title: "Révision Assistée",
                 description: "Mémorisation par répétition espacée"
             },
             stats: {
@@ -134,6 +134,29 @@ export const fr = {
                 description: "Découvrez des sets partagés."
             }
         }
+    },
+    header: {
+        account: "Compte",
+        syncCloud: "Sync Cloud",
+        saveToCloud: "Sauvegarder vers le Cloud"
+    },
+    auth: {
+        title: "Synchronisation Cloud",
+        connectedAs: "Connecté en tant que {email}",
+        userGuide: "Créez un compte pour synchroniser vos données.",
+        loginToRestore: "Connectez-vous pour retrouver vos parcours.",
+        userId: "ID Utilisateur",
+        signOut: "Se déconnecter",
+        forcePull: "Forcer la récupération Cloud",
+        email: "Email",
+        password: "Mot de passe",
+        rememberMe: "Se souvenir de moi (connexion rapide)",
+        login: "Se connecter",
+        signUp: "Créer mon compte",
+        switchToSignUp: "Pas encore de compte ? Inscrivez-vous",
+        switchToLogin: "Déjà un compte ? Connectez-vous",
+        signUpSuccess: "Inscription réussie ! Vérifiez vos emails.",
+        loginSuccess: "Connexion réussie !"
     },
     repetitor: {
         title: "Répétiteur",
@@ -602,7 +625,7 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
         solutions: "Solutions"
     },
     srs: {
-        title: "Révision SRS",
+        title: "Révision Assistée",
         dueToday: "{count} cartes à réviser aujourd'hui",
         dueCards: "Cartes dues",
         learning: "En apprentissage",
@@ -634,7 +657,7 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
             start: "🚀 Commencer la révision"
         },
         help: {
-            title: "💡 Comment fonctionne la révision SRS ?",
+            title: "💡 Comment fonctionne la révision assistée ?",
             point1: "Après chaque carte, évaluez la difficulté ressentie",
             point2: "Facile : Intervalle doublé (révision dans longtemps)",
             point3: "Moyen : Intervalle standard (révision normale)",
@@ -655,7 +678,7 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
         import: "Importer",
         export: "Exporter",
         start: "Lancer le Quiz",
-        reviewDue: "Réviser ({count} à revoir)",
+        reviewDue: "Révision Assistée ({count})",
         noCardsFound: "Aucune fiche valide trouvée pour cette paire de langues.",
         noDueCards: "Aucune carte à réviser pour cette paire. Revenez plus tard ! 🎉",
         exportSuccess: "Exportation réussie !",
@@ -739,8 +762,25 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
             localCheckError: "Impossible de récupérer les modèles locaux. Vérifiez que votre serveur est lancé.",
             noLocalFound: "Aucun modèle trouvé.",
             adviceTitle: "💡 Conseil",
-            adviceText: "Cette configuration sera utilisée pour toutes les fonctionnalités IA de l'application : génération de cartes, conjugaison, et répétiteur vocal.",
+            adviceText: "Cette configuration sera utilisée pour l'ensemble des fonctionnalités IA : génération de fiches, cours, tutorat et répétiteur vocal.",
             currentModel: "Modèle actuel"
+        },
+        general: {
+            title: "Général & Appareil",
+            deviceName: "Nom de l'appareil",
+            deviceNamePlaceholder: "Ex: MacBook Air de Daniel, iPad Pro...",
+            deviceNameHint: "Ce nom identifie cet appareil lors des sauvegardes Cloud.",
+            updateTitle: "Mise à jour de l'application",
+            updateText: "Si l'application ne semble pas à jour ou en cas de problème :",
+            updateButton: "Forcer la mise à jour / Actualiser"
+        },
+        sync: {
+            title: "Synchronisation Cloud",
+            subtitle: "Gérez vos données sur tous vos appareils via le cloud",
+            push: "Envoyer vers le Cloud",
+            pushDesc: "Pousse les données de cet appareil vers le serveur",
+            pull: "Récupérer du Cloud",
+            pullDesc: "Récupère les données les plus récentes du serveur"
         }
     },
     lessons: {
@@ -924,7 +964,7 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
             steps: [
                 "Studeo combine l'intelligence artificielle avec des méthodes d'apprentissage éprouvées.",
                 "Vous pouvez créer du contenu pédagogique à partir de n'importe quelle source : texte, PDF, images, audio ou vidéo.",
-                "L'application utilise la répétition espacée (SRS) pour optimiser votre mémorisation.",
+                "L'application utilise la répétition espacée pour optimiser votre mémorisation (Révision Assistée).",
                 "Toutes vos données sont stockées localement sur votre appareil pour garantir votre confidentialité."
             ]
         },
@@ -947,7 +987,7 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
                 "**Méthode 2 - Document** : Importez un PDF, image, audio ou vidéo. L'IA en extraira le contenu.",
                 "**Méthode 3 - Labo Vidéo** : Collez un lien YouTube pour transformer n'importe quelle vidéo en matériel d'étude.",
 
-                "Les fiches générées sont organisées en paquets que vous pouvez réviser avec le système SRS."
+                "Les fiches générées sont organisées en paquets que vous pouvez réviser avec le système de révision assistée."
             ]
         },
         library: {
@@ -984,11 +1024,11 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
             ]
         },
         srs: {
-            title: "📅 Révision Spacée (SRS)",
-            content: "L'algorithme SRS calcule le moment idéal pour réviser chaque carte avant que vous ne l'oubliiez. Suivez vos révisions quotidiennes sur le **Tableau de Bord**.",
+            title: "📅 Révision Assistée",
+            content: "L'algorithme calcule le moment idéal pour réviser chaque carte avant que vous ne l'oubliiez. Suivez vos révisions quotidiennes sur le **Tableau de Bord**.",
             steps: [
-                "Le système SRS (Spaced Repetition System) calcule automatiquement quand réviser chaque carte.",
-                "Accédez à vos révisions via le bouton **'Révision SRS'** sur le tableau de bord.",
+                "Le système de révision assistée calcule automatiquement quand réviser chaque carte.",
+                "Accédez à vos révisions via le bouton **'Révision Assistée'** sur le tableau de bord.",
                 "Pendant la révision, évaluez votre réponse : Facile, Moyen, Difficile ou À revoir.",
                 "L'algorithme ajuste l'intervalle de révision selon votre performance.",
                 "Consultez vos statistiques sur le **Tableau de Bord** pour suivre vos progrès quotidiens."

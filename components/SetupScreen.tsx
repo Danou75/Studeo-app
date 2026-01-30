@@ -516,7 +516,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                             }`}
                         >
                             <i className="fas fa-clock-rotate-left text-xl"></i>
-                            <span className="uppercase tracking-widest">SRS ({dueCardsCount})</span>
+                            <span className="uppercase tracking-widest">{t('setup.reviewDue', { count: dueCardsCount })}</span>
                             {dueCardsCount > 0 && (
                                 <div className="absolute -top-3 -right-3 bg-error text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
                                     {dueCardsCount}

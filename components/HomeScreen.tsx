@@ -222,14 +222,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             className={`p-2 rounded-xl shadow-sm transition-all flex items-center gap-2 px-3 ${user ? 'bg-success/10 text-success border border-success/20' : 'bg-white/80 dark:bg-gray-800/80 text-gray-400 hover:text-primary border border-transparent'}`}
                         >
                             <i className={`fas ${user ? 'fa-user-circle' : 'fa-cloud-upload-alt'}`}></i>
-                            {user && <span className="text-[9px] font-bold uppercase hidden sm:inline">Compte</span>}
+                            {user && <span className="text-[9px] font-bold uppercase hidden sm:inline">{t('header.account')}</span>}
                         </button>
 
                         <button 
                             onClick={() => onThemeModeChange(themeMode === 'dark' ? 'light' : 'dark')} 
                             className="p-2 bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm text-gray-400 hover:text-primary transition-colors"
                         >
-                            <i className={`fas fa-${themeMode === 'dark' ? 'sun' : 'moon'}`}></i>
+                            <i className={`fas fa-${themeMode === 'dark' ? 'lightbulb' : 'moon'}`}></i>
                         </button>
 
                         <button 
@@ -255,15 +255,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 {/* COLONNE GAUCHE (Labo IA + Bibliothèque) */}
                 <div className="flex flex-col gap-6 md:gap-8">
                     <Section title={t('home.sections.aiLab')} icon="⚡️">
-                        <FeatureCard icon="✨" title={t('home.features.aiGenerator.title')} desc={t('home.features.aiGenerator.description')} onClick={onNavigateToAIGenerator} colorClass="bg-primary/10 text-primary"/>
-                        <FeatureCard icon="💬" title={t('home.features.chat.title')} desc={t('home.features.chat.description')} onClick={onNavigateToChat} colorClass="bg-accent/10 text-accent"/>
                         <FeatureCard icon="👨‍🏫" title={t('home.features.tutorsRoom.title')} desc={t('home.features.tutorsRoom.description')} onClick={onNavigateToTutorsRoom} colorClass="bg-primary/10 text-primary"/>
+                        <FeatureCard icon="💬" title={t('home.features.chat.title')} desc={t('home.features.chat.description')} onClick={onNavigateToChat} colorClass="bg-accent/10 text-accent"/>
+                        <FeatureCard icon="✨" title={t('home.features.aiGenerator.title')} desc={t('home.features.aiGenerator.description')} onClick={onNavigateToAIGenerator} colorClass="bg-primary/10 text-primary"/>
                     </Section>
  
                     <Section title={t('home.sections.library')} icon="📚">
-                        <FeatureCard icon="🧠" title={t('home.features.srs.title')} desc={t('home.cardsToReview', { count: dueCardsCount })} onClick={onNavigateToSRS} colorClass="bg-warning/10 text-warning" badge={dueCardsCount}/>
                         <FeatureCard icon="📂" title={t('home.features.library.title')} desc={`${t('home.totalCards', { count: totalCards })} (${language.toUpperCase()})`} onClick={onNavigateToLibrary} colorClass="bg-info/10 text-info"/>
                         <FeatureCard icon="🗺️" title={t('home.features.curriculum.title')} desc={t('home.features.curriculum.description')} onClick={onNavigateToCurriculum} colorClass="bg-info/10 text-info"/>
+                        <FeatureCard icon="🧠" title={t('home.features.srs.title')} desc={t('home.cardsToReview', { count: dueCardsCount })} onClick={onNavigateToSRS} colorClass="bg-warning/10 text-warning" badge={dueCardsCount}/>
                     </Section>
                 </div>
  

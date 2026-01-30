@@ -116,7 +116,7 @@ export const en: typeof fr = {
                 description: "Follow your study programs in a structured way"
             },
             srs: {
-                title: "SRS Review",
+                title: "Assisted Review",
                 description: "Memorization through spaced repetition"
             },
             stats: {
@@ -137,6 +137,29 @@ export const en: typeof fr = {
                 description: "Discover shared card sets."
             }
         },
+    },
+    header: {
+        account: "Account",
+        syncCloud: "Sync Cloud",
+        saveToCloud: "Save to Cloud"
+    },
+    auth: {
+        title: "Cloud Sync",
+        connectedAs: "Connected as {email}",
+        userGuide: "Create an account to sync your data.",
+        loginToRestore: "Log in to find your programs.",
+        userId: "User ID",
+        signOut: "Sign out",
+        forcePull: "Force Cloud Recovery",
+        email: "Email",
+        password: "Password",
+        rememberMe: "Remember me (fast login)",
+        login: "Log in",
+        signUp: "Create account",
+        switchToSignUp: "No account yet? Sign up",
+        switchToLogin: "Already have an account? Log in",
+        signUpSuccess: "Sign up successful! Check your emails.",
+        loginSuccess: "Login successful!"
     },
     repetitor: {
         title: "Repetitor",
@@ -586,7 +609,7 @@ export const en: typeof fr = {
         solutions: "Solutions"
     },
     srs: {
-        title: "SRS Review",
+        title: "Assisted Review",
         dueToday: "{count} cards to review today",
         dueCards: "Due cards",
         learning: "Learning",
@@ -639,7 +662,7 @@ export const en: typeof fr = {
         import: "Import",
         export: "Export",
         start: "Start Quiz",
-        reviewDue: "Review ({count} due)",
+        reviewDue: "Assisted Review ({count})",
         noCardsFound: "No valid cards found for this language pair.",
         noDueCards: "No cards to review for this pair. Come back later! 🎉",
         exportSuccess: "Export successful!",
@@ -723,8 +746,25 @@ export const en: typeof fr = {
             localCheckError: "Unable to fetch local models. Check if your server is running.",
             noLocalFound: "No models found.",
             adviceTitle: "💡 Advice",
-            adviceText: "This configuration will be used for all AI features of the application: card generation, conjugation, and voice repetitor.",
+            adviceText: "This configuration will be used for all AI features: card generation, lessons, tutoring, and voice repetitor.",
             currentModel: "Current model"
+        },
+        general: {
+            title: "General & Device",
+            deviceName: "Device Name",
+            deviceNamePlaceholder: "E.g. Daniel's MacBook Air, iPad Pro...",
+            deviceNameHint: "This name identifies this device during Cloud backups.",
+            updateTitle: "App Update",
+            updateText: "If the app doesn't seem up to date or in case of issues:",
+            updateButton: "Force Update / Refresh"
+        },
+        sync: {
+            title: "Cloud Sync",
+            subtitle: "Manage your data across all your devices via the cloud",
+            push: "Send to Cloud",
+            pushDesc: "Pushes data from this device to the server",
+            pull: "Recover from Cloud",
+            pullDesc: "Fetches the latest data from the server"
         }
     },
     lessons: {

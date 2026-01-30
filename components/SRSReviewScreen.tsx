@@ -68,7 +68,7 @@ export const SRSReviewScreen: React.FC<SRSReviewScreenProps> = ({
                       size="sm" 
                       className={`transition-all mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
                   >
-                      <i className="fas fa-home mr-2 text-inherit"></i> Accueil
+                      <i className="fas fa-home mr-2 text-inherit"></i> {t('common.home')}
                   </Button>
                   <h1 className="text-3xl font-black drop-shadow-sm text-inherit">
                       {t('srs.title')}

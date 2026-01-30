@@ -102,12 +102,21 @@ const AppContent: React.FC = () => {
 
   const isInitialSyncProgress = React.useRef(false);
 
-  // Fonction pour envoyer manuellement les données vers le cloud
   const pushCloudData = async (silent = false) => {
-    if (!user) return;
-    if (!silent) coordinator.showToast("☁️ Envoi des données vers le cloud...", "info", 2000);
+    if (!user || isInitialSyncProgress.current) return;
+    isInitialSyncProgress.current = true;
+    const deviceName = getDeviceName();
+    
+    if (!silent) coordinator.showToast(`☁️ Sauvegarde en cours depuis "${deviceName}"...`, "info", 2000);
+    console.log(`[Sync] Pushing data for user ${user.id} from device: ${deviceName}`);
     
     try {
+        // Capturer l'état actuel pour éviter les changements pendant l'envoi
+        const currentSets = { ...flashcards.flashcardSets };
+        const currentPrograms = [...coordinator.studyPrograms];
+        const currentLessons = [...coordinator.savedLessons];
+        const currentHistory = [...quizSession.history];
+        
         // 1. Sync Profile
         await syncService.syncProfile(user.id, {
             theme_mode: theme.themeMode,
@@ -116,19 +125,19 @@ const AppContent: React.FC = () => {
             analytics_data: analyticsData,
             curriculum_suggestions: coordinator.curriculumSuggestions,
             library_suggestions: coordinator.librarySuggestions,
-            quiz_history: quizSession.history,
+            quiz_history: currentHistory,
             persistent_errors: quizSession.persistentErrors,
-            last_sync_device: getDeviceName()
+            last_sync_device: deviceName
         });
 
         // 2. Sync Flashcards
-        await syncService.syncFlashcards(user.id, flashcards.flashcardSets);
+        await syncService.syncFlashcards(user.id, currentSets);
 
         // 3. Sync Programs
-        await syncService.syncStudyPrograms(user.id, coordinator.studyPrograms);
+        await syncService.syncStudyPrograms(user.id, currentPrograms);
 
         // 4. Sync Lessons
-        await syncService.syncSavedLessons(user.id, coordinator.savedLessons);
+        await syncService.syncSavedLessons(user.id, currentLessons);
 
         // 5. Sync Chat
         const chatSessions = ChatService.getSessions();
@@ -137,12 +146,17 @@ const AppContent: React.FC = () => {
         }
         
         console.log("☁️ Cloud Push: OK");
-        if (!silent) coordinator.showToast("✅ Données sauvegardées dans le cloud !", "success", 3000);
+        if (!silent) coordinator.showToast(`✅ Sauvegardé avec succès ! (Appareil: ${deviceName})`, "success", 3000);
         return true;
     } catch (e) {
         console.error("☁️ Cloud Push Error:", e);
         if (!silent) coordinator.showToast("❌ Erreur de sauvegarde cloud", "error");
         return false;
+    } finally {
+        // On garde le verrou un peu plus longtemps pour éviter l'effet rebond
+        setTimeout(() => {
+            isInitialSyncProgress.current = false;
+        }, 2000);
     }
   };
 
@@ -328,9 +342,12 @@ const AppContent: React.FC = () => {
           console.error("Load Cloud Error:", e);
           if (!silent) coordinator.showToast("Erreur de récupération cloud", "error");
       } finally {
+          // IMPORTANT: Après un pull (chargement), on verrouille toute sauvegarde sortante 
+          // pendant 10 secondes pour laisser le temps au state React de se stabiliser
+          // et éviter d'écraser le cloud avec un état local encore "ancien".
           setTimeout(() => {
              isInitialSyncProgress.current = false;
-          }, 3000);
+          }, 10000); 
       }
   };
 

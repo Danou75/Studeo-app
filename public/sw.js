@@ -122,8 +122,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Ignorer les requêtes vers d'autres domaines (sauf les APIs connues)
-  if (url.origin !== location.origin && !url.hostname.includes('supabase')) {
+  // CRITIQUE : Ne JAMAIS intercepter ou mettre en cache les requêtes Supabase/Sync
+  // Cela garantit que la synchro cloud est toujours fraîche et ne vient pas du cache du SW.
+  if (url.hostname.includes('supabase')) {
+    return;
+  }
+
+  // Ignorer les requêtes vers d'autres domaines
+  if (url.origin !== location.origin) {
     return;
   }
   
@@ -138,12 +144,6 @@ self.addEventListener('fetch', (event) => {
   ) {
     // Assets statiques: Cache First
     strategy = cacheStrategies.cacheFirst;
-  } else if (
-    url.pathname.startsWith('/api/') ||
-    url.hostname.includes('supabase')
-  ) {
-    // APIs: Network First (avec fallback cache)
-    strategy = cacheStrategies.networkFirst;
   } else {
     // Autres ressources: Stale While Revalidate
     strategy = cacheStrategies.staleWhileRevalidate;

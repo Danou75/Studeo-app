@@ -191,7 +191,7 @@ const AppContent: React.FC = () => {
                   coordinator.showToast(
                       `☁️ Dernière synchro le ${lastDate.toLocaleDateString()} à ${lastDate.toLocaleTimeString()} (${device})`,
                       "info",
-                      5000
+                      8000
                   );
               }
           }

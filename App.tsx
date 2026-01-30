@@ -152,9 +152,12 @@ const AppContent: React.FC = () => {
         console.log("☁️ Cloud Push: OK");
         if (!silent) coordinator.showToast(`✅ Sauvegardé avec succès ! (Appareil: ${deviceName})`, "success", 3000);
         return true;
-    } catch (e) {
+    } catch (e: any) {
         console.error("☁️ Cloud Push Error:", e);
-        if (!silent) coordinator.showToast("❌ Erreur de sauvegarde cloud", "error");
+        if (!silent) {
+            const msg = e.message || "Erreur de sauvegarde cloud";
+            coordinator.showToast(`❌ ${msg}`, "error", 5000);
+        }
         return false;
     } finally {
         // On garde le verrou un peu plus longtemps pour éviter l'effet rebond

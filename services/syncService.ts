@@ -24,7 +24,9 @@ export const syncService = {
                 updated_at: new Date().toISOString()
             });
         
-        if (error) console.error('Sync Profile Error:', error);
+        if (error) {
+            console.error('Sync Profile Error:', error.message, error.details, error.hint);
+        }
         return !error;
     },
 
@@ -65,7 +67,9 @@ export const syncService = {
             .from('flashcard_sets')
             .insert(entries);
         
-        if (error) console.error('Sync Flashcards Error:', error);
+        if (error) {
+            console.error('Sync Flashcards Error:', error.message, error.details, error.hint);
+        }
         return !error;
     },
 

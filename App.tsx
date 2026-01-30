@@ -629,8 +629,6 @@ const AppContent: React.FC = () => {
         return (
           <SettingsScreen 
             onBack={handleBack}
-            userEmail={user?.email}
-            userId={user?.id}
             onSyncPush={() => pushCloudData(false)}
             onSyncPull={() => {
                 if (window.confirm("Attention : Cette action va remplacer toutes vos données locales (cartes, progrès, historique) par la version du Cloud. Souhaitez-vous continuer ?")) {

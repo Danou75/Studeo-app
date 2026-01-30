@@ -1016,6 +1016,16 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
                 "**Récupération** : En cas de besoin, utilisez 'Forcer la récupération Cloud' dans le menu du nuage."
             ]
         },
+        pwa: {
+            title: "📱 Application Native (PWA)",
+            content: "Installez Studeo sur votre appareil pour une expérience fluide, hors ligne et sans barre de navigation.",
+            steps: [
+                "**Sur Mobile (iOS/Android)** : Dans votre navigateur, cliquez sur 'Partager' ou le menu '...', puis sélectionnez '**Sur l'écran d'accueil**'.",
+                "**Sur Ordinateur (Chrome/Edge/Safari)** : Cliquez sur l'icône d'installation dans la barre d'adresse ou cherchez '**Installer Studeo**' dans le menu du navigateur.",
+                "**Avantages** : Lancement instantané depuis votre écran d'accueil, mode plein écran, et fonctionnement optimisé hors ligne.",
+                "**Mise à jour** : L'application se met à jour automatiquement. En cas de besoin, utilisez le bouton d'actualisation forcé dans les paramètres."
+            ]
+        },
         userGuide: {
             title: "Guide Utilisateur Complet",
             subtitle: "Documentation complète de toutes les fonctionnalités de Studeo",

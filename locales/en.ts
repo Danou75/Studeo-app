@@ -1000,6 +1000,16 @@ export const en: typeof fr = {
                 "**Recovery**: If needed, use 'Force Cloud Recovery' in the cloud menu."
             ]
         },
+        pwa: {
+            title: "📱 Native App (PWA)",
+            content: "Install Studeo on your device for a smooth, offline experience without a navigation bar.",
+            steps: [
+                "**On Mobile (iOS/Android)**: In your browser, click 'Share' or the '...' menu, then select '**Add to Home Screen**'.",
+                "**On Desktop (Chrome/Edge/Safari)**: Click the install icon in the address bar or look for '**Install Studeo**' in the browser menu.",
+                "**Benefits**: Instant launch from your home screen, full-screen mode, and optimized offline operation.",
+                "**Update**: The app updates automatically. If needed, use the forced refresh button in settings."
+            ]
+        },
         userGuide: {
             title: "Full User Guide",
             subtitle: "Complete documentation for all Studeo features",

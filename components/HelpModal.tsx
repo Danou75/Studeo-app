@@ -19,6 +19,7 @@ type HelpSection =
   | 'srs'
   | 'lab'
   | 'backup'
+  | 'pwa'
   | 'userGuide';
 
 export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
@@ -82,6 +83,12 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
       title: t('helpCenter.backup.title'),
       icon: "fa-database",
       content: t('helpCenter.backup.content'),
+    },
+    {
+      id: 'pwa' as HelpSection,
+      title: t('helpCenter.pwa.title'),
+      icon: "fa-mobile-alt",
+      content: t('helpCenter.pwa.content'),
     }
   ];
 

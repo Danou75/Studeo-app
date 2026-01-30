@@ -15,6 +15,7 @@ Bienvenue dans l'univers de **Studeo**, votre plateforme d'apprentissage intelli
 6. [Labo Vidéo YouTube](#labo-video-youtube)
 7. [Laboratoire Interactif & Défis](#laboratoire-interactif-defis)
 8. [Sauvegarde & Synchronisation Cloud](#sauvegarde-synchronisation-cloud)
+9. [Installation App Native (PWA)](#installation-app-native-pwa)
 
 
 ---
@@ -359,6 +360,32 @@ Studeo propose une synchronisation automatique via **Supabase** pour retrouver v
 
 **Reconnaissance vocale ?**
 → Autoriser micro dans paramètres
+
+---
+
+## Installation App Native (PWA)
+
+Studeo peut être installé sur votre appareil pour une expérience optimale, comme une application traditionnelle.
+
+### 📱 Sur Mobile (iOS et Android)
+
+1. Ouvrez Studeo dans votre navigateur mobile (Safari sur iOS, Chrome sur Android).
+2. Appuyez sur le bouton **Partager** (iOS) ou sur les **trois points vertical** (Android).
+3. Faites défiler et sélectionnez **"Sur l'écran d'accueil"** ou **"Installer l'application"**.
+4. Validez : l'icône Studeo apparaît maintenant parmi vos autres applications.
+
+### 💻 Sur Ordinateur (Mac, Windows, Linux)
+
+1. Utilisez un navigateur moderne (Chrome, Edge ou Safari).
+2. Cliquez sur l'**icône d'installation** (un petit écran avec une flèche) située à droite dans la barre d'adresse.
+3. Ou allez dans le menu du navigateur et choisissez **"Installer Studeo"**.
+
+### 🚀 Avantages de la version PWA
+
+- **Lancement Rapide** : Plus besoin de taper l'URL, lancez l'app en un clic.
+- **Plein Écran** : Profitez de toute la surface de votre écran sans les barres du navigateur.
+- **Mode Hors Ligne** : L'application est plus rapide et certaines fonctions restent accessibles sans réseau.
+- **Mises à Jour** : L'application se met à jour automatiquement en arrière-plan. Si vous constatez un problème, vous pouvez forcer une actualisation via le bouton dédié dans les **Paramètres**.
 
 ---
 

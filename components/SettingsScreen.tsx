@@ -6,25 +6,19 @@ import { save, open } from '@tauri-apps/api/dialog';
 import { writeTextFile, readTextFile } from '@tauri-apps/api/fs';
 import { useConfirmation } from '../contexts/ConfirmationContext';
 import { useTranslation } from '../contexts/LanguageContext';
-import { InstallButton } from './InstallButton';
-import { PWAHelpModal } from './PWAHelpModal';
 
 interface SettingsScreenProps {
   onBack: () => void;
   onSyncPush?: () => void;
   onSyncPull?: () => void;
   onReloadApp?: () => void;
-  userEmail?: string;
-  userId?: string;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
   onBack, 
   onSyncPush, 
   onSyncPull,
-  onReloadApp,
-  userEmail,
-  userId
+  onReloadApp
 }) => {
   const { config, updateConfig, setGeminiApiKey } = useAIConfig();
   const { showToast } = useToast();
@@ -32,7 +26,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { t } = useTranslation();
   const [showApiKey, setShowApiKey] = useState(false);
   const [backupStatus, setBackupStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
-  const [isPWAHelpOpen, setIsPWAHelpOpen] = useState(false);
 
   const DEFAULT_GEMINI_MODELS = [
     { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash-Lite (Rapide & Éco ✨)' },
@@ -398,10 +391,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <i className="fas fa-desktop text-2xl text-primary"></i>
               <div>
                 <h2 className="text-xl font-bold">Général & Appareil</h2>
-                <div className="text-[10px] text-text-muted space-y-0.5">
-                    {userEmail && <div>📧 {userEmail}</div>}
-                    {userId && <div>🆔 {userId.substring(0, 8)}...</div>}
-                </div>
               </div>
             </div>
 
@@ -420,6 +409,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 Ce nom sera utilisé pour identifier cet appareil lors des sauvegardes Cloud.
               </p>
             </div>
+
+            {onReloadApp && (
+                <div className="pt-4 border-t border-border flex flex-col items-center">
+                    <p className="text-xs text-text-muted mb-3 text-center">
+                        Si l'application ne semble pas à jour ou en cas de problème :
+                    </p>
+                    <button 
+                        onClick={onReloadApp}
+                        className="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-all flex items-center gap-2 shadow-lg"
+                    >
+                        <i className="fas fa-sync-alt"></i>
+                        Forcer la mise à jour / Actualiser
+                    </button>
+                </div>
+            )}
           </div>
 
           {/* 1. Configuration IA */}
@@ -737,70 +741,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             )}
           </div>
           
-          {/* 4. PWA Section */}
-          <div className="bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-xl p-4 md:p-6 border border-primary/20 space-y-6">
-            <div className="flex items-center gap-3 mb-4">
-              <i className="fas fa-mobile-alt text-2xl text-primary"></i>
-              <div>
-                <h2 className="text-xl font-bold">Application Progressive (PWA)</h2>
-                <p className="text-sm text-text-muted">Installez Studeo comme une application native</p>
-              </div>
-            </div>
-
-            <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <i className="fas fa-bolt text-yellow-500"></i>
-                  <span>Lancement instantané</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <i className="fas fa-wifi-slash text-blue-500"></i>
-                  <span>Fonctionne hors ligne</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <i className="fas fa-window-maximize text-green-500"></i>
-                  <span>Fenêtre dédiée</span>
-                </div>
-              </div>
-              
-              {onReloadApp && (
-                <div className="mt-4 pt-4 border-t border-primary/10 flex flex-col items-center">
-                    <p className="text-xs text-text-muted mb-3 text-center">
-                        Si vous avez des problèmes de synchronisation ou si l'application ne semble pas à jour :
-                    </p>
-                    <button 
-                        onClick={onReloadApp}
-                        className="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-all flex items-center gap-2 shadow-lg"
-                    >
-                        <i className="fas fa-sync-alt"></i>
-                        Actualiser l'application
-                    </button>
-                    <p className="text-[10px] text-text-muted mt-2 italic">
-                        Ceci forcera le chargement de la toute dernière version et videra le cache temporaire.
-                    </p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <InstallButton variant="primary" size="md" className="flex-1 justify-center" />
-              <button
-                onClick={() => setIsPWAHelpOpen(true)}
-                className="px-4 py-2 rounded-xl bg-background-secondary text-text-primary hover:bg-background-tertiary border border-border transition-all flex items-center justify-center gap-2"
-              >
-                <i className="fas fa-book"></i>
-                <span>Documentation</span>
-              </button>
-            </div>
-          </div>
-
         </div>
-
-        {/* PWA Help Modal */}
-        <PWAHelpModal 
-          isOpen={isPWAHelpOpen}
-          onClose={() => setIsPWAHelpOpen(false)}
-        />
       </div>
     </div>
   );

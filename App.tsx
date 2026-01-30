@@ -165,7 +165,7 @@ const AppContent: React.FC = () => {
       if (!user || isInitialSyncProgress.current) return;
       isInitialSyncProgress.current = true;
       
-      if (!silent) coordinator.showToast("☁️ Synchronisation Cloud en cours...", "info");
+      // if (!silent) coordinator.showToast("☁️ Synchronisation Cloud en cours...", "info", 1000); // Shorter or removed
       
       try {
           // 1. Profil & Thème & Suggestions
@@ -184,15 +184,11 @@ const AppContent: React.FC = () => {
                   quizSession.setPersistentErrors(cloudProfile.persistent_errors);
               }
 
-              // Affichage du message de dernière synchro
-              if (cloudProfile.updated_at && !silent) {
+              // Stockage temporaire des infos pour le message final
+              if (cloudProfile.updated_at) {
                   const lastDate = new Date(cloudProfile.updated_at);
-                  const device = cloudProfile.last_sync_device || "Appareil inconnu";
-                  coordinator.showToast(
-                      `☁️ Dernière synchro le ${lastDate.toLocaleDateString()} à ${lastDate.toLocaleTimeString()} (${device})`,
-                      "info",
-                      15000
-                  );
+                  const device = cloudProfile.last_sync_device || "Inconnu";
+                  (window as any)._lastSyncMsg = `(Dernière synchro : ${lastDate.toLocaleDateString()} ${lastDate.toLocaleTimeString()} depuis ${device})`;
               }
           }
 
@@ -300,7 +296,11 @@ const AppContent: React.FC = () => {
               }
           }
 
-          if (!silent) coordinator.showToast("☁️ Données cloud récupérées !", "success");
+          if (!silent) {
+              const extraInfo = (window as any)._lastSyncMsg || "";
+              coordinator.showToast(`✅ Synchronisation Cloud terminée ! ${extraInfo}`, "success", 20000);
+              delete (window as any)._lastSyncMsg;
+          }
       } catch (e) {
           console.error("Load Cloud Error:", e);
           if (!silent) coordinator.showToast("Erreur de récupération cloud", "error");
@@ -314,7 +314,7 @@ const AppContent: React.FC = () => {
   // Déclencher le chargement initial dès que l'utilisateur est disponible
   React.useEffect(() => {
      if (user) {
-         loadCloudData(true); // Silencieux au démarrage
+         loadCloudData(false); // Visible au démarrage pour voir les infos de synchro
      }
   }, [user?.id]);
 

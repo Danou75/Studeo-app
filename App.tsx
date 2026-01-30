@@ -381,6 +381,7 @@ const AppContent: React.FC = () => {
             onThemeStyleChange={theme.setThemeStyle}
             onShowHelp={() => setIsHelpModalOpen(true)}
             onOpenAuth={() => setIsAuthModalOpen(true)}
+            onSyncPush={() => pushCloudData(false)}
             user={user}
           />
         );

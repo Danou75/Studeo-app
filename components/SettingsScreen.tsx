@@ -380,362 +380,370 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onSyncPu
 
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-background/50 min-h-0 pb-32">
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto space-y-6">
         
-        {/* PWA Section */}
-        <div className="bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-2xl p-6 border border-primary/20">
-          <div className="flex items-center gap-3 mb-4">
-            <i className="fas fa-mobile-alt text-2xl text-primary"></i>
+          {/* 1. Configuration IA */}
+          <div className="bg-background-secondary rounded-xl p-4 md:p-6 shadow-lg border border-border space-y-6">
+            <div className="flex items-center gap-3 border-b border-border pb-4">
+              <i className="fas fa-robot text-2xl text-primary"></i>
+              <div>
+                <h2 className="text-xl font-bold">{t('settings.ai.title')}</h2>
+                <p className="text-sm text-text-muted">{t('settings.ai.subtitle')}</p>
+              </div>
+            </div>
+
             <div>
-              <h2 className="text-xl font-bold">Application Progressive (PWA)</h2>
-              <p className="text-sm text-text-muted">Installez Studeo comme une application native</p>
+              <label className="block text-sm font-medium mb-3 text-text-secondary">{t('settings.ai.activeProvider')}</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {[
+                    { id: 'gemini', name: 'Gemini', icon: 'fa-google', sub: 'Google' },
+                    { id: 'openai', name: 'OpenAI', icon: 'fa-microchip', sub: 'GPT-4' },
+                    { id: 'anthropic', name: 'Claude', icon: 'fa-brain', sub: 'Anthropic' },
+                    { id: 'mistral', name: 'Mistral', icon: 'fa-wind', sub: 'Mistral AI' },
+                    { id: 'local', name: 'Local', icon: 'fa-server', sub: 'Ollama/LM' },
+                ].map((p) => (
+                    <button
+                        key={p.id}
+                        onClick={() => updateConfig({ provider: p.id as any })}
+                        className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${
+                            config.provider === p.id
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border hover:border-primary/50 text-text-secondary'
+                        }`}
+                    >
+                        <i className={`fas ${p.icon} text-xl`}></i>
+                        <div className="text-center leading-tight">
+                            <div className="font-bold text-sm">{p.name}</div>
+                            <div className="text-[10px] opacity-70">{p.sub}</div>
+                        </div>
+                    </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-              <div className="flex items-center gap-2">
-                <i className="fas fa-bolt text-yellow-500"></i>
-                <span>Lancement instantané</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <i className="fas fa-wifi-slash text-blue-500"></i>
-                <span>Fonctionne hors ligne</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <i className="fas fa-window-maximize text-green-500"></i>
-                <span>Fenêtre dédiée</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            <InstallButton variant="primary" size="md" className="flex-1 justify-center" />
-            <button
-              onClick={() => setIsPWAHelpOpen(true)}
-              className="px-4 py-2 rounded-xl bg-background-secondary text-text-primary hover:bg-background-tertiary border border-border transition-all flex items-center justify-center gap-2"
-            >
-              <i className="fas fa-book"></i>
-              <span>Documentation</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 border-b border-border pb-4">
-          <i className="fas fa-cloud text-2xl text-blue-500"></i>
-          <div>
-            <h2 className="text-xl font-bold">Synchronisation Cloud</h2>
-            <p className="text-sm text-text-muted">Gérez vos données sur tous vos appareils via le cloud</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
-            <button
-                onClick={onSyncPush}
-                disabled={!onSyncPush}
-                className="p-4 rounded-lg border-2 border-border hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group flex flex-col items-center justify-center text-center"
-            >
-                <div className="flex items-center gap-3">
-                    <i className="fas fa-cloud-upload-alt text-xl text-blue-500 group-hover:scale-110 transition-transform"></i>
-                    <div className="font-bold">Envoyer vers le Cloud</div>
+            {config.provider === 'gemini' && (
+              <div className="space-y-4 animate-fade-in p-4 bg-background rounded-lg border border-border/50">
+                <h3 className="font-semibold flex items-center gap-2"><i className="fas fa-google text-blue-500"></i> {t('settings.ai.title')} Gemini</h3>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-text-secondary">{t('settings.ai.apiKey', { name: 'Gemini' })}</label>
+                  <div className="flex gap-2">
+                    <input type={showApiKey ? 'text' : 'password'} value={config.geminiApiKey} onChange={(e) => setGeminiApiKey(e.target.value)} placeholder="AIza..." className="flex-1 p-3 rounded-lg bg-background-secondary border border-border focus:border-primary outline-none" />
+                    <button onClick={() => setShowApiKey(!showApiKey)} className="px-4 border border-border rounded-lg text-text"><i className={`fas fa-eye${showApiKey ? '-slash' : ''}`}></i></button>
+                  </div>
                 </div>
-                <div className="text-xs text-text-muted mt-2">Pousse les données de cet appareil vers le serveur</div>
-            </button>
-
-            <button
-                onClick={onSyncPull}
-                disabled={!onSyncPull}
-                className="p-4 rounded-lg border-2 border-border hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all group flex flex-col items-center justify-center text-center"
-            >
-                <div className="flex items-center gap-3">
-                    <i className="fas fa-cloud-download-alt text-xl text-indigo-500 group-hover:scale-110 transition-transform"></i>
-                    <div className="font-bold">Récupérer du Cloud</div>
-                </div>
-                <div className="text-xs text-text-muted mt-2">Récupère les données les plus récentes du serveur</div>
-            </button>
-        </div>
-
-        <div className="flex items-center gap-3 border-b border-border pb-4">
-          <i className="fas fa-save text-2xl text-primary"></i>
-          <div>
-            <h2 className="text-xl font-bold">{t('settings.backup.title')}</h2>
-            <p className="text-sm text-text-muted">{t('settings.backup.subtitle')}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-                onClick={handleExportBackup}
-                className="p-4 rounded-lg border-2 border-border hover:border-primary/50 hover:bg-primary/5 transition-all group"
-            >
-                <div className="flex items-center gap-3 justify-center">
-                    <i className="fas fa-download text-xl group-hover:scale-110 transition-transform"></i>
-                    <div className="font-bold">{t('settings.backup.export')}</div>
-                </div>
-                <div className="text-xs text-text-muted mt-2 text-center">{t('settings.backup.exportDesc')}</div>
-            </button>
-
-            <button
-                onClick={handleImportBackup}
-                className="p-4 rounded-lg border-2 border-border hover:border-red-500/50 hover:bg-red-500/5 transition-all group"
-            >
-                <div className="flex items-center gap-3 justify-center text-red-600 dark:text-red-400">
-                    <i className="fas fa-upload text-xl group-hover:scale-110 transition-transform"></i>
-                    <div className="font-bold">{t('settings.backup.import')}</div>
-                </div>
-                <div className="text-xs text-text-muted mt-2 text-center">{t('settings.backup.importDesc')}</div>
-            </button>
-        </div>
-
-        {backupStatus && (
-            <div className={`p-3 rounded-lg text-sm text-center font-medium ${backupStatus.type === 'success' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
-                {backupStatus.message}
-            </div>
-        )}
-      </div>
-
-      <div className="bg-background-secondary rounded-xl p-6 shadow-lg border border-border space-y-6">
-        <div className="flex items-center gap-3 border-b border-border pb-4">
-          <i className="fas fa-robot text-2xl text-primary"></i>
-          <div>
-            <h2 className="text-xl font-bold">{t('settings.ai.title')}</h2>
-            <p className="text-sm text-text-muted">{t('settings.ai.subtitle')}</p>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-3 text-text-secondary">{t('settings.ai.activeProvider')}</label>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {[
-                { id: 'gemini', name: 'Gemini', icon: 'fa-google', sub: 'Google' },
-                { id: 'openai', name: 'OpenAI', icon: 'fa-microchip', sub: 'GPT-4' },
-                { id: 'anthropic', name: 'Claude', icon: 'fa-brain', sub: 'Anthropic' },
-                { id: 'mistral', name: 'Mistral', icon: 'fa-wind', sub: 'Mistral AI' },
-                { id: 'local', name: 'Local', icon: 'fa-server', sub: 'Ollama/LM' },
-            ].map((p) => (
-                <button
-                    key={p.id}
-                    onClick={() => updateConfig({ provider: p.id as any })}
-                    className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${
-                        config.provider === p.id
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-primary/50 text-text-secondary'
-                    }`}
-                >
-                    <i className={`fas ${p.icon} text-xl`}></i>
-                    <div className="text-center leading-tight">
-                        <div className="font-bold text-sm">{p.name}</div>
-                        <div className="text-[10px] opacity-70">{p.sub}</div>
-                    </div>
-                </button>
-            ))}
-          </div>
-        </div>
-
-        {config.provider === 'gemini' && (
-          <div className="space-y-4 animate-fade-in p-4 bg-background rounded-lg border border-border/50">
-            <h3 className="font-semibold flex items-center gap-2"><i className="fas fa-google text-blue-500"></i> {t('settings.ai.title')} Gemini</h3>
-            <div>
-              <label className="block text-sm font-medium mb-2 text-text-secondary">{t('settings.ai.apiKey', { name: 'Gemini' })}</label>
-              <div className="flex gap-2">
-                <input type={showApiKey ? 'text' : 'password'} value={config.geminiApiKey} onChange={(e) => setGeminiApiKey(e.target.value)} placeholder="AIza..." className="flex-1 p-3 rounded-lg bg-background-secondary border border-border focus:border-primary outline-none" />
-                <button onClick={() => setShowApiKey(!showApiKey)} className="px-4 border border-border rounded-lg text-text"><i className={`fas fa-eye${showApiKey ? '-slash' : ''}`}></i></button>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-text-secondary">{t('settings.ai.model')}</label>
-                  <button 
-                    onClick={checkGeminiModels}
-                    disabled={isFetchingModels}
-                    className="text-xs text-primary hover:text-primary-dark underline flex items-center gap-1"
-                  >
-                    {isFetchingModels ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-sync-alt"></i>}
-                    {t('settings.ai.refresh')}
-                  </button>
-              </div>
-              <select value={config.geminiModel} onChange={(e) => updateConfig({ geminiModel: e.target.value })} className="w-full p-3 rounded-lg bg-background-secondary border border-border outline-none text-text">
-                {geminiModelsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            </div>
-          </div>
-        )}
-
-        {config.provider === 'openai' && (
-          <div className="space-y-4 animate-fade-in p-4 bg-background rounded-lg border border-border/50">
-            <h3 className="font-semibold flex items-center gap-2"><i className="fas fa-microchip text-green-500"></i> {t('settings.ai.title')} OpenAI</h3>
-            <div>
-              <label className="block text-sm font-medium mb-2 text-text-secondary">{t('settings.ai.apiKey', { name: 'OpenAI' })}</label>
-              <div className="flex gap-2">
-                <input type={showApiKey ? 'text' : 'password'} value={config.openaiApiKey || ''} onChange={(e) => updateConfig({ openaiApiKey: e.target.value })} placeholder="sk-..." className="flex-1 p-3 rounded-lg bg-background-secondary border border-border focus:border-primary outline-none" />
-                <button onClick={() => setShowApiKey(!showApiKey)} className="px-4 border border-border rounded-lg text-text"><i className={`fas fa-eye${showApiKey ? '-slash' : ''}`}></i></button>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-text-secondary">{t('settings.ai.model')}</label>
-                  <button 
-                    onClick={checkOpenAIModels}
-                    disabled={isFetchingModels}
-                    className="text-xs text-primary hover:text-primary-dark underline flex items-center gap-1"
-                  >
-                    {isFetchingModels ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-sync-alt"></i>}
-                    {t('settings.ai.refresh')}
-                  </button>
-              </div>
-              <select value={config.openaiModel || 'gpt-4o'} onChange={(e) => updateConfig({ openaiModel: e.target.value })} className="w-full p-3 rounded-lg bg-background-secondary border border-border outline-none text-text">
-                {openAIModelsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            </div>
-          </div>
-        )}
-
-        {config.provider === 'anthropic' && (
-          <div className="space-y-4 animate-fade-in p-4 bg-background rounded-lg border border-border/50">
-            <h3 className="font-semibold flex items-center gap-2"><i className="fas fa-brain text-orange-500"></i> {t('settings.ai.title')} Claude</h3>
-            <div>
-              <label className="block text-sm font-medium mb-2 text-text-secondary">{t('settings.ai.apiKey', { name: 'Anthropic' })}</label>
-              <div className="flex gap-2">
-                <input type={showApiKey ? 'text' : 'password'} value={config.anthropicApiKey || ''} onChange={(e) => updateConfig({ anthropicApiKey: e.target.value })} placeholder="sk-ant-..." className="flex-1 p-3 rounded-lg bg-background-secondary border border-border focus:border-primary outline-none" />
-                <button onClick={() => setShowApiKey(!showApiKey)} className="px-4 border border-border rounded-lg text-text"><i className={`fas fa-eye${showApiKey ? '-slash' : ''}`}></i></button>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-text-secondary">{t('settings.ai.model')}</label>
-                  <button 
-                    onClick={checkAnthropicModels}
-                    disabled={isFetchingModels}
-                    className="text-xs text-primary hover:text-primary-dark underline flex items-center gap-1"
-                  >
-                    {isFetchingModels ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-sync-alt"></i>}
-                    {t('settings.ai.refresh')}
-                  </button>
-              </div>
-              <select value={config.anthropicModel || 'claude-3-5-sonnet-20240620'} onChange={(e) => updateConfig({ anthropicModel: e.target.value })} className="w-full p-3 rounded-lg bg-background-secondary border border-border outline-none text-text">
-                {anthropicModelsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            </div>
-          </div>
-        )}
-        
-        {config.provider === 'mistral' && (
-          <div className="space-y-4 animate-fade-in p-4 bg-background rounded-lg border border-border/50">
-            <h3 className="font-semibold flex items-center gap-2"><i className="fas fa-wind text-indigo-500"></i> {t('settings.ai.title')} Mistral</h3>
-            <div>
-              <label className="block text-sm font-medium mb-2 text-text-secondary">{t('settings.ai.apiKey', { name: 'Mistral' })}</label>
-              <div className="flex gap-2">
-                <input type={showApiKey ? 'text' : 'password'} value={config.mistralApiKey || ''} onChange={(e) => updateConfig({ mistralApiKey: e.target.value })} placeholder="..." className="flex-1 p-3 rounded-lg bg-background-secondary border border-border focus:border-primary outline-none" />
-                <button onClick={() => setShowApiKey(!showApiKey)} className="px-4 border border-border rounded-lg text-text"><i className={`fas fa-eye${showApiKey ? '-slash' : ''}`}></i></button>
-              </div>
-            </div>
-            <div>
-               <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-text-secondary">{t('settings.ai.model')}</label>
-                  <button 
-                    onClick={checkMistralModels}
-                    disabled={isFetchingModels}
-                    className="text-xs text-primary hover:text-primary-dark underline flex items-center gap-1"
-                  >
-                    {isFetchingModels ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-sync-alt"></i>}
-                    {t('settings.ai.refresh')}
-                  </button>
-              </div>
-              <select value={config.mistralModel || 'mistral-large-latest'} onChange={(e) => updateConfig({ mistralModel: e.target.value })} className="w-full p-3 rounded-lg bg-background-secondary border border-border outline-none text-text">
-                {mistralModelsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            </div>
-          </div>
-        )}
-
-        {config.provider === 'local' && (
-          <div className="space-y-4 animate-fade-in p-4 bg-background rounded-lg border border-border/50">
-            <h3 className="font-semibold flex items-center gap-2"><i className="fas fa-server text-gray-500"></i> {t('settings.ai.title')} Locale</h3>
-            <div>
-              <label className="block text-sm font-medium mb-2 text-text-secondary">
-                {t('settings.ai.localUrl')}
-              </label>
-              <input
-                type="text"
-                value={config.localApiUrl}
-                onChange={(e) => updateConfig({ localApiUrl: e.target.value })}
-                className="w-full p-3 rounded-lg bg-background-secondary border border-border focus:border-primary focus:outline-none font-mono text-sm text-text"
-              />
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => updateConfig({ localApiUrl: 'http://localhost:11434/v1/chat/completions' })}
-                  className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors"
-                >
-                  🦙 Ollama
-                </button>
-                <button
-                  onClick={() => updateConfig({ localApiUrl: 'http://localhost:1234/v1/chat/completions' })}
-                  className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
-                >
-                  🖥️ LM Studio
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-text-secondary">
-                    {t('settings.ai.model')}
-                </label>
-                <button 
-                    onClick={checkLocalModels}
-                    disabled={isFetchingModels}
-                    className="text-xs text-primary hover:text-primary-dark underline flex items-center gap-1"
-                >
-                    {isFetchingModels ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-sync-alt"></i>}
-                    {t('settings.ai.refresh')}
-                </button>
-              </div>
-              {localModelsList.length > 1 || (localModelsList.length === 1 && localModelsList[0].id !== 'local-model') ? (
-                  <select 
-                    value={config.localModelName} 
-                    onChange={(e) => updateConfig({ localModelName: e.target.value })}
-                    className="w-full p-3 rounded-lg bg-background border border-border focus:border-primary focus:outline-none text-text"
-                  >
-                    {localModelsList.map(m => (
-                        <option key={m.id} value={m.id}>{m.name}</option>
-                    ))}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-text-secondary">{t('settings.ai.model')}</label>
+                      <button 
+                        onClick={checkGeminiModels}
+                        disabled={isFetchingModels}
+                        className="text-xs text-primary hover:text-primary-dark underline flex items-center gap-1"
+                      >
+                        {isFetchingModels ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-sync-alt"></i>}
+                        {t('settings.ai.refresh')}
+                      </button>
+                  </div>
+                  <select value={config.geminiModel} onChange={(e) => updateConfig({ geminiModel: e.target.value })} className="w-full p-3 rounded-lg bg-background-secondary border border-border outline-none text-text">
+                    {geminiModelsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                   </select>
-              ) : (
+                </div>
+              </div>
+            )}
+
+            {config.provider === 'openai' && (
+              <div className="space-y-4 animate-fade-in p-4 bg-background rounded-lg border border-border/50">
+                <h3 className="font-semibold flex items-center gap-2"><i className="fas fa-microchip text-green-500"></i> {t('settings.ai.title')} OpenAI</h3>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-text-secondary">{t('settings.ai.apiKey', { name: 'OpenAI' })}</label>
+                  <div className="flex gap-2">
+                    <input type={showApiKey ? 'text' : 'password'} value={config.openaiApiKey || ''} onChange={(e) => updateConfig({ openaiApiKey: e.target.value })} placeholder="sk-..." className="flex-1 p-3 rounded-lg bg-background-secondary border border-border focus:border-primary outline-none" />
+                    <button onClick={() => setShowApiKey(!showApiKey)} className="px-4 border border-border rounded-lg text-text"><i className={`fas fa-eye${showApiKey ? '-slash' : ''}`}></i></button>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-text-secondary">{t('settings.ai.model')}</label>
+                      <button 
+                        onClick={checkOpenAIModels}
+                        disabled={isFetchingModels}
+                        className="text-xs text-primary hover:text-primary-dark underline flex items-center gap-1"
+                      >
+                        {isFetchingModels ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-sync-alt"></i>}
+                        {t('settings.ai.refresh')}
+                      </button>
+                  </div>
+                  <select value={config.openaiModel || 'gpt-4o'} onChange={(e) => updateConfig({ openaiModel: e.target.value })} className="w-full p-3 rounded-lg bg-background-secondary border border-border outline-none text-text">
+                    {openAIModelsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {config.provider === 'anthropic' && (
+              <div className="space-y-4 animate-fade-in p-4 bg-background rounded-lg border border-border/50">
+                <h3 className="font-semibold flex items-center gap-2"><i className="fas fa-brain text-orange-500"></i> {t('settings.ai.title')} Claude</h3>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-text-secondary">{t('settings.ai.apiKey', { name: 'Anthropic' })}</label>
+                  <div className="flex gap-2">
+                    <input type={showApiKey ? 'text' : 'password'} value={config.anthropicApiKey || ''} onChange={(e) => updateConfig({ anthropicApiKey: e.target.value })} placeholder="sk-ant-..." className="flex-1 p-3 rounded-lg bg-background-secondary border border-border focus:border-primary outline-none" />
+                    <button onClick={() => setShowApiKey(!showApiKey)} className="px-4 border border-border rounded-lg text-text"><i className={`fas fa-eye${showApiKey ? '-slash' : ''}`}></i></button>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-text-secondary">{t('settings.ai.model')}</label>
+                      <button 
+                        onClick={checkAnthropicModels}
+                        disabled={isFetchingModels}
+                        className="text-xs text-primary hover:text-primary-dark underline flex items-center gap-1"
+                      >
+                        {isFetchingModels ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-sync-alt"></i>}
+                        {t('settings.ai.refresh')}
+                      </button>
+                  </div>
+                  <select value={config.anthropicModel || 'claude-3-5-sonnet-20240620'} onChange={(e) => updateConfig({ anthropicModel: e.target.value })} className="w-full p-3 rounded-lg bg-background-secondary border border-border outline-none text-text">
+                    {anthropicModelsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+            
+            {config.provider === 'mistral' && (
+              <div className="space-y-4 animate-fade-in p-4 bg-background rounded-lg border border-border/50">
+                <h3 className="font-semibold flex items-center gap-2"><i className="fas fa-wind text-indigo-500"></i> {t('settings.ai.title')} Mistral</h3>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-text-secondary">{t('settings.ai.apiKey', { name: 'Mistral' })}</label>
+                  <div className="flex gap-2">
+                    <input type={showApiKey ? 'text' : 'password'} value={config.mistralApiKey || ''} onChange={(e) => updateConfig({ mistralApiKey: e.target.value })} placeholder="..." className="flex-1 p-3 rounded-lg bg-background-secondary border border-border focus:border-primary outline-none" />
+                    <button onClick={() => setShowApiKey(!showApiKey)} className="px-4 border border-border rounded-lg text-text"><i className={`fas fa-eye${showApiKey ? '-slash' : ''}`}></i></button>
+                  </div>
+                </div>
+                <div>
+                   <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-text-secondary">{t('settings.ai.model')}</label>
+                      <button 
+                        onClick={checkMistralModels}
+                        disabled={isFetchingModels}
+                        className="text-xs text-primary hover:text-primary-dark underline flex items-center gap-1"
+                      >
+                        {isFetchingModels ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-sync-alt"></i>}
+                        {t('settings.ai.refresh')}
+                      </button>
+                  </div>
+                  <select value={config.mistralModel || 'mistral-large-latest'} onChange={(e) => updateConfig({ mistralModel: e.target.value })} className="w-full p-3 rounded-lg bg-background-secondary border border-border outline-none text-text">
+                    {mistralModelsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {config.provider === 'local' && (
+              <div className="space-y-4 animate-fade-in p-4 bg-background rounded-lg border border-border/50">
+                <h3 className="font-semibold flex items-center gap-2"><i className="fas fa-server text-gray-500"></i> {t('settings.ai.title')} Locale</h3>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-text-secondary">
+                    {t('settings.ai.localUrl')}
+                  </label>
                   <input
                     type="text"
-                    value={config.localModelName}
-                    onChange={(e) => updateConfig({ localModelName: e.target.value })}
-                    placeholder={t('settings.ai.localModelPlaceholder')}
-                    className="w-full p-3 rounded-lg bg-background border border-border focus:border-primary focus:outline-none text-text"
+                    value={config.localApiUrl}
+                    onChange={(e) => updateConfig({ localApiUrl: e.target.value })}
+                    className="w-full p-3 rounded-lg bg-background-secondary border border-border focus:border-primary focus:outline-none font-mono text-sm text-text"
                   />
-              )}
-              <p className="text-xs text-text-muted mt-2">
-                {t('settings.ai.localDesc')}
-              </p>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => updateConfig({ localApiUrl: 'http://localhost:11434/v1/chat/completions' })}
+                      className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors"
+                    >
+                      🦙 Ollama
+                    </button>
+                    <button
+                      onClick={() => updateConfig({ localApiUrl: 'http://localhost:1234/v1/chat/completions' })}
+                      className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                    >
+                      🖥️ LM Studio
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-text-secondary">
+                        {t('settings.ai.model')}
+                    </label>
+                    <button 
+                        onClick={checkLocalModels}
+                        disabled={isFetchingModels}
+                        className="text-xs text-primary hover:text-primary-dark underline flex items-center gap-1"
+                    >
+                        {isFetchingModels ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-sync-alt"></i>}
+                        {t('settings.ai.refresh')}
+                    </button>
+                  </div>
+                  {localModelsList.length > 1 || (localModelsList.length === 1 && localModelsList[0].id !== 'local-model') ? (
+                      <select 
+                        value={config.localModelName} 
+                        onChange={(e) => updateConfig({ localModelName: e.target.value })}
+                        className="w-full p-3 rounded-lg bg-background border border-border focus:border-primary focus:outline-none text-text"
+                      >
+                        {localModelsList.map(m => (
+                            <option key={m.id} value={m.id}>{m.name}</option>
+                        ))}
+                      </select>
+                  ) : (
+                      <input
+                        type="text"
+                        value={config.localModelName}
+                        onChange={(e) => updateConfig({ localModelName: e.target.value })}
+                        placeholder={t('settings.ai.localModelPlaceholder')}
+                        className="w-full p-3 rounded-lg bg-background border border-border focus:border-primary focus:outline-none text-text"
+                      />
+                  )}
+                  <p className="text-xs text-text-muted mt-2">
+                    {t('settings.ai.localDesc')}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <div className="flex gap-3">
+                <i className="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-1"></i>
+                <div className="text-sm text-blue-900 dark:text-blue-100">
+                  <p className="font-medium mb-1">{t('settings.ai.adviceTitle')}</p>
+                  <p>
+                    {t('settings.ai.adviceText')}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-        )}
-      </div>
 
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mt-8">
-        <div className="flex gap-3">
-          <i className="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-1"></i>
-          <div className="text-sm text-blue-900 dark:text-blue-100">
-            <p className="font-medium mb-1">{t('settings.ai.adviceTitle')}</p>
-            <p>
-              {t('settings.ai.adviceText')}
-            </p>
+          {/* 2. Synchronisation Cloud */}
+          <div className="bg-background-secondary rounded-xl p-4 md:p-6 shadow-lg border border-border space-y-6">
+            <div className="flex items-center gap-3 border-b border-border pb-4">
+              <i className="fas fa-cloud text-2xl text-blue-500"></i>
+              <div>
+                <h2 className="text-xl font-bold">Synchronisation Cloud</h2>
+                <p className="text-sm text-text-muted">Gérez vos données sur tous vos appareils via le cloud</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+                <button
+                    onClick={onSyncPush}
+                    disabled={!onSyncPush}
+                    className="p-4 rounded-lg border-2 border-border hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group flex flex-col items-center justify-center text-center"
+                >
+                    <div className="flex items-center gap-3">
+                        <i className="fas fa-cloud-upload-alt text-xl text-blue-500 group-hover:scale-110 transition-transform"></i>
+                        <div className="font-bold">Envoyer vers le Cloud</div>
+                    </div>
+                    <div className="text-xs text-text-muted mt-2">Pousse les données de cet appareil vers le serveur</div>
+                </button>
+
+                <button
+                    onClick={onSyncPull}
+                    disabled={!onSyncPull}
+                    className="p-4 rounded-lg border-2 border-border hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all group flex flex-col items-center justify-center text-center"
+                >
+                    <div className="flex items-center gap-3">
+                        <i className="fas fa-cloud-download-alt text-xl text-indigo-500 group-hover:scale-110 transition-transform"></i>
+                        <div className="font-bold">Récupérer du Cloud</div>
+                    </div>
+                    <div className="text-xs text-text-muted mt-2">Récupère les données les plus récentes du serveur</div>
+                </button>
+            </div>
           </div>
+
+          {/* 3. Sauvegarde & Restauration */}
+          <div className="bg-background-secondary rounded-xl p-4 md:p-6 shadow-lg border border-border space-y-6">
+            <div className="flex items-center gap-3 border-b border-border pb-4">
+              <i className="fas fa-save text-2xl text-primary"></i>
+              <div>
+                <h2 className="text-xl font-bold">{t('settings.backup.title')}</h2>
+                <p className="text-sm text-text-muted">{t('settings.backup.subtitle')}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                    onClick={handleExportBackup}
+                    className="p-4 rounded-lg border-2 border-border hover:border-primary/50 hover:bg-primary/5 transition-all group"
+                >
+                    <div className="flex items-center gap-3 justify-center">
+                        <i className="fas fa-download text-xl group-hover:scale-110 transition-transform"></i>
+                        <div className="font-bold">{t('settings.backup.export')}</div>
+                    </div>
+                    <div className="text-xs text-text-muted mt-2 text-center">{t('settings.backup.exportDesc')}</div>
+                </button>
+
+                <button
+                    onClick={handleImportBackup}
+                    className="p-4 rounded-lg border-2 border-border hover:border-red-500/50 hover:bg-red-500/5 transition-all group"
+                >
+                    <div className="flex items-center gap-3 justify-center text-red-600 dark:text-red-400">
+                        <i className="fas fa-upload text-xl group-hover:scale-110 transition-transform"></i>
+                        <div className="font-bold">{t('settings.backup.import')}</div>
+                    </div>
+                    <div className="text-xs text-text-muted mt-2 text-center">{t('settings.backup.importDesc')}</div>
+                </button>
+            </div>
+
+            {backupStatus && (
+                <div className={`p-3 rounded-lg text-sm text-center font-medium ${backupStatus.type === 'success' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                    {backupStatus.message}
+                </div>
+            )}
+          </div>
+          
+          {/* 4. PWA Section */}
+          <div className="bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-xl p-4 md:p-6 border border-primary/20 space-y-6">
+            <div className="flex items-center gap-3 mb-4">
+              <i className="fas fa-mobile-alt text-2xl text-primary"></i>
+              <div>
+                <h2 className="text-xl font-bold">Application Progressive (PWA)</h2>
+                <p className="text-sm text-text-muted">Installez Studeo comme une application native</p>
+              </div>
+            </div>
+
+            <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <i className="fas fa-bolt text-yellow-500"></i>
+                  <span>Lancement instantané</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <i className="fas fa-wifi-slash text-blue-500"></i>
+                  <span>Fonctionne hors ligne</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <i className="fas fa-window-maximize text-green-500"></i>
+                  <span>Fenêtre dédiée</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <InstallButton variant="primary" size="md" className="flex-1 justify-center" />
+              <button
+                onClick={() => setIsPWAHelpOpen(true)}
+                className="px-4 py-2 rounded-xl bg-background-secondary text-text-primary hover:bg-background-tertiary border border-border transition-all flex items-center justify-center gap-2"
+              >
+                <i className="fas fa-book"></i>
+                <span>Documentation</span>
+              </button>
+            </div>
+          </div>
+
         </div>
+
+        {/* PWA Help Modal */}
+        <PWAHelpModal 
+          isOpen={isPWAHelpOpen}
+          onClose={() => setIsPWAHelpOpen(false)}
+        />
       </div>
     </div>
-    
-    {/* PWA Help Modal */}
-    <PWAHelpModal 
-      isOpen={isPWAHelpOpen}
-      onClose={() => setIsPWAHelpOpen(false)}
-    />
-  </div>
   );
 };

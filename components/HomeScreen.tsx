@@ -25,6 +25,7 @@ interface HomeScreenProps {
     onThemeStyleChange: (style: ThemeStyle) => void;
     onShowHelp: () => void;
     onOpenAuth: () => void;
+    onSyncPush?: () => void;
     user: any;
 }
 
@@ -51,6 +52,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     onThemeStyleChange,
     onShowHelp,
     onOpenAuth,
+    onSyncPush,
     user
 }) => {
     const { t, language, setLanguage } = useTranslation();
@@ -205,12 +207,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             <i className="fas fa-fire"></i> {streak}
                         </div>
                         
+                        {user && onSyncPush && (
+                            <button 
+                                onClick={onSyncPush}
+                                className="p-2 bg-blue-500/10 text-blue-600 rounded-xl shadow-sm hover:text-blue-700 transition-colors border border-blue-500/20"
+                                title="Sauvegarder vers le Cloud"
+                            >
+                                <i className="fas fa-cloud-upload-alt"></i>
+                            </button>
+                        )}
+                        
                         <button 
                             onClick={onOpenAuth} 
-                            className={`p-2 rounded-xl shadow-sm transition-all flex items-center gap-2 px-3 ${user ? 'bg-success/10 text-success border border-success/20' : 'bg-white/80 dark:bg-gray-800/80 text-gray-400 hover:text-primary'}`}
+                            className={`p-2 rounded-xl shadow-sm transition-all flex items-center gap-2 px-3 ${user ? 'bg-success/10 text-success border border-success/20' : 'bg-white/80 dark:bg-gray-800/80 text-gray-400 hover:text-primary border border-transparent'}`}
                         >
-                            <i className={`fas ${user ? 'fa-cloud-check' : 'fa-cloud-upload-alt'}`}></i>
-                            {user && <span className="text-[9px] font-bold uppercase hidden sm:inline">Synchro</span>}
+                            <i className={`fas ${user ? 'fa-user-circle' : 'fa-cloud-upload-alt'}`}></i>
+                            {user && <span className="text-[9px] font-bold uppercase hidden sm:inline">Compte</span>}
                         </button>
 
                         <button 

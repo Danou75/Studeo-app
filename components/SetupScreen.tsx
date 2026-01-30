@@ -252,22 +252,22 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                             <span className="text-[10px] font-black ml-1 uppercase opacity-80 text-inherit">{t('setup.statsLabel')}</span>
                         </button>
 
-                        {cloudStatus && cloudStatus !== 'idle' && (
-                            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border-transparent backdrop-blur-sm transition-all ${
-                                cloudStatus === 'syncing' ? 'bg-blue-500/40 text-white animate-pulse' :
-                                cloudStatus === 'synced' ? 'bg-green-500/40 text-white' :
-                                'bg-red-500/40 text-white'
-                            }`}>
-                                <i className={`fas ${
-                                    cloudStatus === 'syncing' ? 'fa-sync-alt fa-spin' : 
-                                    cloudStatus === 'synced' ? 'fa-check' :
-                                    'fa-exclamation-triangle'
-                                }`}></i>
-                                <span className="text-[10px] font-bold uppercase hidden sm:inline">
-                                    {cloudStatus === 'syncing' ? 'Cloud...' : 'Cloud OK'}
-                                </span>
-                            </div>
-                        )}
+                        <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 backdrop-blur-md transition-all shadow-sm ${
+                            cloudStatus === 'syncing' ? 'bg-blue-500 text-white animate-pulse shadow-blue-500/30' :
+                            cloudStatus === 'synced' ? 'bg-green-500 text-white shadow-green-500/30' :
+                            cloudStatus === 'error' ? 'bg-red-500 text-white shadow-red-500/30' :
+                            'bg-white/10 text-white/70'
+                        }`}>
+                            <i className={`fas ${
+                                cloudStatus === 'syncing' ? 'fa-sync-alt fa-spin text-[10px]' : 
+                                cloudStatus === 'synced' ? 'fa-cloud-check' :
+                                cloudStatus === 'error' ? 'fa-exclamation-triangle' :
+                                'fa-cloud'
+                            }`}></i>
+                            <span className="text-[10px] font-black uppercase tracking-tighter">
+                                {cloudStatus === 'syncing' ? 'Cloud...' : (cloudStatus === 'synced' ? 'À Jour' : (cloudStatus === 'error' ? 'Erreur' : 'Sync OK'))}
+                            </span>
+                        </div>
 
                         {onShowSettings && (
                             <button 

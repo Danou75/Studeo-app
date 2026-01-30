@@ -27,7 +27,7 @@ export const syncService = {
         if (error) {
             console.error('Sync Profile Error:', error.message, error.details, error.hint);
         }
-        return !error;
+        return { success: !error, error };
     },
 
     /**
@@ -48,11 +48,9 @@ export const syncService = {
     },
 
     /**
-     * Synchronise toutes les flashcards (on remplace par simplicité pour la v1)
+     * Synchronise toutes les flashcards
      */
     async syncFlashcards(userId: string, flashcardSets: Record<string, any[]>) {
-        // En v1, on simplifie : on stocke tout l'objet record dans une seule entrée ou on itère.
-        // On va itérer pour avoir un meilleur suivi.
         const entries = Object.entries(flashcardSets).map(([name, cards]) => ({
             user_id: userId,
             name,
@@ -60,7 +58,6 @@ export const syncService = {
             updated_at: new Date().toISOString()
         }));
 
-        // Delete existing sets for this user to avoid duplication (simpliste but effective for a first sync)
         await supabase.from('flashcard_sets').delete().eq('user_id', userId);
         
         const { error } = await supabase
@@ -87,7 +84,7 @@ export const syncService = {
             return null;
         }
 
-        return data; // Return full data including name, cards, updated_at
+        return data;
     },
 
     /**
@@ -133,7 +130,7 @@ export const syncService = {
             targetLevel: p.target_level,
             modules: p.modules,
             lastActiveAt: p.last_active_at,
-            createdAt: p.created_at || p.last_active_at // Fallback
+            createdAt: p.created_at || p.last_active_at
         })) as StudyProgram[];
     },
 
@@ -186,6 +183,7 @@ export const syncService = {
             createdAt: l.created_at
         })) as Lesson[];
     },
+
     /**
      * Synchronise les sessions de chat
      */

@@ -118,7 +118,7 @@ const AppContent: React.FC = () => {
         const currentHistory = [...quizSession.history];
         
         // 1. Sync Profile
-        const profileSyncOk = await syncService.syncProfile(user.id, {
+        const profileSync = await syncService.syncProfile(user.id, {
             theme_mode: theme.themeMode,
             theme_style: theme.themeStyle,
             gamification_data: gamification.gamificationData,
@@ -127,9 +127,12 @@ const AppContent: React.FC = () => {
             library_suggestions: coordinator.librarySuggestions,
             quiz_history: currentHistory,
             persistent_errors: quizSession.persistentErrors,
-            last_sync_device: deviceName
+            // Commenté temporairement pour vérifier si c'est la cause de l'erreur (colonne manquante)
+            // last_sync_device: deviceName
         });
-        if (!profileSyncOk) throw new Error("Échec de la synchronisation du profil");
+        if (!profileSync.success) {
+            throw new Error(`Profil: ${profileSync.error?.message || "Erreur inconnue"}`);
+        }
 
         // 2. Sync Flashcards
         const cardsSyncOk = await syncService.syncFlashcards(user.id, currentSets);

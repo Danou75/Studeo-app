@@ -127,8 +127,7 @@ const AppContent: React.FC = () => {
             library_suggestions: coordinator.librarySuggestions,
             quiz_history: currentHistory,
             persistent_errors: quizSession.persistentErrors,
-            // Commenté temporairement pour vérifier si c'est la cause de l'erreur (colonne manquante)
-            // last_sync_device: deviceName
+            last_sync_device: deviceName
         });
         if (!profileSync.success) {
             throw new Error(`Profil: ${profileSync.error?.message || "Erreur inconnue"}`);

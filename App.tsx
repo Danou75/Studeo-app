@@ -167,13 +167,13 @@ const AppContent: React.FC = () => {
       theme.themeStyle,
       gamification.gamificationData,
       analyticsData,
-      quizSession.history,
-      quizSession.persistentErrors
+      quizSession.persistentErrors,
+      config // Ajouté pour déclencher la synchro quand on change le nom de l'appareil
   ]);
 
 
   // Récupération des données Cloud (Au login ou au démarrage si déjà connecté)
-  const loadCloudData = async (silent = false) => {
+  const loadCloudData = async (silent = false, force = false) => {
       if (!user || isInitialSyncProgress.current) return;
       isInitialSyncProgress.current = true;
       
@@ -208,6 +208,15 @@ const AppContent: React.FC = () => {
           const cloudSetsRaw = await syncService.getFlashcards(user.id);
           if (cloudSetsRaw && Array.isArray(cloudSetsRaw) && cloudSetsRaw.length > 0) {
               flashcards.setFlashcardSets(prev => {
+                  if (force) {
+                      // Mode FORCE: On remplace tout le local par le cloud
+                      const forcedMerged: Record<string, any[]> = {};
+                      cloudSetsRaw.forEach((item: any) => {
+                          forcedMerged[item.name] = item.cards;
+                      });
+                      return forcedMerged;
+                  }
+
                   const merged = { ...prev };
                   cloudSetsRaw.forEach((item: any) => {
                       const setName = item.name;
@@ -225,11 +234,11 @@ const AppContent: React.FC = () => {
                               if (!lc) {
                                   localMap.set(cc.id, cc);
                               } else {
-                                  // Compare SRS progress - Keep the most recently reviewed version
                                   const cloudLast = cc.srsData?.lastReviewed ? new Date(cc.srsData.lastReviewed).getTime() : 0;
                                   const localLast = lc.srsData?.lastReviewed ? new Date(lc.srsData.lastReviewed).getTime() : 0;
-                                  
-                                  if (cloudLast > localLast) {
+
+                                  // Bug fix: use >= so cloud winner on tie (especially for new unreviewed cards)
+                                  if (cloudLast >= localLast) {
                                       localMap.set(cc.id, cc);
                                   }
                               }
@@ -246,6 +255,8 @@ const AppContent: React.FC = () => {
           if (cloudPrograms && cloudPrograms.length > 0) {
               if (coordinator.setStudyPrograms) {
                   coordinator.setStudyPrograms(prev => {
+                      if (force) return cloudPrograms;
+                      
                       const map = new Map(prev.map(p => [p.id, p]));
                       cloudPrograms.forEach(cp => {
                           const existing = map.get(cp.id);
@@ -515,7 +526,11 @@ const AppContent: React.FC = () => {
           <SettingsScreen 
             onBack={handleBack} 
             onSyncPush={() => pushCloudData(false)}
-            onSyncPull={() => loadCloudData(false)}
+            onSyncPull={() => {
+                if (window.confirm("Attention : Cette action va remplacer toutes vos données locales (cartes, progrès, historique) par la version du Cloud. Souhaitez-vous continuer ?")) {
+                    loadCloudData(false, true);
+                }
+            }}
           />
         );
 

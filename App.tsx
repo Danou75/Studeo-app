@@ -43,6 +43,8 @@ import { ChatScreen } from "./components/ChatScreen";
 import { AIConfigProvider } from "./contexts/AIConfigContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { useAppCoordinator } from "./hooks/useAppCoordinator";
+import { INITIAL_GAMIFICATION_DATA } from './utils/achievements';
+import { DEFAULT_FLASHCARDS, DEFAULT_FLASHCARD_SET_NAME } from './constants';
 import { Screen } from "./types";
 import { ConfirmationProvider } from "./contexts/ConfirmationContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
@@ -260,13 +262,17 @@ const AppContent: React.FC = () => {
           // 1. Profil & Thème & Suggestions (Bypass cache avec timestamp)
           const cloudProfile = await syncService.getProfile(user.id);
           console.log(`[Sync] ${new Date().toLocaleTimeString()} - Pulled profile for ${user.email} (ID: ${user.id}). Last update: ${cloudProfile?.updated_at}`);
+          
           if (cloudProfile) {
               if (cloudProfile.theme_mode) theme.setThemeMode(cloudProfile.theme_mode as any);
               if (cloudProfile.theme_style) theme.setThemeStyle(cloudProfile.theme_style as any);
               if (cloudProfile.curriculum_suggestions) coordinator.setCurriculumSuggestions(cloudProfile.curriculum_suggestions);
               if (cloudProfile.library_suggestions) coordinator.setLibrarySuggestions(cloudProfile.library_suggestions);
               
-              // New: Sync History & Errors
+              if (cloudProfile.gamification_data) {
+                  gamification.setGamificationData(cloudProfile.gamification_data);
+              }
+              
               if (cloudProfile.quiz_history && Array.isArray(cloudProfile.quiz_history)) {
                   quizSession.setHistory(cloudProfile.quiz_history);
               }
@@ -274,12 +280,21 @@ const AppContent: React.FC = () => {
                   quizSession.setPersistentErrors(cloudProfile.persistent_errors);
               }
 
-              // Stockage temporaire des infos pour le message final
               if (cloudProfile.updated_at) {
                   const lastDate = new Date(cloudProfile.updated_at);
                   const device = cloudProfile.last_sync_device || "Inconnu";
                   (window as any)._lastSyncMsg = `(Dernière synchro : ${lastDate.toLocaleDateString()} ${lastDate.toLocaleTimeString()} depuis ${device})`;
               }
+          } else if (force) {
+              // Mode FORCE et pas de profil cloud: on réinitialise tout par mesure de sécurité
+              console.log("[Sync] Force Pull: No cloud profile found, resetting to defaults.");
+              theme.setThemeMode('light');
+              theme.setThemeStyle('default');
+              coordinator.setCurriculumSuggestions([]);
+              coordinator.setLibrarySuggestions([]);
+              gamification.setGamificationData(INITIAL_GAMIFICATION_DATA);
+              quizSession.setHistory([]);
+              quizSession.setPersistentErrors({});
           }
 
           // 2. Flashcards
@@ -288,7 +303,7 @@ const AppContent: React.FC = () => {
               flashcards.setFlashcardSets(prev => {
                   if (force) {
                       // Mode FORCE: On repart de zéro localement
-                      console.log("[Sync] Force Overwrite: Clearing local sets before applying cloud data");
+                      console.log("[Sync] Force Overwrite: Applying cloud cards directly");
                       const forcedMerged: Record<string, any[]> = {};
                       cloudSetsRaw.forEach((item: any) => {
                           forcedMerged[item.name] = item.cards;
@@ -304,7 +319,7 @@ const AppContent: React.FC = () => {
                       if (!merged[setName]) {
                           merged[setName] = cloudCards;
                       } else {
-                          // Merge logic: Card by card for matching IDs to preserve SRS progress
+                          // Merge logic
                           const localCards = merged[setName];
                           const localMap = new Map(localCards.map(c => [c.id, c]));
                           
@@ -315,8 +330,6 @@ const AppContent: React.FC = () => {
                               } else {
                                   const cloudLast = cc.srsData?.lastReviewed ? new Date(cc.srsData.lastReviewed).getTime() : 0;
                                   const localLast = lc.srsData?.lastReviewed ? new Date(lc.srsData.lastReviewed).getTime() : 0;
-
-                                  // Bug fix: use >= so cloud winner on tie (especially for new unreviewed cards)
                                   if (cloudLast >= localLast) {
                                       localMap.set(cc.id, cc);
                                   }
@@ -327,6 +340,13 @@ const AppContent: React.FC = () => {
                   });
                   return merged;
               });
+          } else if (force) {
+              // Cloud vide et mode force : on remet les cartes par défaut
+              console.log("[Sync] Force Pull: No cloud cards found, resetting to defaults.");
+              flashcards.setFlashcardSets({
+                  [DEFAULT_FLASHCARD_SET_NAME]: DEFAULT_FLASHCARDS,
+              });
+              flashcards.setCurrentSetName(DEFAULT_FLASHCARD_SET_NAME);
           }
 
           // 3. Programmes d'étude
@@ -368,11 +388,13 @@ const AppContent: React.FC = () => {
           }
           
           // 5. Chat Sessions (Bidirectional Sync)
+          if (force) ChatService.clearAllSessions();
+          
           const localSessions = ChatService.getSessions();
           const cloudChat = await syncService.getChatSessions(user.id);
           
           if (cloudChat) {
-              const merged = [...localSessions];
+              const merged = force ? [] : [...localSessions];
               let hasChanges = false;
               
               cloudChat.forEach(cs => {
@@ -386,14 +408,11 @@ const AppContent: React.FC = () => {
                   }
               });
               
-              // Si on a récupéré des trucs du cloud qu'on n'avait pas localement
-              if (hasChanges) {
+              if (hasChanges || force) {
                   ChatService.saveSessions(merged);
               }
               
-              // On repousse immédiatement vers le cloud pour s'assurer que le cloud a aussi 
-              // ce qu'on avait localement mais qu'il n'avait pas encore (Sync Mac -> Cloud)
-              if (merged.length > 0) {
+              if (merged.length > 0 && hasChanges) {
                   await syncService.syncChatSessions(user.id, merged);
               }
           }
@@ -428,9 +447,12 @@ const AppContent: React.FC = () => {
   // Déclencher le chargement initial dès que l'utilisateur est disponible
   React.useEffect(() => {
      if (user) {
-         console.log(`[Sync] User switched/logged in: ${user.id}. Cleaning local state before pull.`);
-         coordinator.resetAllData();
-         loadCloudData(false); // Visible au démarrage pour voir les infos de synchro
+         // Délai de précaution pour laisser les modales se fermer proprement avant le grand nettoyage
+         const timer = setTimeout(() => {
+            console.log(`[Sync] User switched: ${user.id}. Starting full sync.`);
+            loadCloudData(false, true); // Visible au démarrage pour voir les infos de synchro
+         }, 100);
+         return () => clearTimeout(timer);
      }
   }, [user?.id]);
 

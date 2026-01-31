@@ -1,5 +1,4 @@
 {
-  "buildCommand": "npm run build:web",
-  "outputDirectory": "dist",
-  "framework": "vite"
+  "buildCommand": "npm run build:web && ls -R dist",
+  "outputDirectory": "dist"
 }

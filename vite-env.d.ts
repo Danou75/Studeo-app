@@ -6,3 +6,5 @@
 interface Window {
   __TAURI__?: object;
 }
+
+declare const __APP_VERSION__: string;

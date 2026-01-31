@@ -12,6 +12,9 @@ export default defineConfig(({ mode }) => ({
             modernPolyfills: ['es.promise.finally']
         })
     ],
+    define: {
+        '__APP_VERSION__': JSON.stringify(process.env.npm_package_version),
+    },
     // prevent vite from obscuring rust errors
     clearScreen: false,
     // Tauri expects a fixed port, fail if that port is not available

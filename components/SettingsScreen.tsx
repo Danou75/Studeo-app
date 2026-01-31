@@ -26,6 +26,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { t } = useTranslation();
   const [showApiKey, setShowApiKey] = useState(false);
   const [backupStatus, setBackupStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+  
+  const [latestVersion, setLatestVersion] = useState<string | null>(null);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<'up-to-date' | 'available' | 'error' | null>(null);
 
   const DEFAULT_GEMINI_MODELS = [
     { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash-Lite (Rapide & Éco ✨)' },
@@ -248,6 +252,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   };
 
+  const checkUpdate = async () => {
+    setIsCheckingUpdate(true);
+    setUpdateStatus(null);
+    try {
+        // Fetch package.json from the main branch
+        const response = await fetch('https://raw.githubusercontent.com/Danou75/Studeo-app/main/package.json');
+        if (!response.ok) throw new Error("Impossible de joindre le serveur de mise à jour.");
+        
+        const data = await response.json();
+        const remoteVersion = data.version;
+        setLatestVersion(remoteVersion);
+        
+        if (remoteVersion === __APP_VERSION__) {
+            setUpdateStatus('up-to-date');
+        } else {
+            setUpdateStatus('available');
+        }
+    } catch (err: any) {
+        console.error("Update check error:", err);
+        setUpdateStatus('error');
+        showToast(err.message || "Erreur de connexion", 'error');
+    } finally {
+        setIsCheckingUpdate(false);
+    }
+  };
+
   const handleExportBackup = async () => {
     try {
       const data: Record<string, any> = {};
@@ -411,17 +441,60 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
 
             {onReloadApp && (
-                <div className="pt-4 border-t border-border flex flex-col items-center">
-                    <p className="text-xs text-text-muted mb-3 text-center">
-                        {t('settings.general.updateText')}
-                    </p>
-                    <button 
-                        onClick={onReloadApp}
-                        className="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-all flex items-center gap-2 shadow-lg"
-                    >
-                        <i className="fas fa-sync-alt"></i>
-                        {t('settings.general.updateButton')}
-                    </button>
+                <div className="pt-4 border-t border-border space-y-4">
+                    <div className="flex flex-col items-center">
+                        <p className="text-xs text-text-muted mb-3 text-center">
+                            {t('settings.general.updateText')}
+                        </p>
+                        <button 
+                            onClick={onReloadApp}
+                            className="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-all flex items-center gap-2 shadow-lg"
+                        >
+                            <i className="fas fa-sync-alt"></i>
+                            {t('settings.general.updateButton')}
+                        </button>
+                    </div>
+
+                    <div className="mt-4 p-4 bg-background rounded-xl border border-border/50">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-sm font-semibold flex items-center gap-2">
+                                <i className="fas fa-code-branch text-primary"></i>
+                                {t('settings.general.versionCheckTitle')}
+                            </h3>
+                            <button 
+                                onClick={checkUpdate}
+                                disabled={isCheckingUpdate}
+                                className="text-xs text-primary hover:underline flex items-center gap-1"
+                            >
+                                {isCheckingUpdate ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-search"></i>}
+                                {t('settings.general.checkButton')}
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                            <div className="p-3 bg-background-secondary rounded-lg border border-border">
+                                <div className="text-text-muted mb-1">{t('settings.general.currentVersion')}</div>
+                                <div className="font-mono font-bold text-sm">v{__APP_VERSION__}</div>
+                            </div>
+                            <div className="p-3 bg-background-secondary rounded-lg border border-border">
+                                <div className="text-text-muted mb-1">{t('settings.general.latestVersion')}</div>
+                                <div className="font-mono font-bold text-sm">
+                                    {latestVersion ? `v${latestVersion}` : '---'}
+                                </div>
+                            </div>
+                        </div>
+
+                        {updateStatus === 'up-to-date' && (
+                            <div className="mt-3 text-center text-green-600 dark:text-green-400 text-xs font-bold animate-fade-in">
+                                {t('settings.general.upToDate')}
+                            </div>
+                        )}
+                        {updateStatus === 'available' && (
+                            <div className="mt-3 text-center text-accent text-xs font-bold animate-pulse">
+                                {t('settings.general.updateAvailable')}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
           </div>

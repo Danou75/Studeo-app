@@ -772,7 +772,14 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
             deviceNameHint: "Ce nom identifie cet appareil lors des sauvegardes Cloud.",
             updateTitle: "Mise à jour de l'application",
             updateText: "Si l'application ne semble pas à jour ou en cas de problème :",
-            updateButton: "Forcer la mise à jour / Actualiser"
+            updateButton: "Forcer la mise à jour / Actualiser",
+            versionCheckTitle: "Vérification de version",
+            currentVersion: "Version installée",
+            latestVersion: "Dernière disponible",
+            checking: "Vérification...",
+            upToDate: "Application à jour ✅",
+            updateAvailable: "Mise à jour disponible ! ✨",
+            checkButton: "Vérifier les mises à jour"
         },
         sync: {
             title: "Synchronisation Cloud",

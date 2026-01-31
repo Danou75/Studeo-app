@@ -756,7 +756,14 @@ export const en: typeof fr = {
             deviceNameHint: "This name identifies this device during Cloud backups.",
             updateTitle: "App Update",
             updateText: "If the app doesn't seem up to date or in case of issues:",
-            updateButton: "Force Update / Refresh"
+            updateButton: "Force Update / Refresh",
+            versionCheckTitle: "Version Check",
+            currentVersion: "Installed version",
+            latestVersion: "Latest available",
+            checking: "Checking...",
+            upToDate: "App is up to date ✅",
+            updateAvailable: "Update available! ✨",
+            checkButton: "Check for updates"
         },
         sync: {
             title: "Cloud Sync",

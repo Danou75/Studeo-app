@@ -19,8 +19,8 @@ try {
   );
   
   // Enregistrer le service worker pour les fonctionnalités PWA
-  registerServiceWorker();
-  setupInstallPrompt();
+  // registerServiceWorker();
+  // setupInstallPrompt();
   
 } catch (error: any) {
   rootElement.innerHTML = `<div style="padding: 20px; color: red;">

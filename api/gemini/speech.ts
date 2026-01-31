@@ -4,9 +4,11 @@
 // car le format "REST" est souvent plus simple pour le streaming binaire, 
 // mais nous allons utiliser fetch vers l'endpoint REST de Google.
 
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
 const API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_API_KEY;
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -73,8 +75,8 @@ export default async function handler(req, res) {
             throw new Error('No audio content received');
         }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('TTS Error:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 }

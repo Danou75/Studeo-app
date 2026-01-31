@@ -1,9 +1,11 @@
 
 import { GoogleGenAI } from '@google/genai';
 
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
 const API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_API_KEY;
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'OPTIONS') {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -32,9 +34,7 @@ export default async function handler(req, res) {
         }
 
         // Utilisation du SDK Google GenAI pour Node
-        // Attention: la syntaxe change selon la version du SDK. 
-        // Si @google/genai est utilisé :
-        const ai = new GoogleGenAI({ apiKey: finalApiKey });
+        // const ai = new GoogleGenAI({ apiKey: finalApiKey });
         // Utilisation générique compatible (adapter selon SDK exact installé)
         
         // Note: Pour Vercel Serverless, un fetch REST manuel est souvent plus stable
@@ -69,8 +69,8 @@ export default async function handler(req, res) {
 
         res.status(200).json({ text });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Conjugation API Error:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 }

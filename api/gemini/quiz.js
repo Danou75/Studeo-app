@@ -1,8 +1,7 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_API_KEY;
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req, res) {
     if (req.method === 'OPTIONS') {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -102,7 +101,7 @@ Ne mets rien d'autre que le JSON.
              res.status(200).json({ text: cleanText }); 
         }
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('Quiz API Error:', error);
         res.status(500).json({ error: error.message || 'Internal Server Error' });
     }

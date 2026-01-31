@@ -11,10 +11,11 @@ interface AuthModalProps {
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
     onForceRefresh?: () => void;
+    onResetData?: () => void;
     user: any;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode, themeStyle, onForceRefresh, user }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode, themeStyle, onForceRefresh, onResetData, user }) => {
     const { t } = useTranslation();
     const [email, setEmail] = useState(() => localStorage.getItem('studeo_remember_email') || '');
     const [password, setPassword] = useState(() => {
@@ -95,6 +96,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode
                                 setEmail('');
                                 setPassword('');
                                 setRememberMe(false);
+                                
+                                // Réinitialiser les données locales AVANT le signOut pour éviter les fuites
+                                if (onResetData) onResetData();
+                                
                                 await supabase.auth.signOut();
                                 // Ne pas fermer la modal pour permettre de se reconnecter
                             }}

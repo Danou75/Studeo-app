@@ -428,6 +428,8 @@ const AppContent: React.FC = () => {
   // Déclencher le chargement initial dès que l'utilisateur est disponible
   React.useEffect(() => {
      if (user) {
+         console.log(`[Sync] User switched/logged in: ${user.id}. Cleaning local state before pull.`);
+         coordinator.resetAllData();
          loadCloudData(false); // Visible au démarrage pour voir les infos de synchro
      }
   }, [user?.id]);
@@ -979,6 +981,11 @@ const AppContent: React.FC = () => {
           themeMode={theme.themeMode}
           themeStyle={theme.themeStyle}
           onForceRefresh={() => loadCloudData(false)}
+          onResetData={() => {
+              coordinator.resetAllData();
+              userHasModified.current = false;
+              setCanAutoPush(false);
+          }}
           user={user}
       />
 

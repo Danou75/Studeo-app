@@ -187,6 +187,13 @@ export class ChatService {
         const sessions = this.getSessions().filter(s => s.id !== sessionId);
         this.saveSessions(sessions);
     }
+    
+    /**
+     * Supprime TOUTES les sessions (utilisé lors de la déconnexion)
+     */
+    static clearAllSessions(): void {
+        localStorage.removeItem(this.STORAGE_KEY);
+    }
 
     /**
      * Exporte une conversation en Markdown

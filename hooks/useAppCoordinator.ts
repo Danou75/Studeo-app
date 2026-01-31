@@ -15,7 +15,9 @@ import { Flashcard, QuizConfig, Lesson, StudyProgram, StudyModule, Tutor, TutorC
 import { generateModuleContent, generateBonusExercises } from '../services/curriculumService';
 import { generateExercisesFromLesson } from '../services/exerciseGenerationService';
 import { generateFlashcardsWithAI } from '../services/aiCardGenerator';
-import { TUTORS } from '../constants';
+import { ChatService } from '../services/chatService';
+import { TUTORS, DEFAULT_FLASHCARDS, DEFAULT_FLASHCARD_SET_NAME } from '../constants';
+import { INITIAL_GAMIFICATION_DATA } from '../utils/achievements';
 import { getAIClientConfig } from '../utils/aiConfigHelper';
 
 
@@ -687,6 +689,22 @@ export const useAppCoordinator = () => {
         handleNavigateToAIGenerator,
         handleAICardsGenerated,
         showToast,
+        
+        resetAllData: () => {
+            console.log("[Coordinator] Total reset of local data");
+            flashcards.setFlashcardSets({
+                [DEFAULT_FLASHCARD_SET_NAME]: DEFAULT_FLASHCARDS,
+            });
+            flashcards.setCurrentSetName(DEFAULT_FLASHCARD_SET_NAME);
+            studyContent.setSavedLessons([]);
+            studyContent.setStudyPrograms([]);
+            studyContent.setCurriculumSuggestions([]);
+            studyContent.setLibrarySuggestions([]);
+            gamification.setGamificationData(INITIAL_GAMIFICATION_DATA);
+            quizSession.setHistory([]);
+            quizSession.setPersistentErrors({});
+            ChatService.clearAllSessions();
+        },
         
         // Tutors Room State
         tutorsRoomCategory,

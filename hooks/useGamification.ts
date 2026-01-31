@@ -75,6 +75,7 @@ export const useGamification = () => {
 
   return {
     gamificationData,
+    setGamificationData,
     updateGamification,
     newAchievements,
     clearNewAchievements

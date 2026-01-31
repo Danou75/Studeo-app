@@ -266,7 +266,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     try {
         // Fetch version from the deployed site instead of private GitHub
         // Use a cache-buster to ensure we get the latest file
-        const response = await fetch(`https://studeo-app.vercel.app/version.json?t=${Date.now()}`);
+        const response = await fetch(`/version.json?t=${Date.now()}`);
         if (!response.ok) throw new Error("Impossible de joindre le serveur de mise à jour.");
         
         const data = await response.json();

@@ -140,6 +140,13 @@ const AppContent: React.FC = () => {
         const currentLessons = [...coordinator.savedLessons];
         const currentHistory = [...quizSession.history];
         
+        const knownDevicesRaw = localStorage.getItem('studeo_known_devices');
+        const knownDevices = knownDevicesRaw ? JSON.parse(knownDevicesRaw) : [];
+        if (deviceName && !knownDevices.includes(deviceName)) {
+            knownDevices.push(deviceName);
+            localStorage.setItem('studeo_known_devices', JSON.stringify(knownDevices));
+        }
+
         // 1. Sync Profile
         const profileSync = await syncService.syncProfile(user.id, {
             theme_mode: theme.themeMode,
@@ -150,7 +157,8 @@ const AppContent: React.FC = () => {
             library_suggestions: coordinator.librarySuggestions,
             quiz_history: currentHistory,
             persistent_errors: quizSession.persistentErrors,
-            last_sync_device: deviceName
+            last_sync_device: deviceName,
+            known_devices: knownDevices
         });
         if (!profileSync.success) {
             throw new Error(`Profil: ${profileSync.error?.message || "Erreur inconnue"}`);
@@ -278,6 +286,10 @@ const AppContent: React.FC = () => {
               }
               if (cloudProfile.persistent_errors) {
                   quizSession.setPersistentErrors(cloudProfile.persistent_errors);
+              }
+
+              if (cloudProfile.known_devices) {
+                  localStorage.setItem('studeo_known_devices', JSON.stringify(cloudProfile.known_devices));
               }
 
               if (cloudProfile.updated_at) {
@@ -675,6 +687,7 @@ const AppContent: React.FC = () => {
                 }
             }}
             onReloadApp={reloadApp}
+            user={user}
           />
         );
 

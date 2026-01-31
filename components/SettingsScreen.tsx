@@ -6,19 +6,22 @@ import { save, open } from '@tauri-apps/api/dialog';
 import { writeTextFile, readTextFile } from '@tauri-apps/api/fs';
 import { useConfirmation } from '../contexts/ConfirmationContext';
 import { useTranslation } from '../contexts/LanguageContext';
+import { supabase } from '../services/supabaseClient';
 
 interface SettingsScreenProps {
   onBack: () => void;
   onSyncPush?: () => void;
   onSyncPull?: () => void;
   onReloadApp?: () => void;
+  user?: any;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
   onBack, 
   onSyncPush, 
   onSyncPull,
-  onReloadApp
+  onReloadApp,
+  user
 }) => {
   const { config, updateConfig, setGeminiApiKey } = useAIConfig();
   const { showToast } = useToast();
@@ -30,6 +33,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [latestVersion, setLatestVersion] = useState<string | null>(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<'up-to-date' | 'available' | 'error' | null>(null);
+
+  const [knownDevices, setKnownDevices] = useState<string[]>(() => {
+    const saved = localStorage.getItem('studeo_known_devices');
+    return saved ? JSON.parse(saved) : ["iPad", "MacBook", "iPhone"];
+  });
 
   const DEFAULT_GEMINI_MODELS = [
     { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash-Lite (Rapide & Éco ✨)' },
@@ -256,8 +264,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setIsCheckingUpdate(true);
     setUpdateStatus(null);
     try {
-        // Fetch package.json from the main branch
-        const response = await fetch('https://raw.githubusercontent.com/Danou75/Studeo-app/main/package.json');
+        // Fetch version from the deployed site instead of private GitHub
+        // Use a cache-buster to ensure we get the latest file
+        const response = await fetch(`https://studeo-app.vercel.app/version.json?t=${Date.now()}`);
         if (!response.ok) throw new Error("Impossible de joindre le serveur de mise à jour.");
         
         const data = await response.json();
@@ -277,6 +286,42 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         setIsCheckingUpdate(false);
     }
   };
+
+  // Récupérer les appareils connus depuis le cloud
+  React.useEffect(() => {
+    if (!user) return;
+    
+    const fetchProfile = async () => {
+        try {
+            const { data } = await supabase
+                .from('profiles')
+                .select('last_sync_device, known_devices')
+                .eq('id', user.id)
+                .single();
+            
+            if (data) {
+                let devices = [...knownDevices];
+                if (data.last_sync_device && !devices.includes(data.last_sync_device)) {
+                    devices.push(data.last_sync_device);
+                }
+                if (data.known_devices && Array.isArray(data.known_devices)) {
+                    data.known_devices.forEach((d: string) => {
+                        if (d && !devices.includes(d)) devices.push(d);
+                    });
+                }
+                
+                // Nettoyage et tri
+                devices = Array.from(new Set(devices.filter(Boolean))).sort();
+                setKnownDevices(devices);
+                localStorage.setItem('studeo_known_devices', JSON.stringify(devices));
+            }
+        } catch (e) {
+            console.warn("Could not fetch known devices from cloud profile:", e);
+        }
+    };
+    
+    fetchProfile();
+  }, [user]);
 
   const handleExportBackup = async () => {
     try {
@@ -424,20 +469,63 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2 text-text-secondary">{t('settings.general.deviceName')}</label>
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  value={config.deviceName || ''} 
-                  onChange={(e) => updateConfig({ deviceName: e.target.value })} 
-                  placeholder={t('settings.general.deviceNamePlaceholder')} 
-                  className="flex-1 p-3 rounded-lg bg-background border border-border focus:border-primary outline-none text-text" 
-                />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-text-secondary">{t('settings.general.deviceName')}</label>
+                <div className="relative">
+                  <input 
+                    id="input-device-name"
+                    type="text" 
+                    value={config.deviceName || ''} 
+                    onChange={(e) => {
+                        updateConfig({ deviceName: e.target.value });
+                    }} 
+                    placeholder={t('settings.general.deviceNamePlaceholder')} 
+                    className="w-full p-3 pr-10 rounded-lg bg-background border border-border focus:border-primary outline-none text-text transition-all" 
+                  />
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        const menu = document.getElementById('device-dropdown-menu');
+                        if (menu) menu.classList.toggle('hidden');
+                    }}
+                    className="absolute right-0 top-0 h-full px-3 text-text-muted hover:text-primary transition-colors"
+                  >
+                    <i className="fas fa-chevron-down text-xs"></i>
+                  </button>
+                  
+                  <div 
+                    id="device-dropdown-menu" 
+                    className="hidden absolute z-50 w-full mt-1 bg-background-secondary border border-border rounded-lg shadow-xl overflow-hidden animate-fade-in"
+                  >
+                    {knownDevices.length > 0 ? (
+                        <div className="py-1">
+                            {knownDevices.map(device => (
+                                <button
+                                    key={device}
+                                    onClick={() => {
+                                        updateConfig({ deviceName: device });
+                                        document.getElementById('device-dropdown-menu')?.classList.add('hidden');
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-between"
+                                >
+                                    <span>{device}</span>
+                                    {config.deviceName === device && <i className="fas fa-check text-[10px]"></i>}
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="p-4 text-xs text-text-muted text-center italic">
+                            Aucun appareil enregistré
+                        </div>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[11px] text-text-muted mt-2 italic">
+                  {t('settings.general.deviceNameHint')}
+                </p>
               </div>
-              <p className="text-[11px] text-text-muted mt-2 italic">
-                {t('settings.general.deviceNameHint')}
-              </p>
             </div>
 
             {onReloadApp && (
@@ -447,6 +535,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             {t('settings.general.updateText')}
                         </p>
                         <button 
+                            id="btn-reload-app"
                             onClick={onReloadApp}
                             className="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-all flex items-center gap-2 shadow-lg"
                         >
@@ -462,6 +551,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 {t('settings.general.versionCheckTitle')}
                             </h3>
                             <button 
+                                id="btn-check-update"
                                 onClick={checkUpdate}
                                 disabled={isCheckingUpdate}
                                 className="text-xs text-primary hover:underline flex items-center gap-1"
@@ -491,7 +581,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         )}
                         {updateStatus === 'available' && (
                             <div className="mt-3 text-center text-accent text-xs font-bold animate-pulse">
-                                {t('settings.general.updateAvailable')}
+                                {t(`🚀 v${latestVersion} disponible !`)}
+                            </div>
+                        )}
+                        {updateStatus === 'error' && (
+                            <div className="mt-3 text-center text-red-500 text-[10px] leading-tight">
+                                Impossible de joindre le serveur.<br/>
+                                <span className="opacity-70 font-normal">Assurez-vous que la version est déployée sur Vercel.</span>
                             </div>
                         )}
                     </div>
@@ -521,6 +617,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 ].map((p) => (
                     <button
                         key={p.id}
+                        id={`btn-provider-${p.id}`}
                         onClick={() => updateConfig({ provider: p.id as any })}
                         className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${
                             config.provider === p.id

@@ -768,8 +768,9 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
         general: {
             title: "Général & Appareil",
             deviceName: "Nom de l'appareil",
-            deviceNamePlaceholder: "Ex: MacBook Air de Daniel, iPad Pro...",
+            deviceNamePlaceholder: "Ex: MacBook Air, iPad Pro, iPhone...",
             deviceNameHint: "Ce nom identifie cet appareil lors des sauvegardes Cloud.",
+            knownDevices: "Appareils connus :",
             updateTitle: "Mise à jour de l'application",
             updateText: "Si l'application ne semble pas à jour ou en cas de problème :",
             updateButton: "Forcer la mise à jour / Actualiser",

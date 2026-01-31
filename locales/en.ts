@@ -752,8 +752,9 @@ export const en: typeof fr = {
         general: {
             title: "General & Device",
             deviceName: "Device Name",
-            deviceNamePlaceholder: "E.g. Daniel's MacBook Air, iPad Pro...",
+            deviceNamePlaceholder: "E.g. MacBook Air, iPad Pro, iPhone...",
             deviceNameHint: "This name identifies this device during Cloud backups.",
+            knownDevices: "Known devices:",
             updateTitle: "App Update",
             updateText: "If the app doesn't seem up to date or in case of issues:",
             updateButton: "Force Update / Refresh",

@@ -1,4 +1,16 @@
 {
-  "buildCommand": "npm run build:web && ls -R dist",
-  "outputDirectory": "dist"
+  "version": 2,
+  "buildCommand": "npm run build:web",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "routes": [
+    { "src": "/version.json", "dest": "/version.json" },
+    { "src": "/favicon.png", "dest": "/favicon.png" },
+    { "src": "/manifest.json", "dest": "/manifest.json" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }

@@ -90,8 +90,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode
 
                         <Button 
                             onClick={async () => {
+                                localStorage.removeItem('studeo_remember_email');
+                                localStorage.removeItem('studeo_remember_password');
+                                setEmail('');
+                                setPassword('');
+                                setRememberMe(false);
                                 await supabase.auth.signOut();
-                                onClose();
+                                // Ne pas fermer la modal pour permettre de se reconnecter
                             }}
                             variant="secondary"
                             className="w-full rounded-2xl py-4 font-black uppercase tracking-widest text-red-500 border-red-500/20 hover:bg-red-500/5"

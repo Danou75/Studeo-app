@@ -736,10 +736,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                                             navigator.clipboard.writeText(message.content);
                                             showToast('Copié dans le presse-papier !', 'success');
                                         }}
-                                        className="absolute top-2 right-2 opacity-40 hover:opacity-100 p-2 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 rounded-lg transition-all text-text-muted hover:text-primary z-10 shadow-sm border border-border/50"
+                                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-50 hover:!opacity-100 p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-all text-text-muted hover:text-primary z-10"
                                         title="Copier le texte"
                                     >
-                                        <i className="fas fa-copy"></i>
+                                        <i className="far fa-copy"></i>
                                     </button>
                                 )}
                                 <div className="flex items-start gap-4">

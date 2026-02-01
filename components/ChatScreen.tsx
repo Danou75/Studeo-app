@@ -727,7 +727,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                                 className={`max-w-[90%] md:max-w-[75%] rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-sm transition-all hover:shadow-md ${
                                     message.role === 'user'
                                         ? 'bg-primary text-white rounded-tr-none'
-                                        : 'bg-background-secondary border border-border rounded-tl-none relative group'
+                                        : 'bg-background-secondary border border-border rounded-tl-none relative group pr-10 md:pr-5'
                                 }`}
                             >
                                 {message.role === 'assistant' && (

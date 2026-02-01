@@ -441,7 +441,7 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-10 max-w-4xl mx-auto w-full print:overflow-visible min-h-0 pb-32">
-        <div className="bg-background-tertiary p-6 md:p-8 rounded-xl shadow-sm border border-border/50 print-content relative group">
+        <div className="bg-background-tertiary p-6 pr-12 md:p-8 md:pr-8 rounded-xl shadow-sm border border-border/50 print-content relative group">
             <button
                 onClick={() => {
                     navigator.clipboard.writeText(lesson.content);

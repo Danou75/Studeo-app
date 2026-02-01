@@ -441,7 +441,17 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-10 max-w-4xl mx-auto w-full print:overflow-visible min-h-0 pb-32">
-        <div className="bg-background-tertiary p-6 md:p-8 rounded-xl shadow-sm border border-border/50 print-content">
+        <div className="bg-background-tertiary p-6 md:p-8 rounded-xl shadow-sm border border-border/50 print-content relative group">
+            <button
+                onClick={() => {
+                    navigator.clipboard.writeText(lesson.content);
+                    showToast('Leçon copiée dans le presse-papier !', 'success');
+                }}
+                className="absolute top-4 right-4 opacity-40 hover:opacity-100 p-3 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 rounded-xl transition-all text-text-muted hover:text-primary z-10 no-print shadow-sm border border-border"
+                title="Copier toute la leçon"
+            >
+                <i className="fas fa-copy text-xl"></i>
+            </button>
             {renderMarkdown(lesson.content)}
         </div>
         

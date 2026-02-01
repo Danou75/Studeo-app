@@ -727,9 +727,21 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                                 className={`max-w-[90%] md:max-w-[75%] rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-sm transition-all hover:shadow-md ${
                                     message.role === 'user'
                                         ? 'bg-primary text-white rounded-tr-none'
-                                        : 'bg-background-secondary border border-border rounded-tl-none'
+                                        : 'bg-background-secondary border border-border rounded-tl-none relative group'
                                 }`}
                             >
+                                {message.role === 'assistant' && (
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(message.content);
+                                            showToast('Copié dans le presse-papier !', 'success');
+                                        }}
+                                        className="absolute top-2 right-2 opacity-40 hover:opacity-100 p-2 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 rounded-lg transition-all text-text-muted hover:text-primary z-10 shadow-sm border border-border/50"
+                                        title="Copier le texte"
+                                    >
+                                        <i className="fas fa-copy"></i>
+                                    </button>
+                                )}
                                 <div className="flex items-start gap-4">
                                     {message.role === 'assistant' && (
                                         <div className="text-3xl hidden md:block">🎓</div>

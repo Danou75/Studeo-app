@@ -559,7 +559,12 @@ Format JSON STRICT (tableau d'objets) :
 
                 <div className="flex items-center gap-3">
                     {onNewProgram && (
-                        <Button onClick={onNewProgram} size="sm" className="bg-white/90 hover:bg-white text-primary border-none font-bold shadow-lg transform hover:scale-105 active:scale-95 transition-all">
+                        <Button 
+                            variant="secondary"
+                            onClick={onNewProgram} 
+                            size="sm" 
+                            className={`transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm font-bold shadow-lg transform hover:scale-105 active:scale-95`}
+                        >
                             <i className="fas fa-plus mr-2"></i> {t('curriculum.new')}
                         </Button>
                     )}

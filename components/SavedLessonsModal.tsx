@@ -7,7 +7,7 @@ interface SavedLessonsModalProps {
     isOpen: boolean;
     onClose: () => void;
     lessons: Lesson[];
-    onSelectLesson: (lesson: Lesson) => void;
+    onSelectLesson: (lesson: Lesson, source?: 'curriculum' | 'generator') => void;
     onDeleteLesson: (id: string) => void;
 }
 
@@ -58,7 +58,7 @@ export const SavedLessonsModal: React.FC<SavedLessonsModalProps> = ({ isOpen, on
                         lessons.map((lesson) => (
                             <div 
                                 key={lesson.id} 
-                                onClick={() => onSelectLesson(lesson)}
+                                onClick={() => onSelectLesson(lesson, 'generator')}
                                 className="bg-background-secondary hover:bg-background-tertiary border border-border p-4 rounded-xl cursor-pointer transition-all hover:border-primary group flex justify-between items-center"
                             >
                                 <div>

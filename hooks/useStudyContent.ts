@@ -100,6 +100,12 @@ export const useStudyContent = () => {
         setSavedLessons(prev => prev.filter((l: Lesson) => l.id !== lessonId));
     };
 
+    const handleRenameLesson = (lessonId: string, newTopic: string) => {
+        setSavedLessons(prev => prev.map((l: Lesson) => 
+            l.id === lessonId ? { ...l, topic: newTopic } : l
+        ));
+    };
+
     const markCurrentModuleComplete = (lesson: Lesson | null) => {
         if (!lesson) return false;
         
@@ -166,6 +172,7 @@ export const useStudyContent = () => {
         handleDeleteProgram,
         handleRenameProgram,
         handleDeleteLesson,
+        handleRenameLesson,
         markCurrentModuleComplete,
         updateSavedLesson
     };

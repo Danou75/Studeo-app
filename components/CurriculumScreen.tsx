@@ -26,11 +26,15 @@ interface SuggestedProgram {
 interface CurriculumScreenProps {
     onBack: () => void;
     programs: StudyProgram[];
+    lessons: Lesson[];
     onGenerateContent: (program: StudyProgram, module: StudyModule) => Promise<StudyProgram | undefined>;
     onStartModule: (module: StudyModule, tutorId: string) => void;
     onStartQuiz: (module: StudyModule, tutorId: string) => void;
     onDeleteProgram: (id: string) => void;
     onRenameProgram: (id: string, newTitle: string) => void;
+    onSelectLesson: (lesson: Lesson, source?: 'curriculum' | 'generator') => void;
+    onDeleteLesson: (id: string) => void;
+    onRenameLesson: (id: string, newTopic: string) => void;
     onDrawingChallenge?: (module: StudyModule) => void;
     onStartTutorial?: (topic: string) => void;
     onNewProgram?: () => void;
@@ -41,9 +45,12 @@ interface CurriculumScreenProps {
     themeStyle: ThemeStyle;
 }
 
+import { Lesson } from '../types';
+
 export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({ 
     onBack, 
     programs,
+    lessons = [],
     onGenerateContent,
     onStartModule,
     onStartQuiz,
@@ -52,6 +59,9 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     onStartTutorial,
     onNewProgram,
     onRenameProgram,
+    onSelectLesson,
+    onDeleteLesson,
+    onRenameLesson,
     onSuggestedProgram,
     customSuggestions: propsCustomSuggestions = [],
     setCustomSuggestions: propsSetCustomSuggestions,
@@ -66,13 +76,15 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
     const [loadingModuleId, setLoadingModuleId] = useState<string | null>(null);
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
-    const [renameProgramId, setRenameProgramId] = useState<string | null>(null);
+    const [renameItemId, setRenameItemId] = useState<string | null>(null);
+    const [renameType, setRenameType] = useState<'program' | 'lesson'>('program');
     const [newTitle, setNewTitle] = useState('');
     const [isRenewingCatalog, setIsRenewingCatalog] = useState(false);
     const [showRenewModal, setShowRenewModal] = useState(false);
     const [renewPreferences, setRenewPreferences] = useState('');
     const [renewStrategy, setRenewStrategy] = useState<'replace' | 'append'>('replace');
     const [viewMode, setViewMode] = useLocalStorage<'grid' | 'list'>('curriculum_view_mode', 'grid');
+    const [activeTab, setActiveTab] = useState<'programs' | 'lessons'>('programs');
 
     
     const { config } = useAIConfig();
@@ -288,24 +300,24 @@ Format JSON STRICT (tableau d'objets) :
                                 <i className="fas fa-arrow-left mr-2 text-inherit"></i> {t('curriculum.backToList')}
                             </Button>
 
-                            <div className="flex gap-2 items-center">
-                                <div className="flex gap-1 bg-white/10 p-1 rounded-xl border border-white/20 backdrop-blur-sm shadow-inner">
+                            <div className="flex gap-3 md:gap-4 items-center">
+                                <div className="flex gap-2 bg-white/10 p-1 md:p-1.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-inner">
                                     <button 
                                         onClick={() => handleExportProgram('md')}
                                         disabled={isExporting}
-                                        className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
+                                        className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/10 text-primary' : 'hover:bg-white/20 text-white'}`}
                                         title="Markdown"
                                     >
-                                        {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fab fa-markdown"></i>} <span className="hidden sm:inline">MD</span>
+                                        {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fab fa-markdown text-sm"></i>} <span className="hidden sm:inline">MD</span>
                                     </button>
                                     <div className="w-px h-4 bg-white/20 self-center"></div>
                                     <button 
                                         onClick={() => handleExportProgram('rtf')}
                                         disabled={isExporting}
-                                        className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest hover:bg-white/20 rounded-lg flex items-center gap-1.5 transition-all text-white disabled:opacity-50"
+                                        className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/10 text-primary' : 'hover:bg-white/20 text-white'}`}
                                         title="Word/RTF"
                                     >
-                                        {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-file-word"></i>} <span className="hidden sm:inline">RTF</span>
+                                        {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-file-word text-sm"></i>} <span className="hidden sm:inline">RTF</span>
                                     </button>
                                 </div>
                                 <Button 
@@ -564,20 +576,39 @@ Format JSON STRICT (tableau d'objets) :
         </div>
 
         <div className="p-4 md:p-6 flex-1 overflow-y-auto min-h-0 pb-32">
+            
+            {/* TABS SELECTOR */}
+            <div className="flex gap-4 mb-8 border-b border-border">
+                <button 
+                    onClick={() => setActiveTab('programs')}
+                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeTab === 'programs' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
+                >
+                    <i className="fas fa-map-marked-alt mr-2"></i> Parcours ({programs.length})
+                    {activeTab === 'programs' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
+                </button>
+                <button 
+                    onClick={() => setActiveTab('lessons')}
+                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeTab === 'lessons' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
+                >
+                    <i className="fas fa-book-open mr-2"></i> Leçons Solo ({lessons.length})
+                    {activeTab === 'lessons' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
+                </button>
+            </div>
 
-            {programs.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 border-2 border-dashed border-border rounded-xl p-12">
-                    <div className="bg-background-secondary p-6 rounded-full mb-4">
-                        <i className="fas fa-map-marked-alt text-6xl text-text-muted"></i>
+            {activeTab === 'programs' ? (
+                programs.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 border-2 border-dashed border-border rounded-xl p-12">
+                        <div className="bg-background-secondary p-6 rounded-full mb-4">
+                            <i className="fas fa-map-marked-alt text-6xl text-text-muted"></i>
+                        </div>
+                        <h2 className="text-xl font-bold mb-2">{t('curriculum.noPrograms')}</h2>
+                        <p className="max-w-md mx-auto mb-6">
+                            {t('curriculum.noProgramsHelp')}
+                        </p>
                     </div>
-                    <h2 className="text-xl font-bold mb-2">{t('curriculum.noPrograms')}</h2>
-                    <p className="max-w-md mx-auto mb-6">
-                        {t('curriculum.noProgramsHelp')}
-                    </p>
-                </div>
-            ) : (
-                <div className={viewMode === 'list' ? "flex flex-col gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
-                    {programs.map(program => {
+                ) : (
+                    <div className={viewMode === 'list' ? "flex flex-col gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
+                        {programs.map(program => {
                         const tutor = getTutor(program.tutorId);
                         const progress = Math.round((program.modules.filter(m => m.status === 'completed').length / program.modules.length) * 100);
 
@@ -599,7 +630,8 @@ Format JSON STRICT (tableau d'objets) :
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            setRenameProgramId(program.id);
+                                            setRenameItemId(program.id);
+                                            setRenameType('program');
                                             setNewTitle(program.topic);
                                             setIsRenameModalOpen(true);
                                         }}
@@ -612,10 +644,10 @@ Format JSON STRICT (tableau d'objets) :
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             showConfirmation({
-                                                title: "Supprimer le parcours",
-                                                message: `Êtes-vous sûr de vouloir supprimer définitivement le parcours "${program.topic}" ?`,
-                                                confirmText: "Supprimer",
-                                                variant: "danger",
+                                                title: t('curriculum.deleteTitle'),
+                                                message: t('curriculum.deleteConfirm'),
+                                                confirmText: t('common.delete'),
+                                                variant: 'danger',
                                                 onConfirm: () => onDeleteProgram(program.id)
                                             });
                                         }}
@@ -682,7 +714,95 @@ Format JSON STRICT (tableau d'objets) :
                         );
                     })}
                 </div>
-            )}
+            )
+        ) : (
+            lessons.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 border-2 border-dashed border-border rounded-xl p-12">
+                    <div className="bg-background-secondary p-6 rounded-full mb-4">
+                        <i className="fas fa-book text-6xl text-text-muted"></i>
+                    </div>
+                    <h2 className="text-xl font-bold mb-2">Aucune leçon solo</h2>
+                    <p className="max-w-md mx-auto mb-6">
+                        Demandez à un professeur de vous créer une leçon personnalisée sur un sujet précis !
+                    </p>
+                </div>
+            ) : (
+                <div className={viewMode === 'list' ? "flex flex-col gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
+                    {lessons.map(lesson => {
+                        const tutor = getTutor(lesson.tutorId || '');
+                        return (
+                            <div 
+                                key={lesson.id}
+                                onClick={() => onSelectLesson(lesson, 'curriculum')}
+                                className={`bg-background border border-border rounded-2xl transition-all cursor-pointer group flex overflow-hidden relative ${
+                                    viewMode === 'grid' 
+                                        ? 'flex-col shadow-lg hover:shadow-xl hover:border-primary' 
+                                        : 'flex-row items-center p-4 gap-4 hover:bg-background-secondary'
+                                }`}
+                            >
+                                <div className={viewMode === 'grid' 
+                                    ? "absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                                    : "flex gap-2 order-last"
+                                }>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setRenameItemId(lesson.id);
+                                            setRenameType('lesson');
+                                            setNewTitle(lesson.topic);
+                                            setIsRenameModalOpen(true);
+                                        }}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-primary shadow-sm border border-border transition-colors focus:ring-2 focus:ring-primary/20 outline-none"
+                                        title="Renommer"
+                                    >
+                                        <i className="fas fa-edit text-xs"></i>
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            showConfirmation({
+                                                title: "Supprimer la leçon",
+                                                message: `Êtes-vous sûr de vouloir supprimer définitivement la leçon "${lesson.topic}" ?`,
+                                                confirmText: "Supprimer",
+                                                variant: "danger",
+                                                onConfirm: () => onDeleteLesson(lesson.id)
+                                            });
+                                        }}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-red-500 shadow-sm border border-border transition-colors focus:ring-2 focus:ring-red-500/20 outline-none"
+                                        title="Supprimer"
+                                    >
+                                        <i className="fas fa-trash-alt text-xs"></i>
+                                    </button>
+                                </div>
+
+                                <div className={`flex items-center justify-center shrink-0 ${
+                                    viewMode === 'grid' ? 'p-6 pb-0' : 'w-16 h-16 bg-background-secondary rounded-xl'
+                                }`}>
+                                    <div className={`${viewMode === 'grid' ? 'text-4xl bg-background-secondary w-16 h-16' : 'text-3xl'} flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform`}>
+                                        {tutor?.emoji || '📖'}
+                                    </div>
+                                </div>
+
+                                <div className={`flex-1 min-w-0 ${viewMode === 'grid' ? 'p-6' : 'px-2'}`}>
+                                    <h3 className={`font-bold group-hover:text-primary transition-colors ${viewMode === 'grid' ? 'text-base mb-1' : 'text-base'}`}>
+                                        {lesson.topic}
+                                    </h3>
+                                    <p className="text-xs text-text-muted truncate">
+                                        {lesson.createdAt ? new Date(lesson.createdAt).toLocaleDateString() : 'Date inconnue'}
+                                    </p>
+                                </div>
+
+                                {viewMode === 'grid' && (
+                                    <div className="bg-background-secondary p-3 text-center text-[10px] font-bold text-text-muted uppercase tracking-wider group-hover:bg-primary group-hover:text-white transition-colors">
+                                        Lire la leçon
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )
+        )}
 
             {/* Section Découvrir & Développer */}
             <div className="mt-16 mb-10">
@@ -772,14 +892,18 @@ Format JSON STRICT (tableau d'objets) :
                             onChange={(e) => setNewTitle(e.target.value)}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && newTitle.trim()) {
-                                    onRenameProgram(renameProgramId!, newTitle);
+                                    if (renameType === 'program') {
+                                        onRenameProgram(renameItemId!, newTitle);
+                                    } else {
+                                        onRenameLesson(renameItemId!, newTitle);
+                                    }
                                     setIsRenameModalOpen(false);
                                 } else if (e.key === 'Escape') {
                                     setIsRenameModalOpen(false);
                                 }
                             }}
                             className="w-full px-4 py-3 bg-background-secondary border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
-                            placeholder="Nouveau nom du parcours..."
+                            placeholder={renameType === 'program' ? "Nouveau nom du parcours..." : "Nouveau titre de la leçon..."}
                         />
                     </div>
                     <div className="p-6 bg-background-secondary flex justify-end gap-3">
@@ -792,7 +916,11 @@ Format JSON STRICT (tableau d'objets) :
                         <Button 
                             disabled={!newTitle.trim()}
                             onClick={() => {
-                                onRenameProgram(renameProgramId!, newTitle);
+                                if (renameType === 'program') {
+                                    onRenameProgram(renameItemId!, newTitle);
+                                } else {
+                                    onRenameLesson(renameItemId!, newTitle);
+                                }
                                 setIsRenameModalOpen(false);
                             }}
                         >

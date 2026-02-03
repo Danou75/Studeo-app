@@ -102,14 +102,14 @@ export const fr = {
             },
             quiz: {
                 title: "Quiz Multilingue",
-                description: "Créez et passez des quiz personnalisés dans plusieurs langues"
+                description: "Créez des quiz personnalisés dans plusieurs langues"
             },
             conjugator: {
                 title: "Conjugueur & Traducteur",
                 description: "Conjuguez des verbes et traduisez dans plusieurs langues"
             },
             curriculum: {
-                title: "Mes Programmes",
+                title: "Mes Leçons & Programmes",
                 description: "Suivez vos parcours d'étude de manière structurée"
             },
             srs: {
@@ -130,8 +130,8 @@ export const fr = {
             },
 
             library: {
-                title: "Bibliothèque",
-                description: "Découvrez des sets partagés."
+                title: "Bibliothèque des Quiz",
+                description: "{setsCount} Quiz, {cardsCount} fiches au total"
             }
         }
     },
@@ -839,7 +839,7 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
         translateSubtitle: "Traduisez mots, phrases et expressions"
     },
     curriculum: {
-        title: "Vos Parcours d'Étude",
+        title: "Mes Leçons & Programmes",
         subtitle: "Programmes sur mesure générés par vos mentors IA",
         new: "Nouveau",
         backToList: "Retour aux parcours",

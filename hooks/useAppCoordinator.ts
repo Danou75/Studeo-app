@@ -491,8 +491,8 @@ export const useAppCoordinator = () => {
     const handleLessonGenerated = (lesson: Lesson) => studyContent.handleLessonGenerated(lesson, navigation.setScreen);
     const handleCurriculumGenerated = (program: StudyProgram) => studyContent.handleCurriculumGenerated(program, navigation.setScreen);
 
-    const handleSelectLesson = (lesson: Lesson) => {
-        studyContent.setCurrentLesson(lesson);
+    const handleSelectLesson = (lesson: Lesson, source?: 'curriculum' | 'generator') => {
+        studyContent.setCurrentLesson({ ...lesson, source: source || lesson.source || 'generator' });
         navigation.setScreen('lesson');
     };
 
@@ -676,6 +676,7 @@ export const useAppCoordinator = () => {
         handleDeleteProgram: studyContent.handleDeleteProgram,
         handleRenameProgram: studyContent.handleRenameProgram,
         handleDeleteLesson: studyContent.handleDeleteLesson,
+        handleRenameLesson: studyContent.handleRenameLesson,
         handleMarkModuleComplete: studyContent.markCurrentModuleComplete,
         handleStartModule,
         handleStartModuleQuiz,

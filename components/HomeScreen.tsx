@@ -5,7 +5,6 @@ import { useTranslation } from '../contexts/LanguageContext';
 interface HomeScreenProps {
     streak: number;
     dueCardsCount: number;
-    totalCards: number;
     onNavigateToQuiz: () => void;
     onNavigateToSRS: () => void;
     onNavigateToAIGenerator: () => void;
@@ -19,6 +18,7 @@ interface HomeScreenProps {
     onNavigateToVideoLab: () => void;
     onNavigateToChat: () => void;
     onNavigateToLanguageLab: () => void;
+    flashcardSets: Record<string, any[]>;
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
     onThemeModeChange: (mode: ThemeMode) => void;
@@ -33,7 +33,6 @@ interface HomeScreenProps {
 export const HomeScreen: React.FC<HomeScreenProps> = ({
     streak,
     dueCardsCount,
-    totalCards,
     onNavigateToQuiz,
     onNavigateToSRS,
     onNavigateToAIGenerator,
@@ -47,6 +46,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     onNavigateToVideoLab,
     onNavigateToChat,
     onNavigateToLanguageLab,
+    flashcardSets,
     themeMode,
     themeStyle,
     onThemeModeChange,
@@ -275,7 +275,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     </Section>
  
                     <Section title={t('home.sections.library')} icon="📚">
-                        <FeatureCard icon="📂" title={t('home.features.library.title')} desc={`${t('home.totalCards', { count: totalCards })} (${language.toUpperCase()})`} onClick={onNavigateToLibrary} colorClass="bg-info/10 text-info"/>
+                        <FeatureCard 
+                            icon="📂" 
+                            title={t('home.features.library.title')} 
+                            desc={t('home.features.library.description', { 
+                                setsCount: Object.keys(flashcardSets).length, 
+                                cardsCount: Object.values(flashcardSets).reduce((acc, set) => acc + set.length, 0) 
+                            })} 
+                            onClick={onNavigateToLibrary} 
+                            colorClass="bg-info/10 text-info"
+                        />
                         <FeatureCard icon="🗺️" title={t('home.features.curriculum.title')} desc={t('home.features.curriculum.description')} onClick={onNavigateToCurriculum} colorClass="bg-info/10 text-info"/>
                         <FeatureCard icon="🧠" title={t('home.features.srs.title')} desc={t('home.cardsToReview', { count: dueCardsCount })} onClick={onNavigateToSRS} colorClass="bg-warning/10 text-warning" badge={dueCardsCount}/>
                     </Section>

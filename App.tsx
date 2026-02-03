@@ -524,7 +524,7 @@ const AppContent: React.FC = () => {
           <HomeScreen
             streak={gamification.gamificationData.streak.currentStreak}
             dueCardsCount={dueCardsCount}
-            totalCards={flashcards.allFlashcards.length}
+            flashcardSets={flashcards.flashcardSets}
             onNavigateToQuiz={() => setScreen("setup")}
             onNavigateToSRS={coordinator.handleNavigateToSRS}
             onNavigateToAIGenerator={coordinator.handleNavigateToAIGenerator}
@@ -863,11 +863,15 @@ const AppContent: React.FC = () => {
           <CurriculumScreen
             onBack={() => setScreen("home")}
             programs={coordinator.studyPrograms}
+            lessons={coordinator.savedLessons}
             onGenerateContent={coordinator.handleGenerateModuleContent}
             onStartModule={coordinator.handleStartModule}
             onStartQuiz={coordinator.handleStartModuleQuiz}
             onDeleteProgram={coordinator.handleDeleteProgram}
             onRenameProgram={coordinator.handleRenameProgram}
+            onSelectLesson={coordinator.handleSelectLesson}
+            onDeleteLesson={coordinator.handleDeleteLesson}
+            onRenameLesson={coordinator.handleRenameLesson}
             onSuggestedProgram={coordinator.handleSuggestedProgram}
             onDrawingChallenge={() => setScreen("drawing-challenge")}
             onNewProgram={() => setScreen("tutors-room")}

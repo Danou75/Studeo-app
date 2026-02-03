@@ -252,8 +252,9 @@ export const useAppCoordinator = () => {
             showToast(`📚 Le cours "${module.title}" est prêt !`, 'success', 3000);
             return updatedProgram;
         } catch (e) {
-            console.error("Error generating content", e);
-            showToast("Erreur lors de la génération du contenu.", 'error');
+            console.error("Critical error in handleGenerateModuleContent:", e);
+            const errorMessage = e instanceof Error ? e.message : "Erreur inconnue";
+            showToast(`Erreur lors de la génération du contenu : ${errorMessage}`, 'error', 5000);
             return undefined;
         }
     };

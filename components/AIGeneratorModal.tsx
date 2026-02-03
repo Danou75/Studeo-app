@@ -67,9 +67,9 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
                 setSourceLang('fr');
                 setTargetLang(tutor.language);
             } else {
-                // Pour un cours : Par défaut on est en français pour demander et recevoir
+                // Pour un cours ou programme : On rédige en français, mais la langue CIBLE reste celle du prof
                 setSourceLang('fr');
-                setTargetLang('fr');
+                setTargetLang(tutor.language);
             }
         } else {
             // Pour les autres tuteurs ou sans tuteur, tout en français par défaut

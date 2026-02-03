@@ -13,14 +13,23 @@ const getLessonPromptForTutor = (tutorId: string | undefined, topic: string, tar
     let languageInstruction = "";
 
     if (isLanguageTutor) {
+        const nativeName = tutor.language === 'it' ? 'Italien' : 
+                          tutor.language === 'es' ? 'Espagnol' :
+                          tutor.language === 'de' ? 'Allemand' :
+                          tutor.language === 'pt' ? 'Portugais' :
+                          tutor.language === 'ru' ? 'Russe' :
+                          tutor.language === 'pl' ? 'Polonais' :
+                          tutor.language === 'tr' ? 'Turc' :
+                          tutor.language === 'en' ? 'Anglais' : 'ta langue';
+
         languageInstruction = `
         RÈGLE DE LANGUE CRUCIALE (Tu es prof de langue) :
-        1. Ton TITRE PRINCIPAL (#) DOIT être bilingue : "Titre en ${targetLang} (Traduction en Français)".
-        2. Tes SOUS-TITRES (##) pour les parties pédagogiques doivent être en FRANÇAIS pour guider l'élève.
-        3. TOUTES tes EXPLICATIONS, INTRODUCTIONS, DÉFINITIONS et ANALYSES doivent être en FRANÇAIS pour être comprises par un apprenant francophone.
-           - Même si tu es Maestro Italiano, ne fais pas toute l'intro en italien. Juste "Buongiorno" si tu veux, puis français.
-        4. TOUS les EXEMPLES, MOTS-CLÉS, CONJUGAISONS et PHRASES types doivent être dans la langue cible (${targetLang}).
-        5. NE TRADUIS PAS les exemples techniques (comme le "radical" d'un verbe), montre-les dans la langue cible, mais EXPLIQUE leur fonctionnement en français.
+        1. Ton TITRE PRINCIPAL (#) et tes SOUS-TITRES (##) DOIVENT être en FRANÇAIS, suivis de leur traduction en ${nativeName} entre parenthèses.
+           Format : "# [Titre en Français] ([Titre en ${nativeName}])"
+        2. TOUTES tes EXPLICATIONS, INTRODUCTIONS, DÉFINITIONS et ANALYSES doivent être en FRANÇAIS.
+        3. INTERDICTION FORMELLE d'utiliser l'ANGLAIS pour les traductions ou explications (sauf si tu es Mister English).
+        4. TOUS les EXEMPLES originaux, MOTS-CLÉS et PHRASES types doivent être dans la langue que tu enseignes (${targetLang}).
+        5. NE TRADUIS PAS les exemples techniques (comme "radical") mais explique-les en français.
         `;
     } else {
         languageInstruction = `
@@ -41,7 +50,7 @@ const getLessonPromptForTutor = (tutorId: string | undefined, topic: string, tar
 
     STRUCTURE OBLIGATOIRE DU DOCUMENT (Markdown) - UTILISE CES TITRES EXACTS :
     
-    # [Titre en Langue Cible] ([Traduction Française])
+    # [Titre en Français] ([Traduction en ${targetLang || "Langue Cible"}])
     
     ## Introduction
     [Présente le sujet en FRANÇAIS. Situe le contexte.]

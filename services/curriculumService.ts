@@ -180,7 +180,7 @@ export const generateStudyProgram = async (
     console.log(`🎓 Generating Curriculum with ${tutor.name} for ${topic} (${level})`);
 
     const prompt = `
-    ${tutor.systemPrompt}
+    Tu es ${tutor.name}, un expert pédagogique (${tutor.emoji}). ${tutor.description}.
     
     TA MISSION : Créer un programme d'étude structuré et progressif pour un élève.
     
@@ -196,13 +196,16 @@ export const generateStudyProgram = async (
     4. Donne un titre accrocheur et une description pédagogique claire pour chaque module.
     
     FORMAT DE SORTIE ATTENDU (JSON UNIQUEMENT) :
+    - Rédige TOUT en FRANÇAIS.
+    ${tutor.category === 'languages' 
+        ? `- Pour les titres, utilise le format : "Module X : [Titre en Français] ([Traduction en ${tutor.language === 'it' ? 'Italien' : (tutor.language === 'es' ? 'Espagnol' : 'Langue Cible')}])".
+           - INTERDICTION de traduire en anglais.` 
+        : "- INTERDICTION de traduire les titres ou descriptions en anglais entre parenthèses."
+    }
+    
     [
         {
-            "title": "Module 1 : Les fondations",
-            "description": "Dans ce module, nous verrons..."
-        },
-        {
-            "title": "Module 2 : ...",
+            "title": "Module 1 : ...",
             "description": "..."
         }
     ]
@@ -380,8 +383,17 @@ export const generateModuleContent = async (
     console.log(`🎓 Generating Content for Module ${module.title}`);
 
     // ÉTAPE 1 : GÉNÉRER LA LEÇON
+    const targetLangName = tutor.language === 'it' ? 'Italien' : 
+                          tutor.language === 'es' ? 'Espagnol' :
+                          tutor.language === 'en' ? 'Anglais' :
+                          tutor.language === 'de' ? 'Allemand' :
+                          tutor.language === 'pt' ? 'Portugais' :
+                          tutor.language === 'ru' ? 'Russe' :
+                          tutor.language === 'tr' ? 'Turc' :
+                          tutor.language === 'pl' ? 'Polonais' : 'ta langue cible';
+
     const lessonPrompt = `
-    ${tutor.systemPrompt}
+    Tu es ${tutor.name}, un expert pédagogique (${tutor.emoji}). ${tutor.description}.
     
     TA MISSION : Rédiger un cours complet et pédagogique pour le module suivant.
     
@@ -397,12 +409,13 @@ export const generateModuleContent = async (
     1. Utilise un ton encourageant et clair, adapté au niveau.
     2. Structure le cours avec des titres Markdown (#, ##).
     ${tutor.category === 'languages' 
-        ? "3. TRADUCTION : Comme tu es un professeur de langue, propose systématiquement le titre principal et les sous-titres importants avec leur traduction entre parenthèses."
+        ? `3. TRADUCTION & LANGUE : Comme tu es un professeur de langue, rédige tes explications en FRANÇAIS. Tes titres et sous-titres doivent être bilingues : "Titre en Français (Traduction en ${targetLangName})". 
+           INTERDICTION FORMELLE d'utiliser l'ANGLAIS pour les traductions si tu n'es pas Mister English.`
         : "3. LANGUE & FORMAT : Rédige TOUT le contenu exclusivement en français. INTERDICTION FORMELLE de traduire les titres, sous-titres ou termes techniques en anglais (ou autre langue) entre parenthèses. N'écris QUE le titre français. Exemple CORRECT : 'La Révolution'. Exemple INTERDIT : 'La Révolution (The Revolution)'."
     }
     4. Inclus des exemples concrets, des analogies.
     5. Explique les concepts clés définis dans la description du module.
-    6. Termine par un bref résumé.
+    6. Termine par un résumé en FRANÇAIS.
     7. AJOUTE UNE SECTION FINALE "📚 Pour aller plus loin" :
        - Propose 3 à 5 concepts à approfondir.
        - Formate-les comme des liens Markdown vers une recherche Perplexity : [Sujet](https://www.perplexity.ai/search?q=Sujet+Expliqué).
@@ -456,8 +469,8 @@ export const generateModuleContent = async (
         
         const aiConfig: AIGenerationConfig = {
             topic: module.title,
-            sourceLang: 'fr', // Par défaut
-            targetLang: 'fr', // Par défaut (conceptuel) ou langue cible si détectée
+            sourceLang: 'fr', 
+            targetLang: tutor.language || 'fr', 
             count: 15,
             difficulty: 'intermediate',
             context: `Voici le cours que tu viens de donner. Crée 15 exercices VARIÉS (QCM avec distracteurs et quelques questions ouvertes) pour vérifier la compréhension de ce cours précis.\n\nCONTENU DU COURS :\n${lessonContent.slice(0, 10000)}`,

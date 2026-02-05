@@ -190,151 +190,79 @@ function extractVideoId(url: string): string | null {
 }
 
 /**
- * Extraction "Battle-Tested" des transcriptions
- * Utilise un algorithme de matching d'accolades pour extraire les JSON complexes
+ * Extraction "Quantum" des transcriptions
+ * Bascule sur la version mobile de YouTube (souvent moins protégée) et scanne les flux bruts.
  */
 async function fetchTranscriptCustom(videoId: string): Promise<{ text: string; language: string } | null> {
     try {
         const { fetch: tauriFetch } = await import('@tauri-apps/api/http');
         
-        console.log(`[YouTubeService] 🚀 Starting Forced Extraction for ${videoId}...`);
+        console.log(`[YouTubeService] 🌌 Quantum Extraction for ID: ${videoId}`);
         
-        // 1. Récupération de la page vidéo
-        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        const pageResponse = await tauriFetch(videoUrl, { 
+        // On tente la version MOBILE qui est souvent plus "ouverte" aux scrapers
+        const mobileUrl = `https://m.youtube.com/watch?v=${videoId}`;
+        const response = await tauriFetch(mobileUrl, { 
             method: 'GET', 
             responseType: 1,
             headers: {
-                // User-Agent de crawler moderne pour éviter les pages de consentement trop agressives
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7'
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1',
+                'Accept-Language': 'fr-FR,fr;q=0.9',
+                'Cookie': 'CONSENT=YES+cb.20230531-17-p0.fr+FX+999; PREF=hl=fr&gl=FR;'
             }
         });
 
-        if (!pageResponse.ok) {
-            console.error('[YouTubeService] ❌ Failed to fetch video page');
-            return null;
+        if (!response.ok) return null;
+        const html = response.data as string;
+
+        // Diagnostic: Si on voit "consent" ou "robot", on est bloqué
+        if (html.includes('consent.youtube.com') || html.includes('captcha')) {
+            console.warn('[YouTubeService] ⚠️ Detection bot ou page de consentement détectée');
         }
+
+        let transcriptUrl = null;
+
+        // STRATÉGIE 1 : Recherche ultra-large de l'URL timedtext dans la source brute (Fuzzy matching)
+        // YouTube injecte souvent l'URL de base dans des scripts de config
+        const fuzzyTimedTextRegex = /"https:\/\/[^"]+api\/timedtext[^"]+"/g;
+        const matches = html.match(fuzzyTimedTextRegex);
         
-        const html = pageResponse.data as string;
-        let captionTracks: any[] = [];
-
-        // Fonction helper pour extraire un JSON proprement en gérant les accolades imbriquées
-        const extractJson = (content: string, startKey: string): any => {
-            const index = content.indexOf(startKey);
-            if (index === -1) return null;
-            
-            let startPos = index + startKey.length;
-            // On cherche le début de l'objet {
-            while (startPos < content.length && content[startPos] !== '{') startPos++;
-            if (startPos >= content.length) return null;
-            
-            let braceCount = 0;
-            let endPos = startPos;
-            let inString = false;
-            let escape = false;
-            
-            for (let i = startPos; i < content.length; i++) {
-                const char = content[i];
-                if (escape) { escape = false; continue; }
-                if (char === '\\') { escape = true; continue; }
-                if (char === '"') { inString = !inString; continue; }
-                if (inString) continue;
-                
-                if (char === '{') braceCount++;
-                if (char === '}') braceCount--;
-                
-                if (braceCount === 0) {
-                    endPos = i + 1;
-                    break;
-                }
-            }
-            
-            try {
-                const jsonStr = content.substring(startPos, endPos);
-                return JSON.parse(jsonStr);
-            } catch (e) {
-                return null;
-            }
-        };
-
-        // Stratégie A: Recherche dans ytInitialPlayerResponse
-        console.log('[YouTubeService] Strategy A: Checking ytInitialPlayerResponse...');
-        const playerResponse = extractJson(html, 'ytInitialPlayerResponse =');
-        if (playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks) {
-            captionTracks = playerResponse.captions.playerCaptionsTracklistRenderer.captionTracks;
-            console.log(`[YouTubeService] Found ${captionTracks.length} tracks in playerResponse`);
+        if (matches) {
+            // On cherche de préférence une piste française
+            const frMatch = matches.find(m => m.includes('lang=fr') || m.includes('lang=FR'));
+            const anyMatch = frMatch || matches[0];
+            transcriptUrl = anyMatch.replace(/"/g, '').replace(/\\u0026/g, '&').replace(/\\/g, '');
+            console.log('[YouTubeService] Found transcript URL via fuzzy matching');
         }
 
-        // Stratégie B: Recherche dans ytInitialData
-        if (captionTracks.length === 0) {
-            console.log('[YouTubeService] Strategy B: Checking ytInitialData...');
-            const initialData = extractJson(html, 'ytInitialData =');
-            // Parfois caché très profondément dans initialData pour certains formats
-            if (initialData) {
-                // Recherche récursive simplifiée pour captionTracks
-                const findCaptionTracks = (obj: any): any[] | null => {
-                    if (!obj || typeof obj !== 'object') return null;
-                    if (Array.isArray(obj)) {
-                        for (const item of obj) {
-                            const res = findCaptionTracks(item);
-                            if (res) return res;
-                        }
-                    } else {
-                        if (obj.captionTracks) return obj.captionTracks;
-                        for (const key in obj) {
-                            const res = findCaptionTracks(obj[key]);
-                            if (res) return res;
-                        }
-                    }
-                    return null;
-                };
-                captionTracks = findCaptionTracks(initialData) || [];
-                if (captionTracks.length > 0) console.log(`[YouTubeService] Found ${captionTracks.length} tracks in initialData`);
+        // STRATÉGIE 2 : Extraction par blocs JSON (Mobile version structure)
+        if (!transcriptUrl) {
+            const jsonRegex = /"captions":\s*({.+?})\s*,\s*"videoDetails"/s;
+            const match = html.match(jsonRegex);
+            if (match) {
+                try {
+                    const captions = JSON.parse(match[1]);
+                    const track = captions.playerCaptionsTracklistRenderer?.captionTracks?.find((t: any) => t.languageCode === 'fr') || 
+                                  captions.playerCaptionsTracklistRenderer?.captionTracks?.[0];
+                    if (track?.baseUrl) transcriptUrl = track.baseUrl;
+                } catch (e) {}
             }
         }
 
-        // Stratégie C: Recherche brute de l'URL timedtext
-        if (captionTracks.length === 0) {
-            console.log('[YouTubeService] Strategy C: Brute shell scan for timedtext URLs...');
-            const baseUrlRegex = /"(https:\/\/www\.youtube\.com\/api\/timedtext[^"]+)"/g;
-            let match;
-            while ((match = baseUrlRegex.exec(html)) !== null) {
-                const url = match[1].replace(/\\u0026/g, '&');
-                captionTracks.push({ baseUrl: url, languageCode: 'unknown' });
-            }
-        }
-
-        if (captionTracks.length === 0) {
-            console.error('[YouTubeService] ❌ No caption tracks found by any strategy');
+        if (!transcriptUrl) {
+            console.error('[YouTubeService] ❌ Toutes les stratégies Quantum ont échoué');
             return null;
         }
 
-        // 2. Sélection de la meilleure piste
-        // On cherche: FR -> EN -> auto
-        const track = captionTracks.find(t => t.languageCode === 'fr') || 
-                      captionTracks.find(t => t.languageCode === 'en') || 
-                      captionTracks[0];
+        // 3. Téléchargement du texte final
+        const finalUrl = transcriptUrl.includes('fmt=json3') ? transcriptUrl : `${transcriptUrl}&fmt=json3`;
+        const textResponse = await tauriFetch(finalUrl, { method: 'GET', responseType: 1 });
 
-        if (!track || !track.baseUrl) return null;
-        console.log(`[YouTubeService] 🎯 Selected track: ${track.languageCode}`);
+        if (!textResponse.ok) return null;
+        const content = textResponse.data as string;
 
-        // 3. Téléchargement du contenu (on force le format JSON3 pour la propreté)
-        let transcriptUrl = track.baseUrl;
-        if (!transcriptUrl.includes('fmt=json3')) transcriptUrl += '&fmt=json3';
-        
-        const transcriptResponse = await tauriFetch(transcriptUrl, { method: 'GET', responseType: 1 });
-        if (!transcriptResponse.ok) {
-            console.error('[YouTubeService] ❌ Failed to download transcript content');
-            return null;
-        }
-        
-        const content = transcriptResponse.data as string;
+        // 4. Parsing (JSON3 ou XML)
         let transcriptText = "";
-
-        // 4. Parsing du résultat
         try {
-            // Tentative JSON3 (Format moderne)
             const data = JSON.parse(content);
             if (data.events) {
                 transcriptText = data.events
@@ -343,32 +271,18 @@ async function fetchTranscriptCustom(videoId: string): Promise<{ text: string; l
                     .join(' ');
             }
         } catch (e) {
-            // Fallback XML (Ancien format)
-            console.log('[YouTubeService] JSON parse failed, trying XML fallback...');
-            const textNodes = content.match(/<text.*?>.*?<\/text>/g) || [];
-            transcriptText = textNodes
-                .map(node => node.replace(/<[^>]+>/g, '') // Nettoyage balises
-                                 .replace(/&amp;/g, '&')
-                                 .replace(/&lt;/g, '<')
-                                 .replace(/&gt;/g, '>')
-                                 .replace(/&#39;/g, "'")
-                                 .replace(/&quot;/g, '"'))
-                .join(' ');
+            const textNodes = content.match(/<text.*?>([\s\S]*?)<\/text>/g) || [];
+            transcriptText = textNodes.map(node => node.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"')).join(' ');
         }
 
-        // Nettoyage final des espaces multiples
-        const cleanedText = transcriptText.replace(/\s+/g, ' ').trim();
-        
-        if (cleanedText.length < 50) {
-            console.warn('[YouTubeService] ⚠️ Transcript too short, possibly empty');
-            return null;
-        }
+        const cleaned = transcriptText.replace(/\s+/g, ' ').trim();
+        if (cleaned.length < 50) return null;
 
-        console.log(`[YouTubeService] ✅ Success! Extracted ${cleanedText.length} characters.`);
-        return { text: cleanedText, language: track.languageCode };
+        console.log(`[YouTubeService] ✅ Quantum Extraction Success (${cleaned.length} chars)`);
+        return { text: cleaned, language: 'auto' };
 
     } catch (error) {
-        console.error('[YouTubeService] Critical Extraction Error:', error);
+        console.error('[YouTubeService] Quantum extraction fatal error:', error);
         return null;
     }
 }

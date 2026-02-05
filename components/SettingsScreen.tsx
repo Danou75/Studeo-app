@@ -265,8 +265,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setUpdateStatus(null);
     try {
         // Fetch version from the deployed site instead of private GitHub
-        // Use a cache-buster to ensure we get the latest file
-        const response = await fetch(`/version.json?t=${Date.now()}`);
+        // En mode Tauri (Desktop), on doit vérifier la version sur le serveur de production
+        // En mode Web, on peut vérifier relative
+        const isTauri = !!(window as any).__TAURI_IPC__;
+        const checkUrl = isTauri 
+            ? 'https://multilingual-flashcards.vercel.app/version.json' 
+            : `/version.json?t=${Date.now()}`;
+
+        const response = await fetch(isTauri ? `${checkUrl}?t=${Date.now()}` : checkUrl);
         if (!response.ok) throw new Error("Impossible de joindre le serveur de mise à jour.");
         
         const data = await response.json();

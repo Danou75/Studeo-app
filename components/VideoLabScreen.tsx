@@ -59,7 +59,7 @@ export const VideoLabScreen: React.FC<VideoLabScreenProps> = ({
         if (onAnalysisChange) onAnalysisChange(analysisResult ? { summary: analysisResult.summary, videoTitle } : null);
     }, [analysisResult, videoTitle, onAnalysisChange]);
 
-    const handleAIAnalysis = async (currentTitle: string, currentTranscript: string | null | undefined, author: string = "Inconnu", detectedLang: string = "fr", detectedWordCount: number = 0) => {
+    const handleAIAnalysis = async (currentTitle: string, currentTranscript: string | null | undefined, author: string = "Inconnu", detectedLang: string | null = "fr", detectedWordCount: number | null = 0) => {
         try {
             // Configuration IA
             const aiKey = config.provider === 'gemini' ? config.geminiApiKey 

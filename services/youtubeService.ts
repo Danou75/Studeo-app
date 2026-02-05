@@ -49,16 +49,14 @@ export async function analyzeYouTubeVideo(url: string): Promise<YouTubeAnalysis 
         // Étape 2: Tentative d'extraction de la transcription
         let transcriptResult: { text: string; language: string } | null = null;
         
-        // Stratégie A: Endpoint Serverless Vercel (PRIORITAIRE - Plus robuste)
+        // Stratégie A: Serveur Backend Dédié (PRIORITAIRE - Plus robuste)
         try {
-            console.log('[YouTubeService] 🌐 Attempting transcript extraction via Vercel serverless endpoint...');
+            console.log('[YouTubeService] 🌐 Attempting transcript extraction via dedicated backend server...');
             
-            // Déterminer l'URL de base selon l'environnement
-            const baseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-                ? 'http://localhost:3000'
-                : window.location.origin; // Utilise l'origine actuelle pour éviter les problèmes CORS
+            // URL du serveur backend (configurable via variable d'environnement)
+            const backendUrl = import.meta.env.VITE_TRANSCRIPT_API_URL || 'http://localhost:3001';
             
-            const response = await fetch(`${baseUrl}/api/youtube-transcript?videoId=${videoId}`, {
+            const response = await fetch(`${backendUrl}/api/transcript?videoId=${videoId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -72,13 +70,13 @@ export async function analyzeYouTubeVideo(url: string): Promise<YouTubeAnalysis 
                         text: data.transcript, 
                         language: data.language || 'auto' 
                     };
-                    console.log(`[YouTubeService] ✅ Serverless extraction successful (${data.method})`);
+                    console.log(`[YouTubeService] ✅ Backend server extraction successful (${data.method})`);
                 }
             } else {
-                console.warn('[YouTubeService] Serverless endpoint returned:', response.status);
+                console.warn('[YouTubeService] Backend server returned:', response.status);
             }
         } catch (error) {
-            console.warn('[YouTubeService] Serverless strategy failed:', error);
+            console.warn('[YouTubeService] Backend server strategy failed:', error);
         }
         
         // Stratégie B: Bibliothèque standard (youtube-transcript) - Fallback

@@ -47,6 +47,7 @@ export const VideoLabScreen: React.FC<VideoLabScreenProps> = ({
     const [generationType, setGenerationType] = useState<'quiz' | 'srs' | null>(null);
     const [showTranscriptModal, setShowTranscriptModal] = useState(false);
     const [manualTranscript, setManualTranscript] = useState('');
+    const [isExtractingTranscript, setIsExtractingTranscript] = useState(false);
     const [selectedTutorId, setSelectedTutorId] = useState('');
 
     // Sync back to coordinator
@@ -351,6 +352,24 @@ ${analysisResult.summary || "Résumé non disponible."}
         }
     };
 
+    const handleForcedExtraction = async () => {
+        setIsExtractingTranscript(true);
+        try {
+            const { analyzeYouTubeVideo } = await import('../services/youtubeService');
+            const analysis = await analyzeYouTubeVideo(url);
+            if (analysis?.hasTranscript) {
+                setTranscript(analysis.transcript);
+                showToast("✅ Transcription récupérée avec succès !", "success");
+            } else {
+                showToast("❌ Impossible de récupérer la transcription automatiquement.", "error");
+            }
+        } catch (e) {
+            showToast("Erreur lors de l'extraction.", "error");
+        } finally {
+            setIsExtractingTranscript(false);
+        }
+    };
+
     const handleGenerateCards = async (type: 'quiz' | 'srs') => {
         if (!url) return;
         setIsGeneratingQuiz(true);
@@ -413,18 +432,20 @@ ${analysisResult.summary || "Résumé non disponible."}
     return (
         <div className="flex-1 min-h-0 flex flex-col bg-background overflow-hidden relative">
             {/* Global AI Loading Overlay for critical actions */}
-            {(isAnalyzing || isGeneratingQuiz || isGeneratingLesson) && (
+            {(isAnalyzing || isGeneratingQuiz || isGeneratingLesson || isExtractingTranscript) && (
                 <div className="absolute inset-0 z-[100] bg-background/60 backdrop-blur-sm flex flex-col items-center justify-center animate-fade-in">
                     <div className="bg-white dark:bg-gray-800 p-8 rounded-[3rem] shadow-2xl border border-primary/20 flex flex-col items-center gap-6 max-w-sm text-center">
                         <AILoader size="lg" text="Traitement IA" />
                         <div>
                             <h3 className="text-xl font-black text-primary mb-2">
-                                {isAnalyzing ? "Analyse de la vidéo..." : 
+                                {isExtractingTranscript ? "Extraction des sous-titres..." :
+                                 isAnalyzing ? "Analyse de la vidéo..." : 
                                  isGeneratingLesson ? "Rédaction du cours..." : 
                                  "Génération des fiches..."}
                             </h3>
                             <p className="text-sm text-text-secondary">
-                                {isAnalyzing ? "Nous extrayons les points clés et la transcription pour vous." : 
+                                {isExtractingTranscript ? "Nous tentons de récupérer la transcription brute de la vidéo via les canaux secondaires." :
+                                 isAnalyzing ? "Nous extrayons les points clés et la transcription pour vous." : 
                                  "L'IA structure les informations de manière pédagogique."}
                             </p>
                         </div>
@@ -584,27 +605,16 @@ ${analysisResult.summary || "Résumé non disponible."}
                                     
                                     <div className="flex flex-col sm:flex-row gap-3">
                                         <button
-                                            onClick={async () => {
-                                                setIsAnalyzing(true);
-                                                try {
-                                                    const { analyzeYouTubeVideo } = await import('../services/youtubeService');
-                                                    const analysis = await analyzeYouTubeVideo(url);
-                                                    if (analysis?.hasTranscript) {
-                                                        setTranscript(analysis.transcript);
-                                                        showToast("✅ Transcription récupérée avec succès !", "success");
-                                                    } else {
-                                                        showToast("❌ Impossible de récupérer la transcription automatiquement.", "error");
-                                                    }
-                                                } catch (e) {
-                                                    showToast("Erreur lors de l'extraction.", "error");
-                                                } finally {
-                                                    setIsAnalyzing(false);
-                                                }
-                                            }}
+                                            onClick={handleForcedExtraction}
+                                            disabled={isExtractingTranscript}
                                             className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
                                         >
-                                            <i className="fas fa-robot"></i>
-                                            Tenter l'extraction forcée
+                                            {isExtractingTranscript ? (
+                                                <i className="fas fa-spinner fa-spin"></i>
+                                            ) : (
+                                                <i className="fas fa-robot"></i>
+                                            )}
+                                            {isExtractingTranscript ? "Extraction en cours..." : "Tenter l'extraction forcée"}
                                         </button>
 
                                         <button

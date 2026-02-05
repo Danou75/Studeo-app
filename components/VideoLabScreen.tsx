@@ -9,6 +9,8 @@ import { Flashcard, Lesson } from '../types';
 import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
 import { TUTORS } from '../constants';
 import { AILoader } from './ui/AILoader';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface VideoLabScreenProps {
     onBack: () => void;
@@ -688,9 +690,22 @@ ${analysisResult.summary || "Résumé non disponible."}
                                 <i className="fas fa-magic text-red-500"></i>
                                 {t('video.extractSummary')}
                             </h3>
-                            <p className="text-text-secondary leading-relaxed mb-6 italic bg-white/50 dark:bg-black/20 p-6 rounded-2xl border border-border/50">
-                                {analysisResult.summary}
-                            </p>
+                            <div className="prose prose-sm dark:prose-invert max-w-none text-text-secondary leading-relaxed mb-6 bg-white/50 dark:bg-black/20 p-8 rounded-[2rem] border border-border/50 shadow-inner overflow-hidden">
+                                <ReactMarkdown 
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                        h2: ({node, ...props}) => <h2 className="text-xl font-black text-primary mt-6 mb-4 flex items-center gap-2 border-b border-primary/10 pb-2" {...props} />,
+                                        h3: ({node, ...props}) => <h3 className="text-lg font-bold text-text-primary mt-4 mb-2" {...props} />,
+                                        p: ({node, ...props}) => <p className="mb-4 last:mb-0" {...props} />,
+                                        ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-2 mb-4" {...props} />,
+                                        li: ({node, ...props}) => <li className="pl-2" {...props} />,
+                                        strong: ({node, ...props}) => <strong className="font-black text-primary/80" {...props} />,
+                                        code: ({node, ...props}) => <code className="bg-primary/5 text-primary px-1.5 py-0.5 rounded-md font-mono text-[0.8em]" {...props} />
+                                    }}
+                                >
+                                    {analysisResult.summary || ""}
+                                </ReactMarkdown>
+                            </div>
                         </div>
                     )}
                 </div>

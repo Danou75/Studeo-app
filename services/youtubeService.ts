@@ -191,77 +191,114 @@ function extractVideoId(url: string): string | null {
 
 /**
  * Extraction manuelle des transcriptions via Tauri HTTP (bypass CORS)
+ * Version renforcée avec multiples patterns de recherche
  */
 async function fetchTranscriptCustom(videoId: string): Promise<{ text: string; language: string } | null> {
     try {
         const { fetch: tauriFetch } = await import('@tauri-apps/api/http');
         
-        // 1. Récupération de la page vidéo pour trouver les captionTracks
+        // 1. Récupération de la page vidéo
         const url = `https://www.youtube.com/watch?v=${videoId}`;
         const response = await tauriFetch(url, { 
             method: 'GET', 
             responseType: 1, // Text
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7'
             }
         });
         
         if (!response.ok) return null;
-        
         const html = response.data as string;
         
-        // Recherche de la configuration des légendes
-        // On cherche le bloc JSON qui contient captionTracks dans ytInitialPlayerResponse
-        const configRegex = /"captionTracks":\s*(\[.*?\])/;
-        const match = html.match(configRegex);
+        // 2. Recherche des captionTracks (Multi-stratégie)
+        let captionTracks = null;
         
-        if (!match || !match[1]) {
+        // Stratégie 1 : Recherche direct de captionTracks dans le JSON
+        const directRegex = /"?captionTracks"?:\s*(\[.*?\])/;
+        const directMatch = html.match(directRegex);
+        
+        if (directMatch && directMatch[1]) {
+            try {
+                captionTracks = JSON.parse(directMatch[1]);
+            } catch (e) {
+                console.warn('[YouTubeService] Direct captionTracks parse failed');
+            }
+        }
+        
+        // Stratégie 2 : Extraction de ytInitialPlayerResponse complet
+        if (!captionTracks) {
+            const playerResponseRegex = /ytInitialPlayerResponse\s*=\s*({.+?});/s;
+            const playerMatch = html.match(playerResponseRegex);
+            if (playerMatch && playerMatch[1]) {
+                try {
+                    const playerResponse = JSON.parse(playerMatch[1]);
+                    captionTracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+                } catch (e) {
+                    console.warn('[YouTubeService] ytInitialPlayerResponse parse failed');
+                }
+            }
+        }
+
+        // Stratégie 3 : Extraction via window["ytInitialPlayerResponse"]
+        if (!captionTracks) {
+            const windowRegex = /window\["ytInitialPlayerResponse"\]\s*=\s*({.+?});/s;
+            const windowMatch = html.match(windowRegex);
+            if (windowMatch && windowMatch[1]) {
+                try {
+                    captionTracks = JSON.parse(windowMatch[1])?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+                } catch (e) {
+                    console.warn('[YouTubeService] window[...] parse failed');
+                }
+            }
+        }
+
+        if (!Array.isArray(captionTracks) || captionTracks.length === 0) {
+            console.error('[YouTubeService] ❌ captionTracks not found in HTML source');
             return null;
         }
         
-        const captionTracks = JSON.parse(match[1]);
-        if (!Array.isArray(captionTracks) || captionTracks.length === 0) return null;
-        
-        // Priorité: FR -> EN -> Premier disponible
+        // 3. Sélection de la meilleure piste (FR > EN > auto)
         const track = captionTracks.find((t: any) => t.languageCode === 'fr') || 
                       captionTracks.find((t: any) => t.languageCode === 'en') || 
                       captionTracks[0];
                       
         if (!track || !track.baseUrl) return null;
         
-        // 2. Chargement du XML de transcription (YouTube retourne souvent du JSON ou XML selon le baseUrl)
-        const xmlResponse = await tauriFetch(track.baseUrl, { method: 'GET', responseType: 1 });
-        if (!xmlResponse.ok) return null;
+        // 4. Téléchargement du contenu (JSON3 format préféré si possible)
+        const transcriptUrl = track.baseUrl + '&fmt=json3';
+        const transcriptResponse = await tauriFetch(transcriptUrl, { method: 'GET', responseType: 1 });
         
-        const content = xmlResponse.data as string;
+        if (!transcriptResponse.ok) return null;
+        const content = transcriptResponse.data as string;
         
-        // 3. Parsing (YouTube renvoie souvent du XML avec des balises <text>)
         let transcriptText = "";
         
-        if (content.startsWith('<?xml') || content.includes('<transcript>')) {
-            const textNodes = content.match(/<text.*?>.*?<\/text>/g) || [];
-            transcriptText = textNodes
-                .map(node => {
-                    const txt = node.match(/>(.*?)<\/text>/);
-                    return txt ? txt[1] : '';
-                })
-                .join(' ');
-        } else {
-            // Tentative parsing JSON si c'est le format
-            try {
-                const data = JSON.parse(content);
-                if (data.events) {
-                    transcriptText = data.events
-                        .filter((e: any) => e.segs)
-                        .map((e: any) => e.segs.map((s: any) => s.utf8).join(''))
-                        .join(' ');
-                }
-            } catch (e) {
-                transcriptText = content; // Fallback brute
+        // 5. Parsing JSON3 (Format moderne et propre)
+        try {
+            const data = JSON.parse(content);
+            if (data.events) {
+                transcriptText = data.events
+                    .filter((e: any) => e.segs)
+                    .map((e: any) => e.segs.map((s: any) => s.utf8).join(''))
+                    .join(' ');
+            }
+        } catch (e) {
+            // Fallback XML (Ancien format)
+            if (content.includes('<text')) {
+                const textNodes = content.match(/<text.*?>.*?<\/text>/g) || [];
+                transcriptText = textNodes
+                    .map(node => {
+                        const txt = node.match(/>(.*?)<\/text>/);
+                        return txt ? txt[1] : '';
+                    })
+                    .join(' ');
+            } else {
+                transcriptText = content; // Brut
             }
         }
             
-        // Nettoyage final
+        // 6. Nettoyage HTML entities
         const cleanedText = transcriptText
             .replace(/&amp;/g, '&')
             .replace(/&lt;/g, '<')
@@ -274,7 +311,7 @@ async function fetchTranscriptCustom(videoId: string): Promise<{ text: string; l
         return cleanedText.length > 50 ? { text: cleanedText, language: track.languageCode } : null;
         
     } catch (error) {
-        console.error('[YouTubeService] Custom Tauri extraction failed:', error);
+        console.error('[YouTubeService] High-level extraction error:', error);
         return null;
     }
 }

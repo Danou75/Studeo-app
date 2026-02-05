@@ -87,27 +87,31 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
 
     if (terms) {
       return {
-        question: terms[quizConfig.questionLang] ?? '',
-        answer: terms[quizConfig.answerLang] ?? '',
+        question: terms[quizConfig.questionLang] || terms['fr'] || Object.values(terms)[0] || '',
+        answer: terms[quizConfig.answerLang] || Object.values(terms).find(v => v !== (terms[quizConfig.questionLang] || Object.values(terms)[0])) || Object.values(terms)[0] || '',
       };
     }
     if (mcqData) {
-      return {
-        question: mcqData.question[quizConfig.questionLang] ?? '',
-        answer: mcqData.answer[quizConfig.answerLang] ?? '',
-      };
+      const q = mcqData.question[quizConfig.questionLang] || Object.values(mcqData.question)[0] || '';
+      const a = mcqData.answer[quizConfig.answerLang] || Object.values(mcqData.answer)[0] || '';
+      return { question: q, answer: a };
     }
     if (clozeData) {
+      const q = clozeData.text[quizConfig.questionLang] || Object.values(clozeData.text)[0] || '';
+      const answers = clozeData.answers[quizConfig.answerLang] || Object.values(clozeData.answers)[0] || [];
       return {
-        question: clozeData.text[quizConfig.questionLang] ?? '',
-        answer: (clozeData.answers[quizConfig.answerLang] || []).join(', '),
+        question: q,
+        answer: answers.join(', '),
       };
     }
 
     // Comprehensive Fallback for flat objects or missing types
+    const qFallback = (currentCard as any)[quizConfig.questionLang] || (currentCard as any).question || (currentCard as any).fr || Object.values(currentCard).find(v => typeof v === 'string') || '';
+    const aFallback = (currentCard as any)[quizConfig.answerLang] || (currentCard as any).answer || (currentCard as any).it || (currentCard as any).en || '';
+    
     return { 
-      question: (currentCard as any)[quizConfig.questionLang] || '', 
-      answer: (currentCard as any)[quizConfig.answerLang] || '' 
+      question: qFallback, 
+      answer: aFallback 
     };
   }, [currentCard, quizConfig]);
 

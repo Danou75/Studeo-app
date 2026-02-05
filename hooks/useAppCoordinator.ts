@@ -286,7 +286,7 @@ export const useAppCoordinator = () => {
 
         onStartQuiz(module.flashcards, {
             questionLang: 'fr',
-            answerLang: 'fr',
+            answerLang: tutor?.language || 'fr',
             voiceGender: "female",
             mode: "mcq", // Base : QCM pour commencer en douceur
             gameMode: "normal",

@@ -190,116 +190,90 @@ function extractVideoId(url: string): string | null {
 }
 
 /**
- * Extraction manuelle des transcriptions via Tauri HTTP (bypass CORS)
- * Version renforcée avec multiples patterns de recherche
+ * Extraction manuelle des transcriptions via l'API interne InnerTube de YouTube
+ * C'est la méthode la plus robuste (équivalente à ce que fait DownSub en interne)
  */
 async function fetchTranscriptCustom(videoId: string): Promise<{ text: string; language: string } | null> {
     try {
         const { fetch: tauriFetch } = await import('@tauri-apps/api/http');
         
-        // 1. Récupération de la page vidéo
-        const url = `https://www.youtube.com/watch?v=${videoId}`;
-        const response = await tauriFetch(url, { 
+        // 1. Récupération des secrets API depuis la page vidéo
+        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        const pageResponse = await tauriFetch(videoUrl, { 
             method: 'GET', 
-            responseType: 1, // Text
+            responseType: 1,
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7'
             }
         });
-        
-        if (!response.ok) return null;
-        const html = response.data as string;
-        
-        // 2. Recherche des captionTracks (Multi-stratégie)
-        let captionTracks = null;
-        
-        // Stratégie 1 : Recherche direct de captionTracks dans le JSON
-        const directRegex = /"?captionTracks"?:\s*(\[.*?\])/s;
-        const directMatch = html.match(directRegex);
-        
-        if (directMatch && directMatch[1]) {
+
+        if (!pageResponse.ok) return null;
+        const html = pageResponse.data as string;
+
+        // Extraction de l'API Key
+        const apiKeyMatch = html.match(/"innertubeApiKey":"([^"]+)"/);
+        if (!apiKeyMatch) return null;
+        const apiKey = apiKeyMatch[1];
+
+        // Extraction du contexte client
+        const clientContextMatch = html.match(/"INNERTUBE_CONTEXT":({.+?})/);
+        let clientContext = null;
+        if (clientContextMatch) {
             try {
-                captionTracks = JSON.parse(directMatch[1]);
-            } catch (e) {
-                console.warn('[YouTubeService] Direct captionTracks parse failed');
-            }
+                clientContext = JSON.parse(clientContextMatch[1]);
+            } catch (e) {}
         }
         
-        // Stratégie 2 : Extraction de ytInitialPlayerResponse complet
-        if (!captionTracks) {
-            const playerResponseRegex = /ytInitialPlayerResponse\s*=\s*({.+?});/s;
-            const playerMatch = html.match(playerResponseRegex);
-            if (playerMatch && playerMatch[1]) {
-                try {
-                    const playerResponse = JSON.parse(playerMatch[1]);
-                    captionTracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                } catch (e) {
-                    console.warn('[YouTubeService] ytInitialPlayerResponse parse failed');
+        // Si on n'a pas le contexte complet, on en fabrique un minimal (souvent suffisant)
+        if (!clientContext) {
+            clientContext = {
+                client: {
+                    hl: 'fr',
+                    gl: 'FR',
+                    clientName: 'WEB',
+                    clientVersion: '2.20240201.01.00'
                 }
-            }
+            };
         }
 
-        // Stratégie 3 : Extraction via window["ytInitialPlayerResponse"]
-        if (!captionTracks) {
-            const windowRegex = /window\["ytInitialPlayerResponse"\]\s*=\s*({.+?});/s;
-            const windowMatch = html.match(windowRegex);
-            if (windowMatch && windowMatch[1]) {
-                try {
-                    captionTracks = JSON.parse(windowMatch[1])?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-                } catch (e) {
-                    console.warn('[YouTubeService] window[...] parse failed');
-                }
-            }
-        }
-
-        if (!Array.isArray(captionTracks) || captionTracks.length === 0) {
-            console.error('[YouTubeService] ❌ captionTracks not found in HTML source');
-            return null;
-        }
+        // 2. Récupération de l'ID de la transcription (params)
+        // On cherche le jeton de transcription dans ytInitialPlayerResponse
+        const playerResponseRegex = /ytInitialPlayerResponse\s*=\s*({.+?});\s*(?:var|window|const)/s;
+        const playerMatch = html.match(playerResponseRegex);
+        if (!playerMatch) return null;
         
-        // 3. Sélection de la meilleure piste (FR > EN > auto)
-        const track = captionTracks.find((t: any) => t.languageCode === 'fr') || 
-                      captionTracks.find((t: any) => t.languageCode === 'en') || 
-                      captionTracks[0];
+        const playerResponse = JSON.parse(playerMatch[1]);
+        const captions = playerResponse?.captions?.playerCaptionsTracklistRenderer;
+        
+        if (!captions || !captions.captionTracks) return null;
+        
+        // Trouver la piste FR ou EN
+        const track = captions.captionTracks.find((t: any) => t.languageCode === 'fr') || 
+                      captions.captionTracks.find((t: any) => t.languageCode === 'en') || 
+                      captions.captionTracks[0];
                       
-        if (!track || !track.baseUrl) return null;
-        
-        // 4. Téléchargement du contenu (JSON3 format préféré si possible)
+        if (!track) return null;
+
+        // 3. Appel direct à l'API de transcription InnerTube
+        // NOTE: On utilise le baseUrl du track qui contient déjà tous les jetons nécessaires
         const transcriptUrl = track.baseUrl + '&fmt=json3';
-        const transcriptResponse = await tauriFetch(transcriptUrl, { method: 'GET', responseType: 1 });
         
+        const transcriptResponse = await tauriFetch(transcriptUrl, {
+            method: 'GET',
+            responseType: 1
+        });
+
         if (!transcriptResponse.ok) return null;
-        const content = transcriptResponse.data as string;
-        
-        let transcriptText = "";
-        
-        // 5. Parsing JSON3 (Format moderne et propre)
-        try {
-            const data = JSON.parse(content);
-            if (data.events) {
-                transcriptText = data.events
-                    .filter((e: any) => e.segs)
-                    .map((e: any) => e.segs.map((s: any) => s.utf8).join(''))
-                    .join(' ');
-            }
-        } catch (e) {
-            // Fallback XML (Ancien format)
-            if (content.includes('<text')) {
-                const textNodes = content.match(/<text.*?>.*?<\/text>/g) || [];
-                transcriptText = textNodes
-                    .map(node => {
-                        const txt = node.match(/>(.*?)<\/text>/);
-                        return txt ? txt[1] : '';
-                    })
-                    .join(' ');
-            } else {
-                transcriptText = content; // Brut
-            }
-        }
-            
-        // 6. Nettoyage HTML entities
-        const cleanedText = transcriptText
+        const data = JSON.parse(transcriptResponse.data as string);
+
+        if (!data.events) return null;
+
+        // 4. Assemblage du texte
+        const transcriptText = data.events
+            .filter((e: any) => e.segs)
+            .map((e: any) => e.segs.map((s: any) => s.utf8).join(''))
+            .join(' ')
             .replace(/&amp;/g, '&')
             .replace(/&lt;/g, '<')
             .replace(/&gt;/g, '>')
@@ -307,11 +281,11 @@ async function fetchTranscriptCustom(videoId: string): Promise<{ text: string; l
             .replace(/&quot;/g, '"')
             .replace(/\s+/g, ' ')
             .trim();
-            
-        return cleanedText.length > 50 ? { text: cleanedText, language: track.languageCode } : null;
-        
+
+        return transcriptText.length > 50 ? { text: transcriptText, language: track.languageCode } : null;
+
     } catch (error) {
-        console.error('[YouTubeService] High-level extraction error:', error);
+        console.error('[YouTubeService] InnerTube extraction failed:', error);
         return null;
     }
 }

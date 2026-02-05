@@ -49,41 +49,75 @@ export async function analyzeYouTubeVideo(url: string): Promise<YouTubeAnalysis 
         // Étape 2: Tentative d'extraction de la transcription
         let transcriptResult: { text: string; language: string } | null = null;
         
-        // Stratégie A: Bibliothèque standard (youtube-transcript)
+        // Stratégie A: Endpoint Serverless Vercel (PRIORITAIRE - Plus robuste)
         try {
-            console.log('[YouTubeService] 📝 Attempting transcript extraction with youtube-transcript...');
-            const { YoutubeTranscript } = await import('youtube-transcript');
+            console.log('[YouTubeService] 🌐 Attempting transcript extraction via Vercel serverless endpoint...');
             
-            try {
-                const items = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'fr' });
-                if (items && items.length > 0) {
-                    const text = items.map((item: any) => item.text).join(' ').replace(/\s+/g, ' ').trim();
-                    transcriptResult = { text, language: 'fr' };
+            // Déterminer l'URL de base selon l'environnement
+            const baseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+                ? 'http://localhost:3000'
+                : 'https://multilingual-flashcards-hvgclxweq-danielmontiel-8987s-projects.vercel.app';
+            
+            const response = await fetch(`${baseUrl}/api/youtube-transcript?videoId=${videoId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            } catch (frError) {
-                try {
-                    const items = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'en' });
-                    if (items && items.length > 0) {
-                        const text = items.map((item: any) => item.text).join(' ').replace(/\s+/g, ' ').trim();
-                        transcriptResult = { text, language: 'en' };
-                    }
-                } catch (enError) {
-                    try {
-                        const items = await YoutubeTranscript.fetchTranscript(videoId);
-                        if (items && items.length > 0) {
-                            const text = items.map((item: any) => item.text).join(' ').replace(/\s+/g, ' ').trim();
-                            transcriptResult = { text, language: 'auto' };
-                        }
-                    } catch (autoError) {
-                        // On laisse tomber pour cette stratégie
-                    }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.transcript) {
+                    transcriptResult = { 
+                        text: data.transcript, 
+                        language: data.language || 'auto' 
+                    };
+                    console.log(`[YouTubeService] ✅ Serverless extraction successful (${data.method})`);
                 }
+            } else {
+                console.warn('[YouTubeService] Serverless endpoint returned:', response.status);
             }
         } catch (error) {
-            console.warn('[YouTubeService] Library strategy failed:', error);
+            console.warn('[YouTubeService] Serverless strategy failed:', error);
+        }
+        
+        // Stratégie B: Bibliothèque standard (youtube-transcript) - Fallback
+        if (!transcriptResult) {
+            try {
+                console.log('[YouTubeService] 📝 Attempting transcript extraction with youtube-transcript library...');
+                const { YoutubeTranscript } = await import('youtube-transcript');
+                
+                try {
+                    const items = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'fr' });
+                    if (items && items.length > 0) {
+                        const text = items.map((item: any) => item.text).join(' ').replace(/\s+/g, ' ').trim();
+                        transcriptResult = { text, language: 'fr' };
+                    }
+                } catch (frError) {
+                    try {
+                        const items = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'en' });
+                        if (items && items.length > 0) {
+                            const text = items.map((item: any) => item.text).join(' ').replace(/\s+/g, ' ').trim();
+                            transcriptResult = { text, language: 'en' };
+                        }
+                    } catch (enError) {
+                        try {
+                            const items = await YoutubeTranscript.fetchTranscript(videoId);
+                            if (items && items.length > 0) {
+                                const text = items.map((item: any) => item.text).join(' ').replace(/\s+/g, ' ').trim();
+                                transcriptResult = { text, language: 'auto' };
+                            }
+                        } catch (autoError) {
+                            // On laisse tomber pour cette stratégie
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('[YouTubeService] Library strategy failed:', error);
+            }
         }
 
-        // Stratégie B: Fallback custom via Tauri HTTP (bypass CORS) si la première a échoué
+        // Stratégie C: Fallback custom via Tauri HTTP (Desktop uniquement)
         if (!transcriptResult && typeof window !== 'undefined' && (window as any).__TAURI__) {
             try {
                 console.log('[YouTubeService] 🚀 Attempting custom fallback extraction via Tauri HTTP...');

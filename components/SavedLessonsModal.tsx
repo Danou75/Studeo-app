@@ -49,16 +49,16 @@ export const SavedLessonsModal: React.FC<SavedLessonsModalProps> = ({ isOpen, on
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                    {lessons.length === 0 ? (
+                    {lessons.filter(l => l.source !== 'curriculum').length === 0 ? (
                         <div className="text-center py-10 text-text-muted">
                             <i className="fas fa-history text-4xl mb-4 opacity-50"></i>
                             <p>{t('lessons.emptyText')}</p>
                         </div>
                     ) : (
-                        lessons.map((lesson) => (
+                        lessons.filter(l => l.source !== 'curriculum').map((lesson) => (
                             <div 
                                 key={lesson.id} 
-                                onClick={() => onSelectLesson(lesson, 'generator')}
+                                onClick={() => onSelectLesson(lesson)}
                                 className="bg-background-secondary hover:bg-background-tertiary border border-border p-4 rounded-xl cursor-pointer transition-all hover:border-primary group flex justify-between items-center"
                             >
                                 <div>

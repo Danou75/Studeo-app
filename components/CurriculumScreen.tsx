@@ -84,7 +84,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     const [renewPreferences, setRenewPreferences] = useState('');
     const [renewStrategy, setRenewStrategy] = useState<'replace' | 'append'>('replace');
     const [viewMode, setViewMode] = useLocalStorage<'grid' | 'list'>('curriculum_view_mode', 'grid');
-    const [activeTab, setActiveTab] = useState<'programs' | 'lessons'>('programs');
+    const [activeTab, setActiveTab] = useLocalStorage<'programs' | 'lessons'>('curriculum_active_tab', 'programs');
 
     
     const { config } = useAIConfig();
@@ -595,7 +595,7 @@ Format JSON STRICT (tableau d'objets) :
                     onClick={() => setActiveTab('lessons')}
                     className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeTab === 'lessons' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
                 >
-                    <i className="fas fa-book-open mr-2"></i> Leçons Solo ({lessons.length})
+                    <i className="fas fa-book-open mr-2"></i> Leçons Solo ({lessons.filter(l => l.source !== 'curriculum').length})
                     {activeTab === 'lessons' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
                 </button>
             </div>
@@ -733,7 +733,7 @@ Format JSON STRICT (tableau d'objets) :
                 </div>
             ) : (
                 <div className={viewMode === 'list' ? "flex flex-col gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
-                    {lessons.map(lesson => {
+                    {lessons.filter(l => l.source !== 'curriculum').map(lesson => {
                         const tutor = getTutor(lesson.tutorId || '');
                         return (
                             <div 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import { AILoader } from './ui/AILoader';
 import { Button } from './ui/Button';
@@ -426,13 +426,13 @@ Format JSON STRICT (tableau d'objets) :
         }
     };
 
-    const userSetsList = Object.entries(userSets).map(([name, cards]) => ({
+    const userSetsList = useMemo(() => Object.entries(userSets).map(([name, cards]) => ({
         name,
         count: cards.length,
         category: 'Mes Listes',
         isUser: true,
-        isActive: name === currentSetName
-    })).filter(set => !search || set.name.toLowerCase().includes(search.toLowerCase()));
+        isActive: name.trim() === (currentSetName || '').trim()
+    })).filter(set => !search || set.name.toLowerCase().includes(search.toLowerCase())), [userSets, currentSetName, search]);
 
     const curatedList = [...customCollections, ...filtered];
 
@@ -491,7 +491,12 @@ Format JSON STRICT (tableau d'objets) :
                     <h1 className="text-xl md:text-3xl font-black drop-shadow-sm text-inherit">
                         {t('home.features.library.title')}
                     </h1>
-                    <p className="opacity-80 mt-1 text-xs md:text-base text-inherit">{t('home.features.library.description')}</p>
+                    <p className="opacity-80 mt-1 text-xs md:text-base text-inherit">
+                        {t('home.features.library.description', { 
+                            setsCount: Object.keys(userSets).length, 
+                            cardsCount: Object.values(userSets).reduce((acc, cards) => acc + cards.length, 0)
+                        })}
+                    </p>
                 </div>
              </div>
 
@@ -537,14 +542,15 @@ Format JSON STRICT (tableau d'objets) :
                                 {userSetsList.map((set) => (
                                     <div 
                                         key={set.name} 
-                                        className={`group relative bg-white dark:bg-gray-800 border-2 rounded-2xl transition-all ${
+                                        onClick={() => !set.isActive && onSelectSet?.(set.name)}
+                                        className={`group relative bg-white dark:bg-gray-800 border-2 rounded-2xl transition-all cursor-pointer ${
                                             viewMode === 'grid' 
                                                 ? 'p-5 flex flex-col justify-between min-h-[160px]' 
                                                 : 'p-4 flex items-center gap-4 min-h-0'
                                         } ${
                                             set.isActive 
-                                                ? 'border-primary shadow-lg ring-4 ring-primary/5' 
-                                                : 'border-border hover:border-primary/30 hover:shadow-md'
+                                                ? 'border-primary shadow-lg ring-4 ring-primary/5 bg-primary/[0.02]' 
+                                                : 'border-border hover:border-primary/50 hover:shadow-xl hover:bg-primary/[0.03]'
                                         }`}
                                     >
                                         <div className={viewMode === 'grid' ? "flex justify-between items-start mb-2" : "flex items-center gap-4 flex-1"}>
@@ -629,7 +635,10 @@ Format JSON STRICT (tableau d'objets) :
                                                 <Button 
                                                     variant="primary" 
                                                     className="w-full rounded-xl py-1.5 text-xs font-bold"
-                                                    onClick={() => onSelectSet?.(set.name)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onSelectSet?.(set.name);
+                                                    }}
                                                 >
                                                     <i className="fas fa-play text-[10px] mr-2"></i> Activer
                                                 </Button>

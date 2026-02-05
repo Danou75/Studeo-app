@@ -742,10 +742,19 @@ ${analysisResult.summary || "Résumé non disponible."}
                     <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
                         <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">📖 Comment obtenir la transcription ?</h4>
                         <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800 dark:text-blue-200">
+                            <li className="flex flex-col gap-1">
+                                <span>
+                                    <a href={`https://youtubetranscript.com/?v=${url.split('v=')[1]?.split('&')[0] || url.split('/').pop()}`} target="_blank" rel="noopener noreferrer" className="underline font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800">
+                                        Source 1 (Rapide)
+                                    </a> ou 
+                                    <a href={`https://downsub.com/?url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer" className="ml-1 underline font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800">
+                                        Source 2 (Plus robuste)
+                                    </a>
+                                </span>
+                                <span className="text-[10px] opacity-70 italic">Ces services tiers extraient le texte pour vous en un clic.</span>
+                            </li>
                             <li>
-                                <a href={`https://youtubetranscript.com/?v=${url.split('v=')[1]?.split('&')[0] || url.split('/').pop()}`} target="_blank" rel="noopener noreferrer" className="underline font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800">
-                                    Cliquez ici pour extraire la transcription directement
-                                </a> (Recommandé) ou ouvrez la <a href={url} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 dark:text-blue-400">vidéo sur YouTube</a>.
+                                Si besoin, ouvrez directement la <a href={`${url}${url.includes('?') ? '&' : '?'}cc_load_policy=1&cc_lang_pref=fr`} target="_blank" rel="noopener noreferrer" className="underline font-bold text-blue-600 dark:text-blue-400">vidéo sur YouTube</a>
                             </li>
                             <li>Cliquez sur le bouton <strong>"..."</strong> sous la vidéo</li>
                             <li>Sélectionnez <strong>"Afficher la transcription"</strong></li>

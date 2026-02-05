@@ -56,7 +56,7 @@ export async function analyzeYouTubeVideo(url: string): Promise<YouTubeAnalysis 
             // Déterminer l'URL de base selon l'environnement
             const baseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
                 ? 'http://localhost:3000'
-                : 'https://multilingual-flashcards-hvgclxweq-danielmontiel-8987s-projects.vercel.app';
+                : window.location.origin; // Utilise l'origine actuelle pour éviter les problèmes CORS
             
             const response = await fetch(`${baseUrl}/api/youtube-transcript?videoId=${videoId}`, {
                 method: 'GET',

@@ -742,7 +742,7 @@ ${analysisResult.summary || "Résumé non disponible."}
                     <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
                         <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">📖 Comment obtenir la transcription ?</h4>
                         <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800 dark:text-blue-200">
-                            <li>Ouvrez la vidéo YouTube dans votre navigateur</li>
+                            <li>Ouvrez la <a href={url} target="_blank" rel="noopener noreferrer" className="underline font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800">vidéo YouTube</a> dans votre navigateur</li>
                             <li>Cliquez sur le bouton <strong>"..."</strong> sous la vidéo</li>
                             <li>Sélectionnez <strong>"Afficher la transcription"</strong></li>
                             <li>Copiez tout le texte (Ctrl+A puis Ctrl+C)</li>

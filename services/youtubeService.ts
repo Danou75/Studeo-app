@@ -215,7 +215,7 @@ async function fetchTranscriptCustom(videoId: string): Promise<{ text: string; l
         let captionTracks = null;
         
         // Stratégie 1 : Recherche direct de captionTracks dans le JSON
-        const directRegex = /"?captionTracks"?:\s*(\[.*?\])/;
+        const directRegex = /"?captionTracks"?:\s*(\[.*?\])/s;
         const directMatch = html.match(directRegex);
         
         if (directMatch && directMatch[1]) {

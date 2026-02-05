@@ -59,39 +59,9 @@ export const VideoLabScreen: React.FC<VideoLabScreenProps> = ({
         if (onAnalysisChange) onAnalysisChange(analysisResult ? { summary: analysisResult.summary, videoTitle } : null);
     }, [analysisResult, videoTitle, onAnalysisChange]);
 
-    const handleAnalyze = async () => {
-        if (!url.trim() || (!url.includes('youtube.com') && !url.includes('youtu.be'))) {
-            showToast(t('video.error'), 'error');
-            return;
-        }
-
-        setIsAnalyzing(true);
-        setTranscript(null);
-        setVideoTitle('');
-        
+    const handleAIAnalysis = async (currentTitle: string, currentTranscript: string | null | undefined, author: string = "Inconnu", detectedLang: string = "fr", detectedWordCount: number = 0) => {
         try {
-            // Import de la nouvelle fonction d'analyse
-            const { analyzeYouTubeVideo } = await import('../services/youtubeService');
-            
-            // Analyse complète de la vidéo
-            const analysis = await analyzeYouTubeVideo(url);
-            
-            if (!analysis) {
-                throw new Error("Impossible d'analyser cette vidéo. Vérifiez que le lien est valide et que la vidéo est accessible.");
-            }
-
-            // Mise à jour des métadonnées
-            setVideoTitle(analysis.metadata.title);
-            setTranscript(analysis.transcript);
-
-            console.log(`[VideoLab] Analysis complete:`, {
-                title: analysis.metadata.title,
-                hasTranscript: analysis.hasTranscript,
-                wordCount: analysis.wordCount,
-                language: analysis.language
-            });
-
-            // Préparation du contexte pour l'IA
+            // Configuration IA
             const aiKey = config.provider === 'gemini' ? config.geminiApiKey 
                            : config.provider === 'openai' ? config.openaiApiKey 
                            : config.provider === 'anthropic' ? config.anthropicApiKey
@@ -104,55 +74,55 @@ export const VideoLabScreen: React.FC<VideoLabScreenProps> = ({
                            : config.provider === 'local' ? config.localModelName
                            : 'gpt-4o';
 
-            // Construction du prompt intelligent basé sur les données disponibles
+            // Construction du prompt intelligent
             let contextPrompt = '';
             
-            if (analysis.hasTranscript) {
-                // Mode haute fidélité: transcription complète disponible
+            if (currentTranscript && currentTranscript.length > 100) {
+                // Mode haute fidélité
                 contextPrompt = `
                     VIDÉO YOUTUBE - ANALYSE HAUTE FIDÉLITÉ
                     
-                    Titre: "${analysis.metadata.title}"
-                    Auteur: ${analysis.metadata.author}
-                    Langue: ${analysis.language}
-                    Longueur: ${analysis.wordCount} mots
+                    Titre: "${currentTitle}"
+                    Auteur: ${author}
+                    Langue: ${detectedLang}
+                    Longueur estimée: ${detectedWordCount || currentTranscript.split(/\s+/).length} mots
                     
                     TRANSCRIPTION COMPLÈTE:
-                    ${analysis.transcript?.substring(0, 20000) || ''}
+                    ${currentTranscript.substring(0, 20000)}
                     
                     INSTRUCTIONS:
-                    Tu disposes de la transcription INTÉGRALE de cette vidéo.
+                    Tu disposes de la transcription de cette vidéo.
                     1. Fais un résumé structuré et exhaustif en 8-12 points clés
                     2. Identifie les concepts principaux et les arguments développés
                     3. Mentionne les exemples concrets donnés dans la vidéo
                     4. Reste fidèle au contenu RÉEL de la transcription
-                    5. Structure ton résumé avec des titres et sous-sections
+                    5. Structure ton résumé avec des titres et sous-sections en Markdown (##, ###, bullets)
+                    6. INDIQUE que c'est une analyse basée sur la TRANSCRIPTION.
                     
-                    NE FAIS PAS d'hallucinations basées sur le titre. Base-toi UNIQUEMENT sur la transcription fournie.
+                    Base-toi UNIQUEMENT sur la transcription fournie.
                 `;
             } else {
-                // Mode métadonnées: pas de transcription disponible
+                // Mode métadonnées
                 contextPrompt = `
                     VIDÉO YOUTUBE - ANALYSE PAR MÉTADONNÉES
                     
-                    Titre: "${analysis.metadata.title}"
-                    Auteur: ${analysis.metadata.author}
+                    Titre: "${currentTitle}"
+                    Auteur: ${author}
                     URL: ${url}
                     
-                    ⚠️ ATTENTION: La transcription n'est pas disponible pour cette vidéo.
+                    ⚠️ ATTENTION: La transcription n'est pas disponible.
                     
                     INSTRUCTIONS:
                     1. Si tu connais cette vidéo ou ce sujet, fais un résumé basé sur tes connaissances
                     2. Sinon, explique de manière générale ce que le titre suggère
                     3. INDIQUE CLAIREMENT que tu n'as pas accès à la transcription
-                    4. Reste honnête sur les limites de ton analyse
-                    5. Suggère à l'utilisateur d'activer les sous-titres sur YouTube si possible
+                    4. Suggère à l'utilisateur d'activer les sous-titres sur YouTube si possible
                 `;
             }
 
             // Génération du résumé par l'IA
             const response = await generateFlashcardsWithAI({
-                topic: `Analyse: ${analysis.metadata.title}`,
+                topic: `Analyse: ${currentTitle}`,
                 sourceLang: language || 'fr',
                 targetLang: language || 'fr',
                 count: 1,
@@ -181,6 +151,43 @@ export const VideoLabScreen: React.FC<VideoLabScreenProps> = ({
                 summary: summaryText,
                 vocabulary: [] 
             });
+
+            return true;
+        } catch (error) {
+            console.error("[VideoLab] AI Analysis failed:", error);
+            throw error;
+        }
+    };
+
+    const handleAnalyze = async () => {
+        if (!url.trim() || (!url.includes('youtube.com') && !url.includes('youtu.be'))) {
+            showToast(t('video.error'), 'error');
+            return;
+        }
+
+        setIsAnalyzing(true);
+        setTranscript(null);
+        setVideoTitle('');
+        
+        try {
+            const { analyzeYouTubeVideo } = await import('../services/youtubeService');
+            const analysis = await analyzeYouTubeVideo(url);
+            
+            if (!analysis) {
+                throw new Error("Impossible d'analyser cette vidéo. Vérifiez que le lien est valide.");
+            }
+
+            setVideoTitle(analysis.metadata.title);
+            setTranscript(analysis.transcript);
+
+            // APPEL DE LA NOUVELLE FONCTION DÉPORTÉE
+            await handleAIAnalysis(
+                analysis.metadata.title, 
+                analysis.transcript, 
+                analysis.metadata.author, 
+                analysis.language, 
+                analysis.wordCount
+            );
             
             const successMsg = analysis.hasTranscript 
                 ? `✅ Analyse haute fidélité (${analysis.wordCount} mots extraits)`
@@ -347,8 +354,15 @@ ${analysisResult.summary || "Résumé non disponible."}
         
         // Relancer l'analyse avec la transcription manuelle
         if (analysisResult) {
-            // Mettre à jour le résultat pour indiquer qu'on a maintenant une transcription
-            console.log('[VideoLab] Manual transcript added, ready for high-fidelity analysis');
+            setIsAnalyzing(true);
+            handleAIAnalysis(videoTitle, manualTranscript.trim())
+                .then(() => {
+                    showToast("✨ Résumé IA mis à jour avec la transcription !", "success");
+                })
+                .catch(() => {
+                    showToast("Erreur lors de la mise à jour du résumé IA", "error");
+                })
+                .finally(() => setIsAnalyzing(false));
         }
     };
 
@@ -359,7 +373,14 @@ ${analysisResult.summary || "Résumé non disponible."}
             const analysis = await analyzeYouTubeVideo(url);
             if (analysis?.hasTranscript) {
                 setTranscript(analysis.transcript);
-                showToast("✅ Transcription récupérée avec succès !", "success");
+                showToast("✅ Transcription récupérée ! Mise à jour de l'analyse...", "success");
+                
+                // Relancer l'analyse IA avec la nouvelle transcription
+                setIsAnalyzing(true);
+                await handleAIAnalysis(analysis.metadata.title, analysis.transcript, analysis.metadata.author);
+                setIsAnalyzing(false);
+                
+                showToast("✨ Analyse haute fidélité terminée !", "success");
             } else {
                 showToast("❌ Impossible de récupérer la transcription automatiquement.", "error");
             }

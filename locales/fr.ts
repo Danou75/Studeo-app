@@ -403,7 +403,7 @@ export const fr = {
             accuracyLabel: "Précision : {accuracy}%"
         },
         skills: {
-            title: "Compétences par Langue",
+            title: "Compétences Acquises",
             masteredWords: "Mots Maîtrisés",
             accuracy: "Précision",
             noData: "Aucune donnée par langue"

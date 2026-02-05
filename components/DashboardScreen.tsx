@@ -140,7 +140,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                                          lang === 'pt' ? '🇵🇹' :
                                          lang === 'de' ? '🇩🇪' :
                                          lang === 'ru' ? '🇷🇺' :
-                                         '🌐'}
+                                         ['front', 'back', 'recto', 'verso'].includes(lang.toLowerCase()) ? '🗂️' : '🌐'}
                                     </span>
                                     <div>
                                         <p className="font-medium">{t('languages.' + lang) || lang.toUpperCase()}</p>

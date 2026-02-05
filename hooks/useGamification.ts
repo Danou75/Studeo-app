@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { GamificationData, Achievement } from '../types';
 import { INITIAL_GAMIFICATION_DATA, checkAchievements } from '../utils/achievements';
 import { useLocalStorage } from './useLocalStorage';
@@ -10,6 +10,26 @@ export const useGamification = () => {
   );
 
   const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
+
+  // Synchronisation automatique au chargement (migration/rétroactif)
+  useEffect(() => {
+    const unlocked = checkAchievements(gamificationData);
+    if (unlocked.length > 0) {
+        setGamificationData(current => {
+            const newData = { ...current };
+            let hasChanged = false;
+            newData.achievements = newData.achievements.map(a => {
+                const newlyUnlocked = unlocked.find(u => u.id === a.id);
+                if (newlyUnlocked && !a.unlockedAt) {
+                    hasChanged = true;
+                    return newlyUnlocked;
+                }
+                return a;
+            });
+            return hasChanged ? newData : current;
+        });
+    }
+  }, []);
 
   /**
    * Met à jour les données de gamification après une session de quiz
@@ -56,8 +76,48 @@ export const useGamification = () => {
         newData.perfectQuizzes += 1;
       }
 
+      // Mise à jour du progrès par langue
+      const lang = sessionStats.language;
+      if (lang && lang !== 'unknown') {
+          if (!newData.languageProgress[lang]) {
+              newData.languageProgress[lang] = {
+                  language: lang,
+                  masteredCards: 0,
+                  totalCards: 0,
+                  level: 'beginner',
+                  accuracy: 0
+              };
+          }
+          const lp = newData.languageProgress[lang];
+          lp.totalCards += sessionStats.totalCount;
+          
+          // On considère "maîtrisée" une carte réussie dans cette session pour la progression globale
+          lp.masteredCards += sessionStats.correctCount;
+          
+          // Recalculer la précision moyenne pour cette langue
+          if (lp.totalCards > 0) {
+              lp.accuracy = Math.round((lp.masteredCards / lp.totalCards) * 100);
+          }
+          
+          // Mise à jour du niveau (simplifié)
+          if (lp.masteredCards > 500) lp.level = 'expert';
+          else if (lp.masteredCards > 200) lp.level = 'advanced';
+          else if (lp.masteredCards > 50) lp.level = 'intermediate';
+          else lp.level = 'beginner';
+      }
+
       // Vérification des nouveaux succès
       const unlocked = checkAchievements(newData);
+      
+      // Cas spécial : Speed Demon (n'est pas basé sur des totaux cumulés mais sur une session)
+      if (sessionStats.totalCount >= 10 && sessionStats.duration > 0 && sessionStats.duration <= 30) {
+          const speedDemon = newData.achievements.find(a => a.id === 'speed_demon');
+          if (speedDemon && !speedDemon.unlockedAt) {
+              speedDemon.unlockedAt = new Date().toISOString();
+              unlocked.push(speedDemon);
+          }
+      }
+
       if (unlocked.length > 0) {
         // Marquer comme débloqués dans les données
         newData.achievements = newData.achievements.map(a => {

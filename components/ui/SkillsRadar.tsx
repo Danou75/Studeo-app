@@ -54,8 +54,16 @@ export const SkillsRadar: React.FC<SkillsRadarProps> = ({ stats, size = 300 }) =
     const levels = [25, 50, 75, 100];
     
     const getEmoji = (code: string) => {
-        const map: Record<string, string> = { fr: '🇫🇷', en: '🇬🇧', es: '🇪🇸', it: '🇮🇹', pt: '🇵🇹', de: '🇩🇪' };
+        const map: Record<string, string> = { fr: '🇫🇷', en: '🇬🇧', es: '🇪🇸', it: '🇮🇹', pt: '🇵🇹', de: '🇩🇪', ru: '🇷🇺' };
+        if (['front', 'back', 'recto', 'verso'].includes(code.toLowerCase())) return '🗂️';
         return map[code] || '🌐';
+    };
+
+    const getDisplayName = (code: string) => {
+        const lower = code.toLowerCase();
+        if (lower === 'front' || lower === 'recto') return 'RECTO';
+        if (lower === 'back' || lower === 'verso') return 'VERSO';
+        return code.toUpperCase();
     };
 
     return (
@@ -129,7 +137,7 @@ export const SkillsRadar: React.FC<SkillsRadarProps> = ({ stats, size = 300 }) =
                             dominantBaseline="middle" 
                             className="fill-text text-sm font-bold"
                         >
-                            {getEmoji(lang)} {lang.toUpperCase()}
+                            {getEmoji(lang)} {getDisplayName(lang)}
                         </text>
                         <text
                              y="14"

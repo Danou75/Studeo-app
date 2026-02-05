@@ -140,14 +140,16 @@ export const checkAchievements = (data: GamificationData): Achievement[] => {
         break;
       
       case 'cards_100':
-        // Calculer le total des cartes maîtrisées
+      case 'cards_500':
+      case 'cards_1000':
         const totalMastered = Object.values(data.languageProgress).reduce((acc, curr) => acc + curr.masteredCards, 0);
-        isUnlocked = totalMastered >= 100;
+        isUnlocked = totalMastered >= (achievement.target || 0);
         break;
-      // ... autres cas similaires pour cards_500, cards_1000
 
       case 'perfect_10':
-        isUnlocked = data.perfectQuizzes >= 10;
+      case 'perfect_50':
+      case 'perfect_100':
+        isUnlocked = data.perfectQuizzes >= (achievement.target || 0);
         break;
       
       case 'first_quiz':
@@ -160,6 +162,11 @@ export const checkAchievements = (data: GamificationData): Achievement[] => {
 
       case 'early_bird':
         isUnlocked = hour >= 4 && hour < 7;
+        break;
+
+      case 'speed_demon':
+        // Ce succès est généralement débloqué via un flag spécifique passé lors de l'update
+        // ou vérifié directement dans useGamification si on a les stats de la session.
         break;
     }
 

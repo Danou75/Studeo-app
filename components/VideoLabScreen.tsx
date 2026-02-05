@@ -59,8 +59,10 @@ export const VideoLabScreen: React.FC<VideoLabScreenProps> = ({
         if (onAnalysisChange) onAnalysisChange(analysisResult ? { summary: analysisResult.summary, videoTitle } : null);
     }, [analysisResult, videoTitle, onAnalysisChange]);
 
-    const handleAIAnalysis = async (currentTitle: string, currentTranscript: string | null | undefined, author: string = "Inconnu", detectedLang: string | null = "fr", detectedWordCount: number | null = 0) => {
+    const handleAIAnalysis = async (currentTitle: string, currentTranscript: string | null | undefined, author: string = "Inconnu", detectedWordCount: number | null = 0) => {
         try {
+            console.log(`[VideoLab] Starting AI Analysis. Has transcript: ${!!currentTranscript}`);
+            
             // Configuration IA
             const aiKey = config.provider === 'gemini' ? config.geminiApiKey 
                            : config.provider === 'openai' ? config.openaiApiKey 
@@ -80,53 +82,45 @@ export const VideoLabScreen: React.FC<VideoLabScreenProps> = ({
             if (currentTranscript && currentTranscript.length > 100) {
                 // Mode haute fidélité
                 contextPrompt = `
-                    VIDÉO YOUTUBE - ANALYSE HAUTE FIDÉLITÉ
+                    --- MODE RÉSUMÉ ANALYTIQUE (HAUTE FIDÉLITÉ) ---
+                    Tu es chargé de faire une analyse experte de cette vidéo.
                     
                     Titre: "${currentTitle}"
                     Auteur: ${author}
-                    Langue: ${detectedLang}
-                    Longueur estimée: ${detectedWordCount || currentTranscript.split(/\s+/).length} mots
+                    Longueur: ${detectedWordCount || currentTranscript.split(/\s+/).length} mots
                     
-                    TRANSCRIPTION COMPLÈTE:
-                    ${currentTranscript.substring(0, 20000)}
+                    TRANSCRIPTION INTÉGRALE:
+                    ${currentTranscript.substring(0, 25000)}
                     
-                    INSTRUCTIONS:
-                    Tu disposes de la transcription de cette vidéo.
-                    1. Fais un résumé structuré et exhaustif en 8-12 points clés
-                    2. Identifie les concepts principaux et les arguments développés
-                    3. Mentionne les exemples concrets donnés dans la vidéo
-                    4. Reste fidèle au contenu RÉEL de la transcription
-                    5. Structure ton résumé avec des titres et sous-sections en Markdown (##, ###, bullets)
-                    6. INDIQUE que c'est une analyse basée sur la TRANSCRIPTION.
+                    MISSION :
+                    Ignore les instructions de format de flashcard standard et concentre-toi sur le contenu.
+                    1. Rédige un résumé structuré et exhaustif (minimum 10 points clés).
+                    2. Détaille les concepts techniques ou arguments principaux.
+                    3. Utilise le format Markdown (##, ###, bullets, gras).
+                    4. Commence ton texte par "🚀 ANALYSE BASÉ SUR LA TRANSCRIPTION :"
                     
-                    Base-toi UNIQUEMENT sur la transcription fournie.
+                    METS TOUTE CETTE ANALYSE DANS LE CHAMP "QUESTION" DU JSON.
                 `;
             } else {
                 // Mode métadonnées
                 contextPrompt = `
-                    VIDÉO YOUTUBE - ANALYSE PAR MÉTADONNÉES
-                    
+                    --- MODE RÉSUMÉ PAR MÉTADONNÉES ---
                     Titre: "${currentTitle}"
                     Auteur: ${author}
-                    URL: ${url}
                     
-                    ⚠️ ATTENTION: La transcription n'est pas disponible.
-                    
-                    INSTRUCTIONS:
-                    1. Si tu connais cette vidéo ou ce sujet, fais un résumé basé sur tes connaissances
-                    2. Sinon, explique de manière générale ce que le titre suggère
-                    3. INDIQUE CLAIREMENT que tu n'as pas accès à la transcription
-                    4. Suggère à l'utilisateur d'activer les sous-titres sur YouTube si possible
+                    ⚠️ Transcription indisponible.
+                    Rédige un résumé général basé sur le titre et tes connaissances éventuelles.
+                    Explique que l'analyse est limitée par l'absence de texte.
                 `;
             }
 
             // Génération du résumé par l'IA
             const response = await generateFlashcardsWithAI({
-                topic: `Analyse: ${currentTitle}`,
+                topic: `RÉSUMÉ EXPERT: ${currentTitle}`,
                 sourceLang: language || 'fr',
                 targetLang: language || 'fr',
                 count: 1,
-                difficulty: 'intermediate',
+                difficulty: 'advanced',
                 context: contextPrompt,
                 provider: config.provider,
                 apiKey: aiKey,
@@ -134,18 +128,28 @@ export const VideoLabScreen: React.FC<VideoLabScreenProps> = ({
                 modelName: aiModel
             });
 
-            // Extraction du résumé
+            // Extraction robuste du résumé
             const firstCard = response[0];
             let summaryText = "Résumé indisponible.";
             
             if (firstCard) {
-                if (firstCard.type === 'mcq') {
-                    const q = firstCard.mcqData.question;
-                    summaryText = q[language] || q['fr'] || Object.values(q)[0] || "Analyse réussie.";
-                } else if (firstCard.type === 'classic') {
-                    summaryText = firstCard.terms[language] || firstCard.terms['fr'] || Object.values(firstCard.terms)[0] || "Analyse réussie.";
+                // On fouille partout pour trouver le texte le plus long (généralement le résumé)
+                let textOptions: string[] = [];
+                
+                if (firstCard.type === 'mcq' && firstCard.mcqData) {
+                    const qRaw = firstCard.mcqData.question;
+                    const aRaw = firstCard.mcqData.answer;
+                    textOptions.push(qRaw[language] || qRaw['fr'] || Object.values(qRaw)[0] || "");
+                    textOptions.push(aRaw[language] || aRaw['fr'] || Object.values(aRaw)[0] || "");
+                } else if (firstCard.type === 'classic' && firstCard.terms) {
+                    textOptions.push(firstCard.terms[language] || firstCard.terms['fr'] || Object.values(firstCard.terms)[0] || "");
                 }
+
+                // On prend le bloc de texte le plus long trouvé
+                summaryText = textOptions.reduce((a, b) => a.length > b.length ? a : b) || "Analyse réussie (contenu vide).";
             }
+            
+            console.log(`[VideoLab] Summary extracted (${summaryText.length} chars)`);
             
             setAnalysisResult({
                 summary: summaryText,
@@ -185,7 +189,6 @@ export const VideoLabScreen: React.FC<VideoLabScreenProps> = ({
                 analysis.metadata.title, 
                 analysis.transcript, 
                 analysis.metadata.author, 
-                analysis.language, 
                 analysis.wordCount
             );
             
@@ -355,12 +358,14 @@ ${analysisResult.summary || "Résumé non disponible."}
         // Relancer l'analyse avec la transcription manuelle
         if (analysisResult) {
             setIsAnalyzing(true);
-            handleAIAnalysis(videoTitle, manualTranscript.trim())
+            const titleToUse = videoTitle || "Vidéo importée";
+            
+            handleAIAnalysis(titleToUse, manualTranscript.trim())
                 .then(() => {
-                    showToast("✨ Résumé IA mis à jour avec la transcription !", "success");
+                    showToast("✨ Résumé IA mis à jour !", "success");
                 })
                 .catch(() => {
-                    showToast("Erreur lors de la mise à jour du résumé IA", "error");
+                    showToast("Erreur lors de la mise à jour du résumé", "error");
                 })
                 .finally(() => setIsAnalyzing(false));
         }

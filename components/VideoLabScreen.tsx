@@ -572,19 +572,49 @@ ${analysisResult.summary || "Résumé non disponible."}
                                 </span>
                             </div>
                             {!transcript && (
-                                <div className="mt-2 text-xs text-text-secondary bg-orange-50 dark:bg-orange-900/10 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
-                                    <strong>💡 Pour obtenir une transcription :</strong>
-                                    <ul className="list-disc list-inside mt-1 space-y-1">
-                                        <li>Vérifiez que la vidéo a des sous-titres activés sur YouTube</li>
-                                        <li>Certaines vidéos bloquent l'extraction automatique</li>
-                                        <li>L'IA fera de son mieux avec le titre et ses connaissances</li>
+                                <div className="mt-2 text-xs text-text-secondary bg-orange-50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-200 dark:border-orange-800 shadow-sm animate-pulse">
+                                    <div className="flex items-center gap-2 mb-2 text-orange-800 dark:text-orange-200">
+                                        <i className="fas fa-magic"></i>
+                                        <strong className="text-sm">Transcription non trouvée :</strong>
+                                    </div>
+                                    <ul className="list-disc list-inside mt-1 space-y-1 opacity-80 mb-4">
+                                        <li>La vidéo bloque peut-être l'extraction standard.</li>
+                                        <li>Les sous-titres sont peut-être désactivés.</li>
                                     </ul>
-                                    <button
-                                        onClick={() => setShowTranscriptModal(true)}
-                                        className="mt-3 w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-semibold text-sm hover:shadow-lg hover:scale-[1.02] transition-all"
-                                    >
-                                        📋 Coller la transcription manuellement
-                                    </button>
+                                    
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <button
+                                            onClick={async () => {
+                                                setIsAnalyzing(true);
+                                                try {
+                                                    const { analyzeYouTubeVideo } = await import('../services/youtubeService');
+                                                    const analysis = await analyzeYouTubeVideo(url);
+                                                    if (analysis?.hasTranscript) {
+                                                        setTranscript(analysis.transcript);
+                                                        showToast("✅ Transcription récupérée avec succès !", "success");
+                                                    } else {
+                                                        showToast("❌ Impossible de récupérer la transcription automatiquement.", "error");
+                                                    }
+                                                } catch (e) {
+                                                    showToast("Erreur lors de l'extraction.", "error");
+                                                } finally {
+                                                    setIsAnalyzing(false);
+                                                }
+                                            }}
+                                            className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <i className="fas fa-robot"></i>
+                                            Tenter l'extraction forcée
+                                        </button>
+
+                                        <button
+                                            onClick={() => setShowTranscriptModal(true)}
+                                            className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 text-text-primary border border-border rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <i className="fas fa-paste"></i>
+                                            Coller Manuellement
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                             {transcript && <span className="text-[10px] bg-green-500 text-white px-2 py-1 rounded-full font-black uppercase tracking-tighter">HD Mode</span>}

@@ -46,48 +46,51 @@ export async function analyzeYouTubeVideo(url: string): Promise<YouTubeAnalysis 
 
         console.log(`[YouTubeService] ✅ Metadata retrieved: "${metadata.title}"`);
 
-        // Étape 2: Tentative d'extraction de la transcription avec youtube-transcript library
+        // Étape 2: Tentative d'extraction de la transcription
         let transcriptResult: { text: string; language: string } | null = null;
         
+        // Stratégie A: Bibliothèque standard (youtube-transcript)
         try {
             console.log('[YouTubeService] 📝 Attempting transcript extraction with youtube-transcript...');
             const { YoutubeTranscript } = await import('youtube-transcript');
             
-            // Essai avec français en priorité
             try {
                 const items = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'fr' });
                 if (items && items.length > 0) {
                     const text = items.map((item: any) => item.text).join(' ').replace(/\s+/g, ' ').trim();
                     transcriptResult = { text, language: 'fr' };
-                    console.log('[YouTubeService] ✅ French transcript extracted');
                 }
             } catch (frError) {
-                // Essai avec anglais
-                console.log('[YouTubeService] French not available, trying English...');
                 try {
                     const items = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'en' });
                     if (items && items.length > 0) {
                         const text = items.map((item: any) => item.text).join(' ').replace(/\s+/g, ' ').trim();
                         transcriptResult = { text, language: 'en' };
-                        console.log('[YouTubeService] ✅ English transcript extracted');
                     }
                 } catch (enError) {
-                    // Essai sans spécifier la langue (première disponible)
-                    console.log('[YouTubeService] Trying any available language...');
                     try {
                         const items = await YoutubeTranscript.fetchTranscript(videoId);
                         if (items && items.length > 0) {
                             const text = items.map((item: any) => item.text).join(' ').replace(/\s+/g, ' ').trim();
                             transcriptResult = { text, language: 'auto' };
-                            console.log('[YouTubeService] ✅ Transcript extracted (auto-detected language)');
                         }
                     } catch (autoError) {
-                        console.warn('[YouTubeService] ⚠️ No transcript available for this video');
+                        // On laisse tomber pour cette stratégie
                     }
                 }
             }
         } catch (error) {
-            console.error('[YouTubeService] Transcript extraction failed:', error);
+            console.warn('[YouTubeService] Library strategy failed:', error);
+        }
+
+        // Stratégie B: Fallback custom via Tauri HTTP (bypass CORS) si la première a échoué
+        if (!transcriptResult && typeof window !== 'undefined' && (window as any).__TAURI__) {
+            try {
+                console.log('[YouTubeService] 🚀 Attempting custom fallback extraction via Tauri HTTP...');
+                transcriptResult = await fetchTranscriptCustom(videoId);
+            } catch (fallbackError) {
+                console.error('[YouTubeService] Custom fallback failed:', fallbackError);
+            }
         }
         
         const analysis: YouTubeAnalysis = {
@@ -184,6 +187,96 @@ function extractVideoId(url: string): string | null {
 
     console.error(`[YouTubeService] ❌ Failed to extract Video ID from: ${url}`);
     return null;
+}
+
+/**
+ * Extraction manuelle des transcriptions via Tauri HTTP (bypass CORS)
+ */
+async function fetchTranscriptCustom(videoId: string): Promise<{ text: string; language: string } | null> {
+    try {
+        const { fetch: tauriFetch } = await import('@tauri-apps/api/http');
+        
+        // 1. Récupération de la page vidéo pour trouver les captionTracks
+        const url = `https://www.youtube.com/watch?v=${videoId}`;
+        const response = await tauriFetch(url, { 
+            method: 'GET', 
+            responseType: 1, // Text
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+        });
+        
+        if (!response.ok) return null;
+        
+        const html = response.data as string;
+        
+        // Recherche de la configuration des légendes
+        // On cherche le bloc JSON qui contient captionTracks dans ytInitialPlayerResponse
+        const configRegex = /"captionTracks":\s*(\[.*?\])/;
+        const match = html.match(configRegex);
+        
+        if (!match || !match[1]) {
+            return null;
+        }
+        
+        const captionTracks = JSON.parse(match[1]);
+        if (!Array.isArray(captionTracks) || captionTracks.length === 0) return null;
+        
+        // Priorité: FR -> EN -> Premier disponible
+        const track = captionTracks.find((t: any) => t.languageCode === 'fr') || 
+                      captionTracks.find((t: any) => t.languageCode === 'en') || 
+                      captionTracks[0];
+                      
+        if (!track || !track.baseUrl) return null;
+        
+        // 2. Chargement du XML de transcription (YouTube retourne souvent du JSON ou XML selon le baseUrl)
+        const xmlResponse = await tauriFetch(track.baseUrl, { method: 'GET', responseType: 1 });
+        if (!xmlResponse.ok) return null;
+        
+        const content = xmlResponse.data as string;
+        
+        // 3. Parsing (YouTube renvoie souvent du XML avec des balises <text>)
+        let transcriptText = "";
+        
+        if (content.startsWith('<?xml') || content.includes('<transcript>')) {
+            const textNodes = content.match(/<text.*?>.*?<\/text>/g) || [];
+            transcriptText = textNodes
+                .map(node => {
+                    const txt = node.match(/>(.*?)<\/text>/);
+                    return txt ? txt[1] : '';
+                })
+                .join(' ');
+        } else {
+            // Tentative parsing JSON si c'est le format
+            try {
+                const data = JSON.parse(content);
+                if (data.events) {
+                    transcriptText = data.events
+                        .filter((e: any) => e.segs)
+                        .map((e: any) => e.segs.map((s: any) => s.utf8).join(''))
+                        .join(' ');
+                }
+            } catch (e) {
+                transcriptText = content; // Fallback brute
+            }
+        }
+            
+        // Nettoyage final
+        const cleanedText = transcriptText
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&#39;/g, "'")
+            .replace(/&quot;/g, '"')
+            .replace(/\s+/g, ' ')
+            .trim();
+            
+        return cleanedText.length > 50 ? { text: cleanedText, language: track.languageCode } : null;
+        
+    } catch (error) {
+        console.error('[YouTubeService] Custom Tauri extraction failed:', error);
+        return null;
+    }
 }
 
 /**

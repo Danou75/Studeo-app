@@ -37,7 +37,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userInput, setUserInput] = useState('');
   const [isRevealed, setIsRevealed] = useState(false);
-  const [incorrectAnswers] = useState<Flashcard[]>([]);
+  const [incorrectAnswers, setIncorrectAnswers] = useState<Flashcard[]>([]);
   const [startTime, setStartTime] = useState(0);
   const [isReady, setIsReady] = useState(quizConfig.voiceEngine === 'local');
   const [options, setOptions] = useState<string[]>([]);
@@ -271,6 +271,10 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
   const evaluateAnswer = (isCorrectAnswer: boolean) => {
     setCorrectCount(prev => prev + (isCorrectAnswer ? 1 : 0));
     const newStreak = isCorrectAnswer ? correctStreak + 1 : 0;
+
+    if (!isCorrectAnswer) {
+      setIncorrectAnswers(prev => [...prev, currentCard]);
+    }
 
     if (quizConfig.gameMode === 'survival' && !isCorrectAnswer) {
       setLives(prev => Math.max(prev - 1, 0));

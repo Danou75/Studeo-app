@@ -188,8 +188,8 @@ export const useAppCoordinator = () => {
         navigation.setScreen("ai-generator");
     };
 
-    const onStartQuiz = (cards: Flashcard[], config: Omit<QuizConfig, "voiceEngine" | "autoPlayAudio" | "quizName">) => {
-        quizSession.startQuiz(cards, config, voiceEngine, autoPlayAudio, flashcards.currentSetName);
+    const onStartQuiz = (cards: Flashcard[], config: Omit<QuizConfig, "voiceEngine" | "autoPlayAudio" | "quizName">, quizName?: string) => {
+        quizSession.startQuiz(cards, config, voiceEngine, autoPlayAudio, flashcards.currentSetName, quizName);
         navigation.setScreen("quiz");
     };
 
@@ -283,16 +283,28 @@ export const useAppCoordinator = () => {
         }
 
         const tutor = TUTORS.find(t => t.id === tutorId) || guestTutors.find(t => t.id === tutorId);
+        const quizName = `Module : ${module.title}`;
 
-        onStartQuiz(module.flashcards, {
-            questionLang: 'fr',
-            answerLang: tutor?.language || 'fr',
-            voiceGender: "female",
-            mode: "mcq", // Base : QCM pour commencer en douceur
-            gameMode: "normal",
-            tutorId,
-            tutorCategory: tutor?.category
-        });
+        // Utilisation directe de quizSession pour garantir le passage du titre
+        quizSession.startQuiz(
+            module.flashcards, 
+            {
+                questionLang: 'fr',
+                answerLang: tutor?.language || 'fr',
+                voiceGender: "female",
+                mode: "mcq",
+                gameMode: "normal",
+                tutorId,
+                tutorCategory: tutor?.category
+            }, 
+            voiceEngine, 
+            autoPlayAudio, 
+            flashcards.currentSetName, // Garde le set name pour référence technique
+            quizName // Titre forcé
+        );
+
+        navigation.setScreen("quiz");
+        showToast(`Lancement de : ${quizName}`, 'info');
     };
 
     const handleBackToLesson = () => {

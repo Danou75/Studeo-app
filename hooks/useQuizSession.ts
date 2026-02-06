@@ -20,8 +20,8 @@ export const useQuizSession = () => {
         return `Vocab ${questionLang}→${answerLang} (${modeLabel}) — Set: ${setName}`;
     };
 
-    const startQuiz = (cards: Flashcard[], config: Omit<QuizConfig, 'voiceEngine' | 'autoPlayAudio' | 'quizName'>, voiceEngine: QuizConfig['voiceEngine'], autoPlayAudio: boolean, setName: string) => {
-        const quizName = buildQuizName({
+    const startQuiz = (cards: Flashcard[], config: Omit<QuizConfig, 'voiceEngine' | 'autoPlayAudio' | 'quizName'>, voiceEngine: QuizConfig['voiceEngine'], autoPlayAudio: boolean, setName: string, customQuizName?: string) => {
+        const quizName = customQuizName || buildQuizName({
             mode: config.mode,
             questionLang: config.questionLang,
             answerLang: config.answerLang,

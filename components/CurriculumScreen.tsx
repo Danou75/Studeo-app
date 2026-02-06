@@ -41,8 +41,10 @@ interface CurriculumScreenProps {
     onSuggestedProgram: (topic: string, category: string) => void;
     customSuggestions?: any[];
     setCustomSuggestions?: (suggestions: any[] | ((prev: any[]) => any[])) => void;
+
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
+    onNavigateToSettings?: () => void;
 }
 
 import { Lesson } from '../types';
@@ -58,6 +60,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     onDrawingChallenge,
     onStartTutorial,
     onNewProgram,
+    onNavigateToSettings,
     onRenameProgram,
     onSelectLesson,
     onDeleteLesson,
@@ -301,6 +304,17 @@ Format JSON STRICT (tableau d'objets) :
                             </Button>
 
                             <div className="flex gap-3 md:gap-4 items-center">
+                                {onNavigateToSettings && (
+                                    <Button
+                                        variant="secondary"
+                                        onClick={onNavigateToSettings}
+                                        size="sm"
+                                        className="bg-white/10 hover:bg-white/20 text-white border-transparent backdrop-blur-sm shadow-inner rounded-xl h-10 w-10 p-0 flex items-center justify-center"
+                                        title="Paramètres"
+                                    >
+                                        <i className="fas fa-cog"></i>
+                                    </Button>
+                                )}
                                 <div className="flex gap-2 bg-white/10 p-1 md:p-1.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-inner">
                                     <button 
                                         onClick={() => handleExportProgram('md')}

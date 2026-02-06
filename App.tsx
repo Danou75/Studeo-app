@@ -903,7 +903,7 @@ const AppContent: React.FC = () => {
                 mode: 'mixed',
                 voiceGender: 'female',
                 gameMode: 'normal'
-              })}
+              }, `Quiz : ${currentLesson.topic}`)}
               onGenerateExercises={coordinator.handleInteractiveExercises}
               onGenerateQuiz={coordinator.handleGenerateQuizFromLesson}
             />

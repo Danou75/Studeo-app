@@ -585,6 +585,8 @@ const AppContent: React.FC = () => {
               newAchievements={gamification.newAchievements}
               onBackToLesson={currentLesson ? coordinator.handleBackToLesson : undefined}
               onGenerateBonusExercises={currentLesson ? coordinator.handleGenerateBonusExercises : undefined}
+              isProgramCompleted={coordinator.isProgramCompleted}
+              onResetProgramCompletion={() => coordinator.setIsProgramCompleted(false)}
             />
           );
         }

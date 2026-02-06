@@ -106,10 +106,11 @@ export const useStudyContent = () => {
         ));
     };
 
-    const markCurrentModuleComplete = (lesson: Lesson | null) => {
-        if (!lesson) return false;
+    const markCurrentModuleComplete = (lesson: Lesson | null): { moduleCompleted: boolean, programCompleted: boolean } => {
+        if (!lesson) return { moduleCompleted: false, programCompleted: false };
         
         let updated = false;
+        let programFinished = false;
         let nextModuleTitle = "";
 
         setStudyPrograms(prev => {
@@ -123,6 +124,8 @@ export const useStudyContent = () => {
                          if (modIndex + 1 < prog.modules.length) {
                              prog.modules[modIndex + 1].status = 'unlocked';
                              nextModuleTitle = prog.modules[modIndex + 1].title;
+                         } else {
+                             programFinished = true;
                          }
                     }
                     prog.lastActiveAt = new Date().toISOString();
@@ -138,9 +141,9 @@ export const useStudyContent = () => {
             } else {
                 setTimeout(() => showToast(`🎉 Félicitations ! Vous avez terminé ce programme ! 🎓`, 'success', 7000), 500);
             }
-            return true;
+            return { moduleCompleted: true, programCompleted: programFinished };
         }
-        return false;
+        return { moduleCompleted: false, programCompleted: false };
     };
 
     const updateSavedLesson = (updatedLesson: Lesson) => {

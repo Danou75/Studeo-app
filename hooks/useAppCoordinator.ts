@@ -33,6 +33,7 @@ export const useAppCoordinator = () => {
 
     const [voiceEngine, setVoiceEngine] = useState<QuizConfig["voiceEngine"]>("local");
     const [autoPlayAudio, setAutoPlayAudio] = useState(true);
+    const [isProgramCompleted, setIsProgramCompleted] = useState(false);
 
     // SRS Preview State (Peut être extrait dans un useSRSUI plus tard)
     const [srsPreviewCards, setSrsPreviewCards] = useState<Flashcard[]>([]);
@@ -457,7 +458,10 @@ export const useAppCoordinator = () => {
             if (studyContent.currentLesson && result.totalCount > 0) {
                 const score = result.correctCount / result.totalCount;
                 if (score >= 0.7) {
-                    studyContent.markCurrentModuleComplete(studyContent.currentLesson);
+                    const status = studyContent.markCurrentModuleComplete(studyContent.currentLesson);
+                    if (status.programCompleted) {
+                        setIsProgramCompleted(true);
+                    }
                 }
             }
 
@@ -726,6 +730,7 @@ export const useAppCoordinator = () => {
 
         // Video Lab State
         videoLabURL, setVideoLabURL,
-        videoLabAnalysis, setVideoLabAnalysis
+        videoLabAnalysis, setVideoLabAnalysis,
+        isProgramCompleted, setIsProgramCompleted
     };
 };

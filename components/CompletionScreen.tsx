@@ -20,6 +20,8 @@ type Props = {
   onBackToLesson?: () => void;
   onGenerateBonusExercises?: () => void;
   onBackToSetup?: () => void;
+  isProgramCompleted?: boolean;
+  onResetProgramCompletion?: () => void;
 };
 
 export const CompletionScreen: React.FC<Props> = ({
@@ -37,15 +39,53 @@ export const CompletionScreen: React.FC<Props> = ({
   onBackToLesson,
   onGenerateBonusExercises,
   onBackToSetup,
+  isProgramCompleted,
+  onResetProgramCompletion,
 }) => {
   const { t } = useTranslation();
   const [showFullHistory, setShowFullHistory] = useState(false);
   const [showPersistentErrors, setShowPersistentErrors] = useState(false);
   const [showIncorrectCards, setShowIncorrectCards] = useState(false);
 
-  // Animation festive pour un score parfait
+  // Animation festive pour fin de programme
   React.useEffect(() => {
-    if (lastResult.correctCount === lastResult.totalCount && lastResult.totalCount > 0) {
+    if (isProgramCompleted) {
+        const duration = 5000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+        const random = (min: number, max: number) => Math.random() * (max - min) + min;
+
+        const interval: any = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+            return clearInterval(interval);
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+            // Fireworks effect
+            confetti({ ...defaults, particleCount, origin: { x: random(0.1, 0.3), y: Math.random() - 0.2 } });
+            confetti({ ...defaults, particleCount, origin: { x: random(0.7, 0.9), y: Math.random() - 0.2 } });
+            confetti({ ...defaults, particleCount, origin: { x: random(0.3, 0.7), y: Math.random() - 0.2 } });
+        }, 250);
+
+        const applauseAudio = new Audio("https://actions.google.com/sounds/v1/humanity/applause.ogg");
+        applauseAudio.volume = 0.8;
+        applauseAudio.play().catch(e => console.warn("Lecture audio impossible:", e));
+
+        return () => {
+            clearInterval(interval);
+            applauseAudio.pause();
+            applauseAudio.currentTime = 0;
+            if (onResetProgramCompletion) onResetProgramCompletion();
+        };
+    }
+  }, [isProgramCompleted]);
+
+  // Animation festive pour un score parfait (seulement si pas déjà programme completed pour éviter double dose)
+  React.useEffect(() => {
+    if (!isProgramCompleted && lastResult.correctCount === lastResult.totalCount && lastResult.totalCount > 0) {
       const duration = 3000;
       const animationEnd = Date.now() + duration;
       const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
@@ -74,7 +114,7 @@ export const CompletionScreen: React.FC<Props> = ({
         applauseAudio.currentTime = 0;
       };
     }
-  }, [lastResult]);
+  }, [lastResult, isProgramCompleted]);
 
   const displayedQuizName = lastResult.quizName || quizConfig.quizName;
   const displayedHistory = showFullHistory ? history : history.slice(0, 5);
@@ -82,6 +122,26 @@ export const CompletionScreen: React.FC<Props> = ({
   return (
     <div className="h-full overflow-y-auto pt-safe p-6 space-y-6">
       <h2 className="text-2xl font-bold">{t('completion.title')}</h2>
+
+      {/* Bannière de Fin de Programme */}
+      {isProgramCompleted && (
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-8 rounded-2xl shadow-xl text-center mb-6 animate-pulse border-4 border-yellow-400 relative overflow-hidden">
+            <div className="absolute inset-0 bg-white/10 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 2px, transparent 2.5px)', backgroundSize: '20px 20px' }}></div>
+            <h1 className="text-4xl md:text-5xl font-black mb-4 flex flex-col md:flex-row items-center justify-center gap-4 relative z-10">
+                <span className="animate-bounce">👑</span> 
+                {t('completion.programCompletedTitle') === 'completion.programCompletedTitle' ? 'PROGRAMME TERMINÉ !' : t('completion.programCompletedTitle')} 
+                <span className="animate-bounce">👑</span>
+            </h1>
+            <p className="text-xl md:text-2xl opacity-95 mb-6 font-medium relative z-10">
+                {t('completion.programCompletedMessage') === 'completion.programCompletedMessage' ? 'Félicitations ! Vous avez validé tous les modules de ce parcours !' : t('completion.programCompletedMessage')}
+            </p>
+            <div className="flex justify-center gap-8 relative z-10">
+                <i className="fas fa-star text-yellow-300 text-4xl animate-spin-slow"></i>
+                <i className="fas fa-graduation-cap text-white text-6xl drop-shadow-lg transform hover:scale-110 transition-transform"></i>
+                <i className="fas fa-star text-yellow-300 text-4xl animate-spin-slow"></i>
+            </div>
+        </div>
+      )}
 
       {/* Succès débloqués */}
       {newAchievements.length > 0 && (

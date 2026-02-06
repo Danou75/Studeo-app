@@ -109,41 +109,51 @@ export const useStudyContent = () => {
     const markCurrentModuleComplete = (lesson: Lesson | null): { moduleCompleted: boolean, programCompleted: boolean } => {
         if (!lesson) return { moduleCompleted: false, programCompleted: false };
         
+        // Recherche synchrone pour déterminer l'état de fin immédiat
+        const currentProgram = studyPrograms.find(p => p.modules.some(m => m.id === lesson.id));
+        if (!currentProgram) return { moduleCompleted: false, programCompleted: false };
+        
+        const modIndex = currentProgram.modules.findIndex(m => m.id === lesson.id);
+        const isLastModule = modIndex === currentProgram.modules.length - 1;
+        const programFinished = isLastModule;
+
         let updated = false;
-        let programFinished = false;
         let nextModuleTitle = "";
 
         setStudyPrograms(prev => {
-            const newPrograms = prev.map(prog => {
-                const modIndex = prog.modules.findIndex(m => m.id === lesson.id);
-                if (modIndex !== -1) {
-                    if (prog.modules[modIndex].status !== 'completed') {
-                         prog.modules[modIndex].status = 'completed';
+            return prev.map(prog => {
+                if (prog.id !== currentProgram.id) return prog;
+
+                const newProg = { ...prog, modules: [...prog.modules] };
+                const mIndex = newProg.modules.findIndex(m => m.id === lesson.id);
+
+                if (mIndex !== -1) {
+                    if (newProg.modules[mIndex].status !== 'completed') {
+                         newProg.modules[mIndex] = { ...newProg.modules[mIndex], status: 'completed' };
                          updated = true;
                          
-                         if (modIndex + 1 < prog.modules.length) {
-                             prog.modules[modIndex + 1].status = 'unlocked';
-                             nextModuleTitle = prog.modules[modIndex + 1].title;
-                         } else {
-                             programFinished = true;
+                         if (mIndex + 1 < newProg.modules.length) {
+                             newProg.modules[mIndex + 1] = { ...newProg.modules[mIndex + 1], status: 'unlocked' };
+                             nextModuleTitle = newProg.modules[mIndex + 1].title;
                          }
                     }
-                    prog.lastActiveAt = new Date().toISOString();
+                    newProg.lastActiveAt = new Date().toISOString();
                 }
-                return prog;
+                return newProg;
             });
-            return newPrograms;
         });
 
         if (updated) {
             if (nextModuleTitle) {
                 setTimeout(() => showToast(`🎉 Bravo ! Module validé. Le module "${nextModuleTitle}" est débloqué !`, 'success', 5000), 500);
-            } else {
+            } else if (programFinished) {
                 setTimeout(() => showToast(`🎉 Félicitations ! Vous avez terminé ce programme ! 🎓`, 'success', 7000), 500);
             }
-            return { moduleCompleted: true, programCompleted: programFinished };
         }
-        return { moduleCompleted: false, programCompleted: false };
+        
+        // On renvoie programCompleted: true si c'est le dernier module, même si déjà validé, 
+        // pour permettre de revoir l'animation de fin en refaisant le quiz.
+        return { moduleCompleted: updated, programCompleted: programFinished };
     };
 
     const updateSavedLesson = (updatedLesson: Lesson) => {

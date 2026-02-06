@@ -454,7 +454,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       <div className="pt-safe p-3 md:p-8 shrink-0 border-b border-border bg-background-secondary shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center gap-4">
           <Button variant="secondary" onClick={onBack} size="sm" className="mb-2 md:mb-0 text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800">
-            <i className="fas fa-home mr-2"></i> {t('common.home')}
+            <i className="fas fa-arrow-left mr-2"></i> {t('common.back') === 'common.back' ? 'Retour' : t('common.back')}
           </Button>
           <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
             {t('settings.title')}

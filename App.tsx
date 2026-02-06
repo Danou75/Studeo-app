@@ -877,7 +877,7 @@ const AppContent: React.FC = () => {
             onSuggestedProgram={coordinator.handleSuggestedProgram}
             onDrawingChallenge={() => setScreen("drawing-challenge")}
             onNewProgram={() => setScreen("tutors-room")}
-            onNavigateToSettings={() => setScreen("settings")}
+            onNavigateToSettings={() => handleNavigate("settings", "curriculum")}
             themeMode={theme.themeMode}
             themeStyle={theme.themeStyle}
             customSuggestions={coordinator.curriculumSuggestions}

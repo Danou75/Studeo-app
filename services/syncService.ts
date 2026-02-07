@@ -26,7 +26,7 @@ export const syncService = {
             });
         
         if (error) {
-            console.error('Sync Profile Error:', error.message, error.details, error.hint);
+            console.error('Sync Profile Error:', error.message);
         }
         return { success: !error, error };
     },
@@ -45,7 +45,7 @@ export const syncService = {
             .single();
         
         if (error) {
-            console.error('Get Profile Error:', error);
+            console.error('Get Profile Error:', error.message);
             return null;
         }
         return data;
@@ -69,7 +69,7 @@ export const syncService = {
             .insert(entries);
         
         if (error) {
-            console.error('Sync Flashcards Error:', error.message, error.details, error.hint);
+            console.error('Sync Flashcards Error:', error.message);
         }
         return !error;
     },
@@ -86,7 +86,7 @@ export const syncService = {
             .setHeader('Pragma', 'no-cache');
         
         if (error) {
-            console.error('Get Flashcards Error:', error);
+            console.error('Get Flashcards Error:', error.message);
             return null;
         }
 
@@ -111,7 +111,7 @@ export const syncService = {
             .from('study_programs')
             .upsert(entries);
         
-        if (error) console.error('Sync Programs Error:', error);
+        if (error) console.error('Sync Programs Error:', error.message);
         return !error;
     },
 
@@ -127,7 +127,7 @@ export const syncService = {
             .setHeader('Pragma', 'no-cache');
         
         if (error) {
-            console.error('Get Programs Error:', error);
+            console.error('Get Programs Error:', error.message);
             return null;
         }
 
@@ -162,7 +162,7 @@ export const syncService = {
             .from('saved_lessons')
             .upsert(entries);
         
-        if (error) console.error('Sync Lessons Error:', error);
+        if (error) console.error('Sync Lessons Error:', error.message);
         return !error;
     },
 
@@ -178,7 +178,7 @@ export const syncService = {
             .setHeader('Pragma', 'no-cache');
         
         if (error) {
-            console.error('Get Lessons Error:', error);
+            console.error('Get Lessons Error:', error.message);
             return null;
         }
 
@@ -214,7 +214,7 @@ export const syncService = {
             .from('chat_sessions')
             .upsert(entries);
         
-        if (error) console.error('Sync Chat Error:', error);
+        if (error) console.error('Sync Chat Error:', error.message);
         return !error;
     },
 
@@ -230,7 +230,7 @@ export const syncService = {
             .setHeader('Pragma', 'no-cache');
         
         if (error) {
-            console.error('Get Chat Error:', error);
+            console.error('Get Chat Error:', error.message);
             return null;
         }
 

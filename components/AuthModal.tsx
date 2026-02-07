@@ -18,10 +18,7 @@ interface AuthModalProps {
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode, themeStyle, onForceRefresh, onResetData, user }) => {
     const { t } = useTranslation();
     const [email, setEmail] = useState(() => localStorage.getItem('studeo_remember_email') || '');
-    const [password, setPassword] = useState(() => {
-        const saved = localStorage.getItem('studeo_remember_password');
-        return saved ? atob(saved) : '';
-    });
+    const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(!!localStorage.getItem('studeo_remember_email'));
     const [isSignUp, setIsSignUp] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -50,10 +47,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode
 
                 if (rememberMe) {
                     localStorage.setItem('studeo_remember_email', email);
-                    localStorage.setItem('studeo_remember_password', btoa(password));
                 } else {
                     localStorage.removeItem('studeo_remember_email');
-                    localStorage.removeItem('studeo_remember_password');
                 }
 
                 showToast(t('auth.loginSuccess'), "success");
@@ -92,7 +87,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode
                         <Button 
                             onClick={async () => {
                                 localStorage.removeItem('studeo_remember_email');
-                                localStorage.removeItem('studeo_remember_password');
                                 setEmail('');
                                 setPassword('');
                                 setRememberMe(false);

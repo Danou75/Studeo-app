@@ -35,7 +35,7 @@ import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 
 import { AuthModal } from "./components/AuthModal";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { supabase } from "./services/supabaseClient";
+
 import { syncService } from "./services/syncService";
 
 import { ProgressScreen } from "./components/ProgressScreen";
@@ -490,29 +490,7 @@ const AppContent: React.FC = () => {
     handleNavigate("drawing-tutorial", "tutors-room");
   };
 
-  const handleOpenAuth = async () => {
-    // Si l'utilisateur n'est pas connecté, on regarde s'il y a des identifiants enregistrés
-    if (!user) {
-        const savedEmail = localStorage.getItem('studeo_remember_email');
-        const savedPass = localStorage.getItem('studeo_remember_password');
-        
-        if (savedEmail && savedPass) {
-            coordinator.showToast("⚡ Connexion automatique...", "info", 2000);
-            try {
-                const { error } = await supabase.auth.signInWithPassword({ 
-                    email: savedEmail, 
-                    password: atob(savedPass) 
-                });
-                if (error) throw error;
-                coordinator.showToast("✅ Reconnecté !", "success");
-                return; // Succès, pas besoin d'ouvrir la modal
-            } catch (err) {
-                console.error("Auto-login failed:", err);
-            }
-        }
-    }
-    
-    // Si pas d'identifiants ou échec, on ouvre la modal normalement
+  const handleOpenAuth = () => {
     setIsAuthModalOpen(true);
   };
 

@@ -154,9 +154,18 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
             <div className="flex-1 overflow-hidden flex flex-col">
                 {/* Header */}
                 <div 
-                    className={`transition-all duration-500 pt-safe p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                    className={`transition-all duration-500 pt-safe p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 group ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                     style={{ background: getThemeGradient(themeStyle, themeMode) }}
                 >
+                    {onNavigateToSettings && (
+                        <button 
+                            onClick={onNavigateToSettings}
+                            className="absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
+                            title="Paramètres de l'IA"
+                        >
+                            <i className="fas fa-cog text-inherit"></i>
+                        </button>
+                    )}
                     <div className="flex flex-col md:flex-row md:justify-between items-center gap-4">
                         <div className="flex justify-between w-full md:w-auto md:justify-start items-center gap-2">
                              <button
@@ -165,13 +174,6 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                             >
                                 <i className="fas fa-home"></i> 
                                 <span className="hidden sm:inline">Accueil</span>
-                            </button>
-
-                            <button
-                                onClick={onNavigateToSettings}
-                                className={`md:hidden hover:opacity-80 rounded-lg px-3 py-1.5 transition-all bg-white/20 text-white`}
-                            >
-                                <i className="fas fa-cog"></i>
                             </button>
                         </div>
                         
@@ -184,14 +186,7 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                             </p>
                         </div>
                         
-                        <div className="hidden md:flex justify-end gap-2">
-                            <button
-                                onClick={onNavigateToSettings}
-                                className={`hover:opacity-80 rounded-lg px-3 py-2 transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'}`}
-                                title={t('common.settings')}
-                            >
-                                <i className="fas fa-cog text-xl text-inherit"></i>
-                            </button>
+                        <div className="hidden md:flex justify-end gap-2 w-32">
                         </div>
                     </div>
                 </div>

@@ -79,6 +79,7 @@ interface LibraryScreenProps {
     themeStyle: ThemeStyle;
     customCollections?: any[];
     setCustomCollections?: (collections: any[] | ((prev: any[]) => any[])) => void;
+    onNavigateToSettings?: () => void;
 }
 
 export const LibraryScreen: React.FC<LibraryScreenProps> = ({ 
@@ -94,7 +95,8 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     themeMode,
     themeStyle,
     customCollections: propsCustomCollections = [],
-    setCustomCollections: propsSetCustomCollections
+    setCustomCollections: propsSetCustomCollections,
+    onNavigateToSettings
 }) => {
     // Sync Fallback
     const [localCollections, setLocalCollections] = useLocalStorage<LibraryItem[]>('library_custom_catalog', []);
@@ -440,9 +442,18 @@ Format JSON STRICT (tableau d'objets) :
         <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
              {/* Header */}
              <div 
-                className={`transition-all duration-500 pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                className={`transition-all duration-500 pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 group ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
+                {onNavigateToSettings && (
+                    <button 
+                        onClick={onNavigateToSettings}
+                        className="absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
+                        title="Paramètres de l'IA"
+                    >
+                        <i className="fas fa-cog text-inherit"></i>
+                    </button>
+                )}
                 {/* Ligne des Boutons de Navigation/Action */}
                 <div className="relative z-20 flex justify-between items-center mb-6">
                     <Button 

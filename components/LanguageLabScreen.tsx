@@ -61,6 +61,7 @@ interface LanguageLabScreenProps {
     onAddCards: (cards: Flashcard[], targetSetName?: string) => void;
     onCreateSet: (name: string, cards: Flashcard[]) => void;
     flashcardSets: Record<string, Flashcard[]>;
+    onNavigateToSettings?: () => void;
 }
 
 
@@ -208,7 +209,8 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     themeStyle,
     onAddCards,
     // onCreateSet removed as unused,
-    flashcardSets
+    flashcardSets,
+    onNavigateToSettings
 }) => {
     const { config } = useAIConfig();
     const { showToast } = useToast();
@@ -760,9 +762,18 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
         <div className="flex flex-col h-full bg-background text-text animate-fade-in font-sans relative">
             {/* Header */}
             <div 
-                className={`transition-all duration-500 pt-safe p-4 shadow-md z-10 space-y-3 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'}`} 
+                className={`transition-all duration-500 pt-safe p-4 shadow-md z-10 space-y-3 group relative ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
+                {onNavigateToSettings && (
+                    <button 
+                        onClick={onNavigateToSettings}
+                        className="absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
+                        title="Paramètres de l'IA"
+                    >
+                        <i className="fas fa-cog text-inherit"></i>
+                    </button>
+                )}
                 {/* Top Row: Back + Title + Settings */}
                 <div className="flex items-center justify-between">
                     <button 

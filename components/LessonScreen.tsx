@@ -20,9 +20,10 @@ interface LessonScreenProps {
   onStartQuiz?: (cards: any[]) => void;
   onGenerateExercises?: () => void;
   onGenerateQuiz?: () => void;
+  onNavigateToSettings?: () => void;
 }
 
-export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHome, onSave, onNewLesson, onStartQuiz, onGenerateExercises, onGenerateQuiz }) => {
+export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHome, onSave, onNewLesson, onStartQuiz, onGenerateExercises, onGenerateQuiz, onNavigateToSettings }) => {
   const { showToast } = useToast();
   const tutor = TUTORS.find(t => t.id === lesson.tutorId);
 
@@ -110,6 +111,7 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
   };
 
   const [isExporting, setIsExporting] = React.useState(false);
+  const [isGeneratingExercises, setIsGeneratingExercises] = React.useState(false);
 
   // Sauvegarde native avec Tauri (MD ou RTF)
   const handleExport = async (format: 'md' | 'rtf') => {
@@ -172,9 +174,55 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
         const line = lines[index];
         const lower = line.toLowerCase();
         
-        // Arrêt si section suggestions
-        if (suggestions.length > 0 && (line.startsWith('#') || line.startsWith('**')) && (lower.includes('pour aller plus loin') || lower.includes('connexes') || lower.includes('approfondir') || lower.includes('ressources'))) {
+        // Arrêt si section suggestions (détection plus robuste pour éviter le doublon)
+        const isSuggestionTitle = lower.includes('pour aller plus loin') || 
+                                 lower.includes('sujets connexes') || 
+                                 lower.includes('approfondir') || 
+                                 lower.includes('ressources');
+
+        if (suggestions.length > 0 && (line.startsWith('#') || line.startsWith('**') || line.startsWith('📚')) && isSuggestionTitle) {
             break;
+        }
+
+        // Style spécial pour les suggestions si elles sont dans le corps du texte (cas où suggestionsIndex non utilisé ou format spécifique)
+        if ((line.trim().startsWith('📚') || lower.includes('pour aller plus loin')) && !line.startsWith('#')) {
+             const suggestionGroup: string[] = [line];
+             let j = index + 1;
+             while (j < lines.length) {
+                 const nextLine = lines[j].trim();
+                 if (!nextLine) { j++; continue; } // Ignorer les lignes vides internes
+                 if (nextLine.startsWith('#')) break; // Prochain titre = fin du bloc
+                 
+                 // On accepte les listes et le texte simple
+                 if (nextLine.startsWith('-') || nextLine.startsWith('*') || nextLine.startsWith('•') || nextLine.length > 0) {
+                     suggestionGroup.push(lines[j]);
+                     j++;
+                 } else {
+                     break;
+                 }
+             }
+             index = j - 1;
+
+             elements.push(
+                 <div key={index} className="my-6 p-6 bg-green-500/5 dark:bg-green-500/10 border border-green-500/20 rounded-2xl shadow-sm animate-in fade-in zoom-in-95">
+                     <h3 className="text-lg font-bold text-green-700 dark:text-green-400 mb-3 flex items-center gap-2">
+                         <i className="fas fa-lightbulb"></i> {formatRichText(suggestionGroup[0])}
+                     </h3>
+                     <ul className="space-y-2">
+                         {suggestionGroup.slice(1).map((sLine, sIdx) => {
+                             const content = sLine.trim().replace(/^[-*•]\s+/, '');
+                             if (!content) return null;
+                             return (
+                                <li key={sIdx} className="flex items-start gap-2 text-text/80 transition-all hover:translate-x-1">
+                                    <span className="text-green-500 mt-1">●</span>
+                                    <span className="flex-1">{formatRichText(content)}</span>
+                                </li>
+                             );
+                         })}
+                     </ul>
+                 </div>
+             );
+             continue;
         }
 
         // Nettoyage titres (dates)
@@ -339,32 +387,55 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
     }
   };
 
-  // Fonction pour gérer le gras et l'italique
+  // Fonction pour gérer le gras, l'italique et les liens Markdown [texte](url)
   const formatRichText = (text: string) => {
-    // Split sur le gras (**...**)
-    const parts = text.split(/(\*\*.*?\*\*)/g);
+    // 1. Gérer les liens Markdown: [Texte](URL)
+    // On split pour isoler les [texte](url)
+    const linkParts = text.split(/(\[.*?\]\(.*?\))/g);
     
-    return parts.map((part, i) => {
-      // Si c'est du gras
-      if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
-        return <strong key={i} className="font-bold text-primary dark:text-primary-light">{part.slice(2, -2)}</strong>;
-      }
-      
-      // Sinon, on cherche l'italique (*...*) dans le reste
-      // Regex améliorée pour éviter de matcher des listes ou calculs
-      const italicParts = part.split(/(\*[^*\s][^*]*?\*)/g);
-      
-      // On utilise un fragment ou un tableau pour retourner les sous-parties
-      return (
-        <React.Fragment key={i}>
-            {italicParts.map((subPart, j) => {
-                if (subPart.startsWith('*') && subPart.endsWith('*') && subPart.length > 2) {
-                    return <em key={j} className="italic text-text-em/90">{subPart.slice(1, -1)}</em>;
-                }
-                return subPart;
-            })}
-        </React.Fragment>
-      );
+    return linkParts.map((part, i) => {
+        // Est-ce un lien ?
+        const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
+        if (linkMatch) {
+            const linkText = linkMatch[1];
+            const url = linkMatch[2];
+            return (
+                <button 
+                    key={`link-${i}`}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        openLink(url);
+                    }}
+                    className="text-primary hover:underline font-bold inline-flex items-center gap-1 cursor-pointer transition-all active:scale-95 decoration-primary/40 underline-offset-4 decoration-2"
+                    title={url}
+                >
+                    {linkText}
+                    <i className="fas fa-external-link-alt text-[10px] opacity-70"></i>
+                </button>
+            );
+        }
+
+        // 2. Gérer le gras (**...**)
+        const boldParts = part.split(/(\*\*.*?\*\*)/g);
+        
+        return boldParts.map((bPart, j) => {
+            if (bPart.startsWith('**') && bPart.endsWith('**') && bPart.length > 4) {
+                return <strong key={`bold-${i}-${j}`} className="font-bold text-primary dark:text-primary-light">{bPart.slice(2, -2)}</strong>;
+            }
+            
+            // 3. Gérer l'italique (*...*) 
+            const italicParts = bPart.split(/(\*[^*\s][^*]*?\*)/g);
+            return (
+                <React.Fragment key={`text-${i}-${j}`}>
+                    {italicParts.map((subPart, k) => {
+                        if (subPart.startsWith('*') && subPart.endsWith('*') && subPart.length > 2) {
+                            return <em key={`italic-${i}-${j}-${k}`} className="italic text-text-em/90">{subPart.slice(1, -1)}</em>;
+                        }
+                        return subPart;
+                    })}
+                </React.Fragment>
+            );
+        });
     });
   };
 
@@ -396,7 +467,7 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
       `}</style>
 
       {/* Header */}
-      <div className="group/header flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 pt-safe border-b border-border bg-background-secondary shadow-sm z-10 no-print gap-4 min-h-[64px] transition-all">
+      <div className="group/header flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 pt-safe border-b border-border bg-background-secondary shadow-sm z-10 no-print gap-4 min-h-[64px] transition-all relative">
         <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
             <div className="flex gap-2.5 md:gap-3 shrink-0">
                 <Button variant="secondary" onClick={onBack} size="sm" className="h-8 md:h-9 text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800 px-2.5 md:px-4 text-xs md:text-sm shadow-sm transition-all active:scale-95">
@@ -443,6 +514,15 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
                 </button>
             </div>
         </div>
+        {onNavigateToSettings && (
+            <button 
+                onClick={onNavigateToSettings}
+                className="absolute bottom-2 right-4 z-50 opacity-0 group-hover/header:opacity-100 transition-all duration-300 p-2 hover:bg-black/5 rounded-xl text-text/40 hover:text-primary"
+                title="Paramètres de l'IA"
+            >
+                <i className="fas fa-cog text-inherit"></i>
+            </button>
+        )}
       </div>
 
       {/* Content */}
@@ -496,20 +576,33 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
                             </>
                         ) : (
                             <Button 
-                                onClick={onGenerateExercises} 
+                                onClick={async () => {
+                                    if (onGenerateExercises) {
+                                        setIsGeneratingExercises(true);
+                                        try {
+                                            await onGenerateExercises();
+                                        } finally {
+                                            setIsGeneratingExercises(false);
+                                        }
+                                    }
+                                }} 
                                 size="lg" 
                                 variant="secondary"
-                                disabled={!onGenerateExercises}
+                                disabled={!onGenerateExercises || isGeneratingExercises}
                                 title={!onGenerateExercises ? "Fonctionnalité non disponible dans ce contexte" : ""}
                                 className="shadow-xl shadow-green-500/20 hover:scale-105 transition-transform px-8 py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <i className="fas fa-magic mr-2"></i> 
-                                {onGenerateExercises ? (
+                                {isGeneratingExercises ? (
                                     <div className="flex items-center gap-2">
                                         <AILoader size="sm" />
                                         <span>Génération des exercices...</span>
                                     </div>
-                                ) : "Génération Indisponible"}
+                                ) : (
+                                    <>
+                                        <i className="fas fa-magic mr-2"></i> 
+                                        Générer des exercices
+                                    </>
+                                )}
                             </Button>
                         )}
                     </div>

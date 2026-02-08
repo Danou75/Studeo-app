@@ -223,9 +223,18 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
         <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
             {/* Header */}
             <div 
-                className={`pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 transition-all duration-500 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                className={`pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 transition-all duration-500 group ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
+                {onShowSettings && (
+                    <button 
+                        onClick={onShowSettings}
+                        className="absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
+                        title="Paramètres de l'IA"
+                    >
+                        <i className="fas fa-cog text-inherit"></i>
+                    </button>
+                )}
                 <div className="relative z-10 flex justify-between items-start">
                     <div className="flex flex-col">
                         <Button 
@@ -268,15 +277,6 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                                 {cloudStatus === 'syncing' ? 'Cloud...' : (cloudStatus === 'synced' ? 'À Jour' : (cloudStatus === 'error' ? 'Erreur' : 'Sync OK'))}
                             </span>
                         </div>
-
-                        {onShowSettings && (
-                            <button 
-                                onClick={onShowSettings}
-                                className={`p-2.5 rounded-xl border-transparent backdrop-blur-sm transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80`}
-                            >
-                                <i className="fas fa-cog text-lg text-inherit"></i>
-                            </button>
-                        )}
                     </div>
                 </div>
             </div>

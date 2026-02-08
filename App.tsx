@@ -503,19 +503,19 @@ const AppContent: React.FC = () => {
             streak={gamification.gamificationData.streak.currentStreak}
             dueCardsCount={dueCardsCount}
             flashcardSets={flashcards.flashcardSets}
-            onNavigateToQuiz={() => setScreen("setup")}
+            onNavigateToQuiz={() => handleNavigate("setup")}
             onNavigateToSRS={coordinator.handleNavigateToSRS}
             onNavigateToAIGenerator={coordinator.handleNavigateToAIGenerator}
-            onNavigateToTutorsRoom={() => setScreen("tutors-room")}
-            onNavigateToConjugator={() => setScreen("conjugator")}
-            onNavigateToDashboard={() => setScreen("dashboard")}
-            onNavigateToSettings={() => setScreen("settings")}
-            onNavigateToCurriculum={() => setScreen("curriculum")}
-            onNavigateToKnowledgeMap={() => setScreen("knowledge-map")}
-            onNavigateToLibrary={() => setScreen("library")}
-            onNavigateToVideoLab={() => setScreen("video-lab")}
-            onNavigateToChat={() => setScreen("chat")}
-            onNavigateToLanguageLab={() => setScreen("tutor-selection")}
+            onNavigateToTutorsRoom={() => handleNavigate("tutors-room")}
+            onNavigateToConjugator={() => handleNavigate("conjugator")}
+            onNavigateToDashboard={() => handleNavigate("dashboard")}
+            onNavigateToSettings={() => handleNavigate("settings")}
+            onNavigateToCurriculum={() => handleNavigate("curriculum")}
+            onNavigateToKnowledgeMap={() => handleNavigate("knowledge-map")}
+            onNavigateToLibrary={() => handleNavigate("library")}
+            onNavigateToVideoLab={() => handleNavigate("video-lab")}
+            onNavigateToChat={() => handleNavigate("chat")}
+            onNavigateToLanguageLab={() => handleNavigate("tutor-selection")}
 
             themeMode={theme.themeMode}
             themeStyle={theme.themeStyle}
@@ -647,11 +647,12 @@ const AppContent: React.FC = () => {
       case "conjugator":
         return (
           <ConjugatorScreen
-            onBack={() => setScreen("home")}
-            onAddCards={(cards) => { flashcards.addCards(cards); setScreen('setup'); }}
-            onCreateSet={(name, cards) => { flashcards.createSet(name, cards); setScreen('setup'); }}
+            onBack={handleBack}
+            onAddCards={(cards) => { flashcards.addCards(cards); handleNavigate('setup', 'conjugator'); }}
+            onCreateSet={(name, cards) => { flashcards.createSet(name, cards); handleNavigate('setup', 'conjugator'); }}
             themeMode={theme.themeMode}
             themeStyle={theme.themeStyle}
+            onNavigateToSettings={() => handleNavigate("settings", "conjugator")}
           />
         );
 
@@ -676,9 +677,9 @@ const AppContent: React.FC = () => {
           <AIGeneratorModal
             isOpen={true}
             onClose={handleBack}
-            onCardsGenerated={(cards) => { coordinator.handleAICardsGenerated(cards); setScreen('setup'); }}
-            onCreateSet={(name, cards) => { flashcards.createSet(name, cards); setScreen('setup'); }}
-            onAddCards={(cards) => { flashcards.addCards(cards); setScreen('setup'); }}
+            onCardsGenerated={(cards) => { coordinator.handleAICardsGenerated(cards); handleNavigate('setup', 'ai-generator'); }}
+            onCreateSet={(name, cards) => { flashcards.createSet(name, cards); handleNavigate('setup', 'ai-generator'); }}
+            onAddCards={(cards) => { flashcards.addCards(cards); handleNavigate('setup', 'ai-generator'); }}
             onLessonGenerated={coordinator.handleLessonGenerated}
             onCurriculumGenerated={coordinator.handleCurriculumGenerated}
 
@@ -696,7 +697,7 @@ const AppContent: React.FC = () => {
         return (
           <TutorSelectionModal
             isOpen={true}
-            onClose={() => setScreen("home")}
+            onClose={handleBack}
             onSelectTutor={(tutor) => {
                  coordinator.setSelectedTutor(tutor);
                  setScreen("language-lab");
@@ -779,7 +780,7 @@ const AppContent: React.FC = () => {
                 flashcards.setCurrentSetName(setName);
                 
                 // Rediriger vers l'écran de configuration du quiz (Setup)
-                setScreen("setup");
+                handleNavigate("setup", "chat");
             }}
             themeMode={theme.themeMode}
             themeStyle={theme.themeStyle}
@@ -796,6 +797,7 @@ const AppContent: React.FC = () => {
                 onAddCards={flashcards.addCards}
                 onCreateSet={flashcards.createSet}
                 flashcardSets={flashcards.flashcardSets}
+                onNavigateToSettings={() => handleNavigate("settings", "language-lab")}
             />
         );
 
@@ -813,11 +815,12 @@ const AppContent: React.FC = () => {
             onRenameSet={flashcards.renameSet}
             currentSetName={flashcards.currentSetName}
             onSelectSet={flashcards.setCurrentSetName}
-            onStartQuiz={() => setScreen("setup")}
+            onStartQuiz={() => handleNavigate("setup", "library")}
             themeMode={theme.themeMode}
             themeStyle={theme.themeStyle}
             customCollections={coordinator.librarySuggestions}
             setCustomCollections={coordinator.setLibrarySuggestions}
+            onNavigateToSettings={() => handleNavigate("settings", "library")}
           />
         );
 
@@ -835,13 +838,14 @@ const AppContent: React.FC = () => {
             onAnalysisChange={coordinator.setVideoLabAnalysis}
             themeMode={theme.themeMode}
             themeStyle={theme.themeStyle}
+            onNavigateToSettings={() => handleNavigate("settings", "video-lab")}
           />
         );
 
       case "curriculum":
         return (
           <CurriculumScreen
-            onBack={() => setScreen("home")}
+            onBack={handleBack}
             programs={coordinator.studyPrograms}
             lessons={coordinator.savedLessons}
             onGenerateContent={coordinator.handleGenerateModuleContent}
@@ -887,6 +891,7 @@ const AppContent: React.FC = () => {
               }, `Quiz : ${currentLesson.topic}`)}
               onGenerateExercises={coordinator.handleInteractiveExercises}
               onGenerateQuiz={coordinator.handleGenerateQuizFromLesson}
+              onNavigateToSettings={() => handleNavigate("settings", "lesson")}
             />
           );
         }
@@ -927,17 +932,17 @@ const AppContent: React.FC = () => {
             onStartQuiz={coordinator.onStartQuiz}
             onShowSRSPreview={coordinator.onShowSRSPreview}
             onFileImport={flashcards.handleFileImport}
-            onShowReview={() => setScreen("reviewAll")}
+            onShowReview={() => handleNavigate("reviewAll", "setup")}
             onShowEdit={() => setIsEditModalOpen(true)}
-            onShowDashboard={() => setScreen("dashboard")}
-            onShowSettings={() => setScreen("settings")}
+            onShowDashboard={() => handleNavigate("dashboard", "setup")}
+            onShowSettings={() => handleNavigate("settings", "setup")}
             onManageSets={() => setIsSetsManagerOpen(true)}
             voiceEngine={voiceEngine}
             setVoiceEngine={setVoiceEngine}
             autoPlayAudio={autoPlayAudio}
             setAutoPlayAudio={setAutoPlayAudio}
             streak={gamification.gamificationData.streak.currentStreak}
-            onBack={() => setScreen("home")}
+            onBack={handleBack}
             setCurrentSetName={flashcards.setCurrentSetName}
             flashcardSets={flashcards.flashcardSets}
             themeMode={theme.themeMode}

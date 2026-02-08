@@ -22,6 +22,7 @@ interface ConjugatorScreenProps {
   onCreateSet?: (name: string, cards: Flashcard[]) => void;
   themeMode: ThemeMode;
   themeStyle: ThemeStyle;
+  onNavigateToSettings?: () => void;
 }
 
 export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({ 
@@ -30,7 +31,8 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
   onAddCards, 
   onCreateSet,
   themeMode,
-  themeStyle
+  themeStyle,
+  onNavigateToSettings
 }) => {
   const [verb, setVerb] = useState('');
   const [language, setLanguage] = useState(defaultLang);
@@ -409,9 +411,18 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
     <div className="flex-1 min-h-0 flex flex-col w-full text-text animate-fade-in overflow-hidden relative">
       {/* Header */}
       <div 
-        className={`transition-all duration-500 pt-safe p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+        className={`transition-all duration-500 pt-safe p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 group ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
         style={{ background: getThemeGradient(themeStyle, themeMode) }}
       >
+        {onNavigateToSettings && (
+            <button 
+                onClick={onNavigateToSettings}
+                className="absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
+                title="Paramètres de l'IA"
+            >
+                <i className="fas fa-cog text-inherit"></i>
+            </button>
+        )}
           <div className="relative z-10 flex justify-between items-start">
               <div className="flex flex-col">
                   <Button 
@@ -441,7 +452,9 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                           className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
                               mode === 'conjugate'
                                   ? 'bg-white text-primary shadow-md'
-                                  : 'text-white/70 hover:text-white'
+                                  : themeStyle === 'apple' && themeMode === 'light' 
+                                      ? 'text-primary/40 hover:text-primary/60' 
+                                      : 'text-white/70 hover:text-white'
                           }`}
                       >
                           <i className="fas fa-book mr-1.5"></i>Conjugaison
@@ -456,7 +469,9 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                           className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
                               mode === 'translate'
                                   ? 'bg-white text-primary shadow-md'
-                                  : 'text-white/70 hover:text-white'
+                                  : themeStyle === 'apple' && themeMode === 'light' 
+                                      ? 'text-primary/40 hover:text-primary/60' 
+                                      : 'text-white/70 hover:text-white'
                           }`}
                       >
                           <i className="fas fa-language mr-1.5"></i>Traduction

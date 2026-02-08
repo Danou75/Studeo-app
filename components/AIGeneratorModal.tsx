@@ -509,9 +509,18 @@ CONTEXTE UTILISATEUR : ${context}
         <div className="flex-1 min-h-0 flex flex-col text-text overflow-hidden">
             {/* Header avec gradient */}
             <div 
-                className={`pt-safe p-6 transition-all duration-500 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                className={`pt-safe p-6 transition-all duration-500 group relative ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
+                {onNavigateToSettings && (
+                    <button 
+                        onClick={onNavigateToSettings}
+                        className="absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
+                        title="Paramètres de l'IA"
+                    >
+                        <i className="fas fa-cog text-inherit"></i>
+                    </button>
+                )}
                 {/* Ligne 1 : Navigation */}
                 <div className="relative flex justify-between items-center mb-4">
                         <Button 

@@ -29,6 +29,7 @@ interface AIGeneratorModalProps {
     themeStyle: ThemeStyle;
     onShowSavedLessons?: () => void;
     onNavigateToSettings?: () => void;
+    guestTutors?: any[];
 }
 
 export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
@@ -45,7 +46,8 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
     themeMode,
     themeStyle,
     onShowSavedLessons,
-    onNavigateToSettings
+    onNavigateToSettings,
+    guestTutors = []
 }) => {
     const [generationType, setGenerationType] = useState<'quiz' | 'lesson' | 'curriculum' | 'mixed-quiz'>('quiz');
     const [topic, setTopic] = useState('');
@@ -558,7 +560,7 @@ CONTEXTE UTILISATEUR : ${context}
                         <select
                             value={config.selectedTutor?.id || ''}
                             onChange={(e) => {
-                                const tutor = TUTORS.find(t => t.id === e.target.value) || null;
+                                const tutor = [...TUTORS, ...guestTutors].find(t => t.id === e.target.value) || null;
                                 setSelectedTutor(tutor);
                             }}
                             className={`border-none rounded-full px-6 py-1.5 text-xs outline-none backdrop-blur-md cursor-pointer transition-all appearance-none text-center min-w-[200px] ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary focus:ring-black/20' : 'bg-white/20 text-white focus:ring-white/50'}`}
@@ -567,6 +569,11 @@ CONTEXTE UTILISATEUR : ${context}
                             {TUTORS.map(tutor => (
                                 <option key={tutor.id} value={tutor.id} className="text-gray-800">
                                     {tutor.emoji} {tutor.name}
+                                </option>
+                            ))}
+                            {guestTutors.map(tutor => (
+                                <option key={tutor.id} value={tutor.id} className="text-gray-800">
+                                    {tutor.emoji} {tutor.name} (Invité)
                                 </option>
                             ))}
                         </select>

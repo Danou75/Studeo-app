@@ -702,6 +702,7 @@ const AppContent: React.FC = () => {
             themeStyle={theme.themeStyle}
             onShowSavedLessons={() => handleNavigate("saved-lessons", "ai-generator")}
             onNavigateToSettings={() => handleNavigate("settings", "ai-generator")}
+            guestTutors={coordinator.guestTutors}
           />
         );
 

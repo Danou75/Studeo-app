@@ -731,16 +731,43 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                                 }`}
                             >
                                 {message.role === 'assistant' && (
-                                    <button
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(message.content);
-                                            showToast('Copié dans le presse-papier !', 'success');
-                                        }}
-                                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-50 hover:!opacity-100 p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-all text-text-muted hover:text-primary z-10"
-                                        title="Copier le texte"
-                                    >
-                                        <i className="far fa-copy"></i>
-                                    </button>
+                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all z-10">
+                                        <button
+                                            onClick={() => {
+                                                const cleanText = message.content
+                                                    .replace(/^#+ (.*)$/gm, (_, p1) => p1.toUpperCase())
+                                                    .replace(/\*\*(.*?)\*\*/g, '$1')
+                                                    .replace(/\*(.*?)\*/g, '$1')
+                                                    .replace(/^- (.*)$/gm, '• $1')
+                                                    .trim();
+                                                
+                                                if (navigator.share) {
+                                                    navigator.share({
+                                                        title: `Message de ${currentSession.tutorName}`,
+                                                        text: `${currentSession.tutorName.toUpperCase()} - ${currentSession.tutorSubject.toUpperCase()}\n\n${cleanText}\n\nPartagé via Studeo`
+                                                    }).catch(err => {
+                                                        if (err.name !== 'AbortError') console.error('Share error:', err);
+                                                    });
+                                                } else {
+                                                    showToast("Le partage n'est pas supporté", "info");
+                                                }
+                                            }}
+                                            className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg text-text-muted hover:text-primary transition-all"
+                                            title="Partager ce message"
+                                        >
+                                            <i className="fas fa-share-alt"></i>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(message.content);
+                                                showToast('Copié dans le presse-papier !', 'success');
+                                            }}
+                                            className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg text-text-muted hover:text-primary transition-all"
+                                            title="Copier le texte"
+                                        >
+                                            <i className="far fa-copy"></i>
+                                        </button>
+                                    </div>
                                 )}
                                 <div className="flex items-start gap-4">
                                     {message.role === 'assistant' && (

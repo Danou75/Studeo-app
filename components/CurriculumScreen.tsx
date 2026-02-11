@@ -56,11 +56,11 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     onGenerateContent,
     onStartModule,
     onStartQuiz,
-    onDeleteProgram,
     onDrawingChallenge,
     onStartTutorial,
     onNewProgram,
     onNavigateToSettings,
+    onDeleteProgram,
     onRenameProgram,
     onSelectLesson,
     onDeleteLesson,
@@ -252,6 +252,51 @@ Format JSON STRICT (tableau d'objets) :
         }
     };
 
+    const cleanupMarkdownForShare = (text: string) => {
+        return text
+            .replace(/^#+ (.*)$/gm, (_, p1) => p1.toUpperCase())
+            .replace(/\*\*(.*?)\*\*/g, '$1')
+            .replace(/\*(.*?)\*/g, '$1')
+            .replace(/^- (.*)$/gm, '• $1')
+            .trim();
+    };
+
+    const handleShare = async () => {
+        if (!selectedProgram) return;
+
+        let shareText = `${selectedProgram.topic.toUpperCase()}\nNIVEAU : ${selectedProgram.targetLevel.toUpperCase()}\n\n`;
+        
+        selectedProgram.modules.forEach((module, index) => {
+            shareText += `--- MODULE ${index + 1} : ${module.title.toUpperCase()} ---\n`;
+            if (module.description) shareText += `${cleanupMarkdownForShare(module.description)}\n`;
+            if (module.lessonContent) {
+                const cleanLesson = cleanupMarkdownForShare(module.lessonContent);
+                shareText += `\nEXTRAIT DU CONTENU :\n${cleanLesson.substring(0, 500)}${cleanLesson.length > 500 ? '...' : ''}\n`;
+            }
+            shareText += `\n`;
+        });
+
+        shareText += `--------------------------\nPartagé via Studeo`;
+
+        const shareData = {
+            title: selectedProgram.topic,
+            text: shareText,
+        };
+        
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                if (err instanceof Error && err.name !== 'AbortError') {
+                    console.error('Erreur de partage:', err);
+                    showToast("Erreur lors du partage", "error");
+                }
+            }
+        } else {
+            showToast("Le partage n'est pas supporté sur cet appareil", "info");
+        }
+    };
+
     const handleModuleClick = async (module: StudyModule) => {
         if (loadingModuleId) return;
 
@@ -287,9 +332,8 @@ Format JSON STRICT (tableau d'objets) :
 
         return (
             <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
-                {/* Header Programme */}
                 <div 
-                    className={`transition-all duration-500 pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                    className={`transition-all duration-500 pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 group/header ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                     style={{ background: getThemeGradient(themeStyle, themeMode) }}
                 >
                     <div className="relative z-10">
@@ -309,13 +353,13 @@ Format JSON STRICT (tableau d'objets) :
                                         variant="secondary"
                                         onClick={onNavigateToSettings}
                                         size="sm"
-                                        className="bg-white/10 hover:bg-white/20 text-white border-transparent backdrop-blur-sm shadow-inner rounded-xl h-10 w-10 p-0 flex items-center justify-center"
+                                        className="bg-white/10 hover:bg-white/20 text-white border-transparent backdrop-blur-sm shadow-inner rounded-xl h-10 w-10 p-0 flex items-center justify-center transition-all md:opacity-0 md:group-hover/header:opacity-100 duration-300"
                                         title="Paramètres"
                                     >
                                         <i className="fas fa-cog"></i>
                                     </Button>
                                 )}
-                                <div className="flex gap-2 bg-white/10 p-1 md:p-1.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-inner">
+                                <div className="flex gap-2 bg-white/10 p-1 md:p-1.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-inner md:opacity-0 md:translate-x-4 md:group-hover/header:opacity-100 md:group-hover/header:translate-x-0 transition-all duration-300">
                                     <button 
                                         onClick={() => handleExportProgram('md')}
                                         disabled={isExporting}
@@ -333,27 +377,15 @@ Format JSON STRICT (tableau d'objets) :
                                     >
                                         {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-file-word text-sm"></i>} <span className="hidden sm:inline">RTF</span>
                                     </button>
+                                    <div className="w-px h-4 bg-white/20 self-center"></div>
+                                    <button 
+                                        onClick={handleShare}
+                                        className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/10 text-primary' : 'hover:bg-white/20 text-white'}`}
+                                        title="Partager ce parcours"
+                                    >
+                                        <i className="fas fa-share-alt"></i>
+                                    </button>
                                 </div>
-                                <Button 
-                                    variant="secondary"
-                                    onClick={() => {
-                                        showConfirmation({
-                                            title: t('curriculum.deleteTitle'),
-                                            message: t('curriculum.deleteConfirm'),
-                                            confirmText: t('common.delete'),
-                                            variant: 'danger',
-                                            onConfirm: () => {
-                                                onDeleteProgram(selectedProgram.id);
-                                                setSelectedProgram(null);
-                                            }
-                                        });
-                                    }}
-                                    size="sm"
-                                    className="bg-red-500/20 hover:bg-red-500/40 text-white border-transparent backdrop-blur-sm shadow-inner rounded-xl h-10 w-10 p-0 flex items-center justify-center"
-                                    title={t('curriculum.deleteTitle')}
-                                >
-                                    <i className="fas fa-trash"></i>
-                                </Button>
                             </div>
                         </div>
                         

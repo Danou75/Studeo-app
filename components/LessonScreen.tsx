@@ -163,6 +163,35 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
       }
   };
 
+  const cleanupMarkdownForShare = (text: string) => {
+    return text
+        .replace(/^#+ (.*)$/gm, (_, p1) => p1.toUpperCase())
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
+        .replace(/^- (.*)$/gm, '• $1')
+        .trim();
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+        title: lesson.topic,
+        text: `${lesson.topic.toUpperCase()}\n\n${cleanupMarkdownForShare(lesson.content)}\n\nPartagé via Studeo`,
+    };
+    
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (err) {
+            if (err instanceof Error && err.name !== 'AbortError') {
+                console.error('Erreur de partage:', err);
+                showToast("Erreur lors du partage", "error");
+            }
+        }
+    } else {
+        showToast("Le partage n'est pas supporté sur cet appareil", "info");
+    }
+  };
+
   // Fonction simple pour parser le Markdown basique
   // Note: Dans une application plus complexe, utiliser react-markdown
   // Fonction pour parser le Markdown améiorée
@@ -512,17 +541,25 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
                     <span className="hidden lg:inline">Word (RTF)</span>
                     <span className="hidden sm:inline lg:hidden">RTF</span>
                 </button>
+                <div className="w-px h-4 bg-border/50 self-center"></div>
+                <button 
+                    onClick={handleShare}
+                    className="h-8 md:h-9 px-3 rounded-lg flex items-center justify-center text-text/60 hover:text-primary transition-all hover:bg-primary/10 active:scale-90"
+                    title="Partager cette leçon"
+                >
+                    <i className="fas fa-share-alt"></i>
+                </button>
             </div>
+            {onNavigateToSettings && (
+                <button 
+                    onClick={onNavigateToSettings}
+                    className="h-8 w-8 flex items-center justify-center opacity-0 group-hover/header:opacity-100 transition-all duration-300 hover:bg-black/5 rounded-xl text-text/40 hover:text-primary active:scale-90"
+                    title="Paramètres de l'IA"
+                >
+                    <i className="fas fa-cog"></i>
+                </button>
+            )}
         </div>
-        {onNavigateToSettings && (
-            <button 
-                onClick={onNavigateToSettings}
-                className="absolute bottom-2 right-4 z-50 opacity-0 group-hover/header:opacity-100 transition-all duration-300 p-2 hover:bg-black/5 rounded-xl text-text/40 hover:text-primary"
-                title="Paramètres de l'IA"
-            >
-                <i className="fas fa-cog text-inherit"></i>
-            </button>
-        )}
       </div>
 
       {/* Content */}

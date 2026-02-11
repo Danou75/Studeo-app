@@ -349,6 +349,78 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
     }
   };
 
+  const cleanupMarkdownForShare = (text: string) => {
+    return text
+        .replace(/^#+ (.*)$/gm, (_, p1) => p1.toUpperCase())
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
+        .replace(/^- (.*)$/gm, '• $1')
+        .replace(/> (.*)$/gm, '« $1 »')
+        .trim();
+  };
+
+  const handleShare = async () => {
+    let shareText = '';
+    let title = '';
+
+    if (mode === 'conjugate' && result) {
+        title = `Conjugaison de ${result.verb}`;
+        shareText = `${result.verb.toUpperCase()} (${result.language.toUpperCase()})\n`;
+        if (result.translation) shareText += `Traduction : ${result.translation}\n`;
+        if (result.definition) shareText += `\n"${result.definition}"\n`;
+        if (result.example) shareText += `\nExemple : ${result.example}\n`;
+        
+        shareText += '\n';
+        result.tables.forEach(table => {
+            shareText += `--- ${table.tenseName.toUpperCase()} ---\n`;
+            Object.entries(table.forms).forEach(([pronoun, form]) => {
+                shareText += `${pronoun} : ${form}\n`;
+            });
+            shareText += '\n';
+        });
+    } else if (mode === 'translate' && translationResult) {
+        title = `Traduction de ${translationResult.original}`;
+        shareText = `ORIGINAL : ${translationResult.original}\n`;
+        shareText = `TRADUCTION (${translationResult.language.toUpperCase()}) : ${translationResult.translated}\n\n`;
+        
+        if (translationResult.context) {
+            shareText += `CONTEXTE :\n${cleanupMarkdownForShare(translationResult.context)}\n\n`;
+        }
+        
+        if (translationResult.examples && translationResult.examples.length > 0) {
+            shareText += `EXEMPLES :\n`;
+            translationResult.examples.forEach(ex => {
+                shareText += `• ${cleanupMarkdownForShare(ex)}\n`;
+            });
+            shareText += '\n';
+        }
+        
+        if (translationResult.notes) {
+            shareText += `NOTES :\n${cleanupMarkdownForShare(translationResult.notes)}\n\n`;
+        }
+    }
+
+    if (!shareText) return;
+
+    shareText += `Partagé via Studeo`;
+
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title,
+                text: shareText
+            });
+        } catch (err) {
+            if (err instanceof Error && err.name !== 'AbortError') {
+                console.error('Share error:', err);
+                showToast("Erreur lors du partage", "error");
+            }
+        }
+    } else {
+        showToast("Le partage n'est pas supporté sur cet appareil", "info");
+    }
+  };
+
   const handleCreateCards = () => {
       if (!result) return;
       if (!onAddCards && !onCreateSet) return; // Need at least one handler
@@ -480,24 +552,36 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
               </div>
 
               <div className="flex gap-2 items-center">
-                  {result && (
+                  {(result || translationResult) && (
                       <div className={`flex gap-1 p-1 rounded-xl backdrop-blur-sm shadow-inner border transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'}`}>
+                          {mode === 'conjugate' && result && (
+                              <>
+                                <button 
+                                    onClick={() => handleExport('md')}
+                                    disabled={isExporting}
+                                    className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
+                                    title={t('conjugator.exportMD')}
+                                >
+                                    {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fab fa-markdown"></i>} <span className="hidden sm:inline">MD</span>
+                                </button>
+                                <div className={`w-px h-4 self-center ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/10' : 'bg-white/20'}`}></div>
+                                <button 
+                                    onClick={() => handleExport('doc')}
+                                    disabled={isExporting}
+                                    className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
+                                    title={t('conjugator.exportWord')}
+                                >
+                                    {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-file-word"></i>} <span className="hidden sm:inline">RTF</span>
+                                </button>
+                                <div className={`w-px h-4 self-center ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/10' : 'bg-white/20'}`}></div>
+                              </>
+                          )}
                           <button 
-                              onClick={() => handleExport('md')}
-                              disabled={isExporting}
-                              className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
-                              title={t('conjugator.exportMD')}
+                              onClick={handleShare}
+                              className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
+                              title="Partager"
                           >
-                              {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fab fa-markdown"></i>} <span className="hidden sm:inline">MD</span>
-                          </button>
-                          <div className={`w-px h-4 self-center ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/10' : 'bg-white/20'}`}></div>
-                          <button 
-                              onClick={() => handleExport('doc')}
-                              disabled={isExporting}
-                              className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
-                              title={t('conjugator.exportWord')}
-                          >
-                              {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-file-word"></i>} <span className="hidden sm:inline">RTF</span>
+                              <i className="fas fa-share-alt"></i> <span className="hidden sm:inline">Partager</span>
                           </button>
                       </div>
                   )}
@@ -565,14 +649,31 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                 <label className="block text-sm font-medium mb-1 text-text-secondary">
                     {mode === 'conjugate' ? t('conjugator.verbLabel') : t('conjugator.textToTranslate')}
                 </label>
-                <input
-                    type="text"
-                    value={verb}
-                    onChange={(e) => setVerb(e.target.value)}
-                    placeholder={mode === 'conjugate' ? t('conjugator.verbPlaceholder') : t('conjugator.translatePlaceholder')}
-                    className="w-full p-3 rounded-lg bg-background border border-border focus:ring-2 focus:ring-primary outline-none transition-all text-lg text-text"
-                    autoFocus
-                />
+                <div className="relative group/input">
+                    <input
+                        type="text"
+                        value={verb}
+                        onChange={(e) => setVerb(e.target.value)}
+                        placeholder={mode === 'conjugate' ? t('conjugator.verbPlaceholder') : t('conjugator.translatePlaceholder')}
+                        className="w-full p-3 pr-10 rounded-lg bg-background border border-border focus:ring-2 focus:ring-primary outline-none transition-all text-lg text-text"
+                        autoFocus
+                    />
+                    {verb && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setVerb('');
+                                setResult(null);
+                                setTranslationResult(null);
+                                setError(null);
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-red-500 transition-colors p-1"
+                            title={t('common.clear')}
+                        >
+                            <i className="fas fa-times-circle"></i>
+                        </button>
+                    )}
+                </div>
             </div>
             
             <div className="w-full md:w-48">
@@ -828,13 +929,24 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                             <span className="text-[10px] text-text-muted uppercase tracking-wider font-bold">{t('conjugator.setNameLabel')}</span>
                         </label>
                         {isNewSet && (
-                            <input 
-                                type="text" 
-                                value={setName} 
-                                onChange={(e) => setSetName(e.target.value)}
-                                placeholder={t('conjugator.setNamePlaceholder')}
-                                className="bg-background border border-border rounded px-3 py-1 text-sm w-48 focus:border-primary outline-none transition-colors text-text animate-slide-up"
-                            />
+                            <div className="relative">
+                                <input 
+                                    type="text" 
+                                    value={setName} 
+                                    onChange={(e) => setSetName(e.target.value)}
+                                    placeholder={t('conjugator.setNamePlaceholder')}
+                                    className="bg-background border border-border rounded px-3 pr-8 py-1 text-sm w-48 focus:border-primary outline-none transition-colors text-text animate-slide-up"
+                                />
+                                {setName && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSetName('')}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-red-500 transition-colors"
+                                    >
+                                        <i className="fas fa-times text-[10px]"></i>
+                                    </button>
+                                )}
+                            </div>
                         )}
                     </div>
 

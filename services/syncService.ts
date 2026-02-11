@@ -16,6 +16,7 @@ export const syncService = {
         persistent_errors?: any;
         last_sync_device?: string;
         known_devices?: string[];
+        guest_tutors?: any[];
     }) {
         const { error } = await supabase
             .from('profiles')

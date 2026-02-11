@@ -125,7 +125,11 @@ const AppContent: React.FC = () => {
   }, []);
 
   const pushCloudData = async (silent = false) => {
-    if (!user || isInitialSyncProgress.current) return;
+    if (!user) {
+        if (!silent) coordinator.showToast("Vous devez être connecté pour synchroniser vos données sur le Cloud.", "warning");
+        return;
+    }
+    if (isInitialSyncProgress.current) return;
     isInitialSyncProgress.current = true;
     setCloudStatus('syncing');
     const deviceName = getDeviceName();
@@ -158,7 +162,8 @@ const AppContent: React.FC = () => {
             quiz_history: currentHistory,
             persistent_errors: quizSession.persistentErrors,
             last_sync_device: deviceName,
-            known_devices: knownDevices
+            known_devices: knownDevices,
+            guest_tutors: coordinator.guestTutors
         });
         if (!profileSync.success) {
             throw new Error(`Profil: ${profileSync.error?.message || "Erreur inconnue"}`);
@@ -227,7 +232,8 @@ const AppContent: React.FC = () => {
       theme.themeStyle,
       gamification.gamificationData,
       analyticsData,
-      quizSession.persistentErrors
+      quizSession.persistentErrors,
+      coordinator.guestTutors
   ]);
 
   // Synchronisation automatique (Réactive)
@@ -254,7 +260,8 @@ const AppContent: React.FC = () => {
       gamification.gamificationData,
       analyticsData,
       quizSession.persistentErrors,
-      config // Ajouté pour déclencher la synchro quand on change le nom de l'appareil
+      config, // Ajouté pour déclencher la synchro quand on change le nom de l'appareil
+      coordinator.guestTutors
   ]);
 
 
@@ -287,6 +294,9 @@ const AppContent: React.FC = () => {
               if (cloudProfile.persistent_errors) {
                   quizSession.setPersistentErrors(cloudProfile.persistent_errors);
               }
+              if (cloudProfile.guest_tutors && Array.isArray(cloudProfile.guest_tutors)) {
+                  coordinator.setGuestTutors(cloudProfile.guest_tutors);
+              }
 
               if (cloudProfile.known_devices) {
                   localStorage.setItem('studeo_known_devices', JSON.stringify(cloudProfile.known_devices));
@@ -307,6 +317,7 @@ const AppContent: React.FC = () => {
               gamification.setGamificationData(INITIAL_GAMIFICATION_DATA);
               quizSession.setHistory([]);
               quizSession.setPersistentErrors({});
+              coordinator.setGuestTutors([]);
           }
 
           // 2. Flashcards
@@ -668,6 +679,7 @@ const AppContent: React.FC = () => {
                 }
             }}
             onReloadApp={reloadApp}
+            onShowAuth={() => setIsAuthModalOpen(true)}
             user={user}
           />
         );

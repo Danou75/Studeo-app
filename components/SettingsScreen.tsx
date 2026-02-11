@@ -13,7 +13,8 @@ interface SettingsScreenProps {
   onSyncPush?: () => void;
   onSyncPull?: () => void;
   onReloadApp?: () => void;
-  user?: any;
+  onShowAuth?: () => void;
+  user: any;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
@@ -21,6 +22,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onSyncPush, 
   onSyncPull,
   onReloadApp,
+  onShowAuth,
   user
 }) => {
   const { config, updateConfig, setGeminiApiKey } = useAIConfig();
@@ -849,7 +851,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+            {!user && (
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-center gap-4 mb-4">
+                <i className="fas fa-exclamation-triangle text-amber-500 text-xl"></i>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-amber-500">Vous n'êtes pas connecté</p>
+                  <p className="text-xs text-text-muted">Connectez-vous pour sauvegarder vos professeurs et vos progrès sur le Cloud.</p>
+                </div>
+                <button 
+                  onClick={onShowAuth}
+                  className="px-4 py-2 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition-colors"
+                >
+                  Se connecter
+                </button>
+              </div>
+            )}
+
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 ${!user ? 'opacity-50 pointer-events-none' : ''}`}>
                 <button
                     onClick={onSyncPush}
                     disabled={!onSyncPush}

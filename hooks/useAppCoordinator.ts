@@ -671,6 +671,7 @@ export const useAppCoordinator = () => {
         theme,
         availableLanguages,
         guestTutors,
+        setGuestTutors,
         addGuestTutor,
         updateGuestTutor,
         removeGuestTutor,

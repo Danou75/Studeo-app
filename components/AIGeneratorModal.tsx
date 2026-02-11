@@ -881,13 +881,25 @@ CONTEXTE UTILISATEUR : ${context}
                             };
 
                             return (
-                                <input
-                                    type="text"
-                                    value={topic}
-                                    onChange={(e) => setTopic(e.target.value)}
-                                    placeholder={getTopicPlaceholder()}
-                                    className="w-full p-3 border border-border rounded-lg bg-background text-text focus:ring-2 focus:ring-primary"
-                                />
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={topic}
+                                        onChange={(e) => setTopic(e.target.value)}
+                                        placeholder={getTopicPlaceholder()}
+                                        className="w-full p-3 pr-10 border border-border rounded-lg bg-background text-text focus:ring-2 focus:ring-primary"
+                                    />
+                                    {topic && (
+                                        <button
+                                            onClick={() => setTopic('')}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors opacity-50 hover:opacity-100"
+                                            type="button"
+                                            title="Effacer"
+                                        >
+                                            <i className="fas fa-times text-sm"></i>
+                                        </button>
+                                    )}
+                                </div>
                             );
                         })()}
                     </div>

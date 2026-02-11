@@ -727,48 +727,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                                 className={`max-w-[90%] md:max-w-[75%] rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-sm transition-all hover:shadow-md ${
                                     message.role === 'user'
                                         ? 'bg-primary text-white rounded-tr-none'
-                                        : 'bg-background-secondary border border-border rounded-tl-none relative group pr-10 md:pr-5'
+                                        : 'bg-background-secondary border border-border rounded-tl-none'
                                 }`}
                             >
-                                {message.role === 'assistant' && (
-                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all z-10">
-                                        <button
-                                            onClick={() => {
-                                                const cleanText = message.content
-                                                    .replace(/^#+ (.*)$/gm, (_, p1) => p1.toUpperCase())
-                                                    .replace(/\*\*(.*?)\*\*/g, '$1')
-                                                    .replace(/\*(.*?)\*/g, '$1')
-                                                    .replace(/^- (.*)$/gm, '• $1')
-                                                    .trim();
-                                                
-                                                if (navigator.share) {
-                                                    navigator.share({
-                                                        title: `Message de ${currentSession.tutorName}`,
-                                                        text: `${currentSession.tutorName.toUpperCase()} - ${currentSession.tutorSubject.toUpperCase()}\n\n${cleanText}\n\nPartagé via Studeo`
-                                                    }).catch(err => {
-                                                        if (err.name !== 'AbortError') console.error('Share error:', err);
-                                                    });
-                                                } else {
-                                                    showToast("Le partage n'est pas supporté", "info");
-                                                }
-                                            }}
-                                            className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg text-text-muted hover:text-primary transition-all"
-                                            title="Partager ce message"
-                                        >
-                                            <i className="fas fa-share-alt"></i>
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(message.content);
-                                                showToast('Copié dans le presse-papier !', 'success');
-                                            }}
-                                            className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg text-text-muted hover:text-primary transition-all"
-                                            title="Copier le texte"
-                                        >
-                                            <i className="far fa-copy"></i>
-                                        </button>
-                                    </div>
-                                )}
                                 <div className="flex items-start gap-4">
                                     {message.role === 'assistant' && (
                                         <div className="text-3xl hidden md:block">🎓</div>
@@ -819,6 +780,47 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                                             <i className="far fa-clock"></i>
                                             {message.timestamp.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                                         </div>
+                                        {message.role === 'assistant' && (
+                                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/30">
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(message.content);
+                                                        showToast('Copié dans le presse-papier !', 'success');
+                                                    }}
+                                                    className="text-xs px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg text-text-muted hover:text-primary transition-all flex items-center gap-1.5"
+                                                    title="Copier le texte"
+                                                >
+                                                    <i className="far fa-copy"></i>
+                                                    <span className="hidden md:inline">Copier</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        const cleanText = message.content
+                                                            .replace(/^#+ (.*)$/gm, (_, p1) => p1.toUpperCase())
+                                                            .replace(/\*\*(.*?)\*\*/g, '$1')
+                                                            .replace(/\*(.*?)\*/g, '$1')
+                                                            .replace(/^- (.*)$/gm, '• $1')
+                                                            .trim();
+                                                        
+                                                        if (navigator.share) {
+                                                            navigator.share({
+                                                                title: `Message de ${currentSession.tutorName}`,
+                                                                text: `${currentSession.tutorName.toUpperCase()} - ${currentSession.tutorSubject.toUpperCase()}\n\n${cleanText}\n\nPartagé via Studeo`
+                                                            }).catch(err => {
+                                                                if (err.name !== 'AbortError') console.error('Share error:', err);
+                                                            });
+                                                        } else {
+                                                            showToast("Le partage n'est pas supporté", "info");
+                                                        }
+                                                    }}
+                                                    className="text-xs px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg text-text-muted hover:text-primary transition-all flex items-center gap-1.5"
+                                                    title="Partager ce message"
+                                                >
+                                                    <i className="fas fa-share-alt"></i>
+                                                    <span className="hidden md:inline">Partager</span>
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

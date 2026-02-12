@@ -259,6 +259,12 @@ export const fr = {
         topicPlaceholder: "Ex: Verbes irréguliers italiens, Photosynthèse, Capitales d'Europe...",
         countLabel: "Nombre d'éléments",
         difficultyLabel: "Niveau de difficulté",
+        difficulty: {
+            beginner: "Apprenti",
+            intermediate: "Virtuose",
+            advanced: "Maestro",
+            university: "Universitaire (Expert & Académique)"
+        },
         contextLabel: "Contexte additionnel (facultatif)",
         contextPlaceholder: "Ex: Focus sur le vocabulaire formel...",
         type: {

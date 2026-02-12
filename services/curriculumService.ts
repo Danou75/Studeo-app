@@ -189,6 +189,14 @@ export const generateStudyProgram = async (
     - Niveau de l'élève/Objectif : "${level}"
     ${media ? "INSTRUCTION SPÉCIALE : Ce programme doit être basé sur l'analyse du fichier média fourni en pièce jointe." : ""}
 
+    ${level === 'university' ? `
+    MODE UNIVERSITAIRE (Exigence Académique) :
+    1. Structure le programme comme un syllabus de cours magistral universitaire (10 à 12 Séances/Modules).
+    2. Adopte une approche analytique et critique, pas seulement descriptive.
+    3. Intègre des notions d'historiographie, d'épistémologie ou de théorie avancée selon le sujet.
+    4. Les titres des modules doivent être précis et académiques.
+    ` : ""}
+
     CONSIGNES :
     1. Divise l'apprentissage en 5 à 10 modules logiques et progressifs.
     2. Le premier module doit être accessible (bases).
@@ -392,6 +400,8 @@ export const generateModuleContent = async (
                           tutor.language === 'tr' ? 'Turc' :
                           tutor.language === 'pl' ? 'Polonais' : 'ta langue cible';
 
+    const isUniversity = program.targetLevel === 'university';
+
     const lessonPrompt = `
     Tu es ${tutor.name}, un expert pédagogique (${tutor.emoji}). ${tutor.description}.
     
@@ -400,22 +410,29 @@ export const generateModuleContent = async (
     CONTEXTE PROGRAMME :
     - Sujet Global : "${program.topic}"
     - Niveau : "${program.targetLevel}"
+    ${isUniversity ? "- EXIGENCE : Niveau UNIVERSITAIRE / RECHERCHE (Master/Doctorat)" : ""}
     
     MODULE ACTUEL :
     - Titre : "${module.title}"
     - Description : "${module.description}"
     
     CONSIGNES DE RÉDACTION :
-    1. Utilise un ton encourageant et clair, adapté au niveau.
-    2. Structure le cours avec des titres Markdown (#, ##).
+    1. ${isUniversity 
+        ? "TON ACADÉMIQUE : Adopte une posture d'expert. Sois rigoureux, précis et analytique. Analyse les nuances, les débats théoriques et l'historiographie du sujet." 
+        : "TON PÉDAGOGIQUE : Utilise un ton encourageant, clair et progressif, adapté au niveau de l'élève."}
+    2. Structure le cours avec des titres Markdown (#, ##, ###) pour une lisibilité parfaite.
     ${tutor.category === 'languages' 
         ? `3. TRADUCTION & LANGUE : Comme tu es un professeur de langue, rédige tes explications en FRANÇAIS. Tes titres et sous-titres doivent être bilingues : "Titre en Français (Traduction en ${targetLangName})". 
            INTERDICTION FORMELLE d'utiliser l'ANGLAIS pour les traductions si tu n'es pas Mister English.`
         : "3. LANGUE & FORMAT : Rédige TOUT le contenu exclusivement en français. INTERDICTION FORMELLE de traduire les titres, sous-titres ou termes techniques en anglais (ou autre langue) entre parenthèses. N'écris QUE le titre français. Exemple CORRECT : 'La Révolution'. Exemple INTERDIT : 'La Révolution (The Revolution)'."
     }
-    4. Inclus des exemples concrets, des analogies.
-    5. Explique les concepts clés définis dans la description du module.
-    6. Termine par un résumé en FRANÇAIS.
+    4. ${isUniversity 
+        ? "APPROFONDISSEMENT : Ne reste pas en surface. Cite des théories, des auteurs ou des contextes historiques précis. Explique les mécanismes sous-jacents." 
+        : "EXEMPLES : Inclus des exemples concrets et des analogies pour faciliter la compréhension."}
+    5. ${isUniversity 
+        ? "TERMINOLOGIE : Utilise le vocabulaire technique adéquat et définis-le si nécessaire."
+        : "Explique les concepts clés définis dans la description du module."}
+    6. Termine par un résumé synthétique en FRANÇAIS.
     7. AJOUTE UNE SECTION FINALE "📚 Pour aller plus loin" :
        - Propose 3 à 5 concepts à approfondir.
        - Formate-les comme des liens Markdown vers une recherche Perplexity : [Sujet](https://www.perplexity.ai/search?q=Sujet+Expliqué).

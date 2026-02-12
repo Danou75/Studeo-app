@@ -190,6 +190,17 @@ export const generateFlashcardsWithAI = async (
         identityPrompt = getTutorPrompt(tutorId, aiProvider === 'local' ? 'local' : 'gemini');
     }
 
+    if (difficulty === 'university') {
+        identityPrompt += `
+        
+        MODE UNIVERSITAIRE (Niveau Expert/Doctorat) :
+        1. Rigueur Absolue : Aucune approximation. Utilise la terminologie technique exacte.
+        2. Complexité : Tes questions doivent tester la compréhension profonde, l'analyse et la synthèse, pas juste le par coeur.
+        3. Style : Académique, formel et dense.
+        4. Sources : Si tu cites des faits, assure-toi qu'ils font consensus dans la communauté scientifique.
+        `;
+    }
+
     if (isDefinitionMode || hasRichContext) {
         let instruction = "";
         if (isDefinitionMode) {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { open } from '@tauri-apps/api/dialog';
 import { readTextFile, readBinaryFile } from '@tauri-apps/api/fs';
-import { AIGenerationConfig, Flashcard, Lesson, StudyProgram } from '../types';
+import { AIGenerationConfig, Flashcard, Lesson, StudyProgram, AIGenerationLevel } from '../types';
 import { generateFlashcardsWithAI } from '../services/aiCardGenerator';
 import { generateLessonWithAI } from '../services/aiLessonGenerator';
 import { generateStudyProgram } from '../services/curriculumService';
@@ -90,7 +90,7 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
     
     const [targetLang, setTargetLang] = useState('en');
     const [count, setCount] = useState(10);
-    const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
+    const [difficulty, setDifficulty] = useState<AIGenerationLevel>('intermediate');
     const [context, setContext] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -138,6 +138,10 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
         const draft = { topic, count, difficulty, context, sourceLang, targetLang, generationType };
         localStorage.setItem('ai_generator_draft', JSON.stringify(draft));
     }, [topic, count, difficulty, context, sourceLang, targetLang, generationType, isFormDirty]);
+    
+    // ... (rest of useEffects) ...
+
+
 
     React.useEffect(() => {
         if (topic) {
@@ -1009,12 +1013,13 @@ CONTEXTE UTILISATEUR : ${context}
                             </label>
                             <select
                                 value={difficulty}
-                                onChange={(e) => setDifficulty(e.target.value as any)}
+                                onChange={(e) => setDifficulty(e.target.value as AIGenerationLevel)}
                                 className="w-full p-3 border border-border rounded-lg bg-background text-text focus:ring-2 focus:ring-primary"
                             >
-                                <option value="beginner">{t('music.difficulty.beginner')}</option>
-                                <option value="intermediate">{t('music.difficulty.intermediate')}</option>
-                                <option value="advanced">{t('music.difficulty.advanced')}</option>
+                                <option value="beginner">{t('ai.difficulty.beginner')}</option>
+                                <option value="intermediate">{t('ai.difficulty.intermediate')}</option>
+                                <option value="advanced">{t('ai.difficulty.advanced')}</option>
+                                <option value="university">{t('ai.difficulty.university')}</option>
                             </select>
                         </div>
                     </div>

@@ -275,7 +275,7 @@ export type AnalyticsData = {
 // AI GENERATOR TYPES
 // ============================================
 
-export type AIGenerationLevel = "beginner" | "intermediate" | "advanced";
+export type AIGenerationLevel = "beginner" | "intermediate" | "advanced" | "university";
 
 export type AIProvider = 'gemini' | 'local' | 'openai' | 'anthropic' | 'mistral';
 

@@ -262,6 +262,12 @@ export const en: typeof fr = {
         topicPlaceholder: "E.g. Italian irregular verbs, Photosynthesis, Capitals of Europe...",
         countLabel: "Number of items",
         difficultyLabel: "Difficulty level",
+        difficulty: {
+            beginner: "Apprentice",
+            intermediate: "Virtuoso",
+            advanced: "Maestro",
+            university: "University (Expert & Academic)"
+        },
         contextLabel: "Additional context (optional)",
         contextPlaceholder: "E.g. Focus on formal vocabulary...",
         type: {

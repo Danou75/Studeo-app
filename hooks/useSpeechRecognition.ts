@@ -103,23 +103,30 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
       }
       
       // Gérer spécifiquement l'erreur de permission
+      // Gérer spécifiquement l'erreur de permission
       if (event.error === 'not-allowed') {
         console.error('🚫 Microphone permission denied');
         const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
+        const isAndroid = /Android/i.test(navigator.userAgent);
         
-        setError(isTauri 
-          ? 'Permission microphone refusée. Veuillez autoriser l\'accès au microphone dans les Réglages Système de macOS.' 
-          : 'Permission microphone refusée. Veuillez autoriser l\'accès au microphone dans les paramètres de votre navigateur.'
-        );
+        let detailedError = isTauri 
+            ? 'Permission microphone refusée (macOS). Vérifiez les Réglages Système.'
+            : isAndroid 
+                ? 'Accès refusé. Cliquez sur le Cadenas 🔒 > Permissions > Microphone > Autoriser. Si bloqué, réinitialisez les permissions du site.'
+                : 'Permission microphone refusée. Veuillez l\'autoriser dans les paramètres du navigateur.';
+
+        setError(detailedError);
         setStatus('error');
         isListeningRef.current = false;
         
         // Afficher une alerte adaptée à l'environnement
         setTimeout(() => {
           if (isTauri) {
-            showToast('🎤 Permission microphone requise. Vérifiez les "Réglages Système" de macOS > "Confidentialité et sécurité" > "Microphone".', 'error', 10000);
+            showToast('🎤 Permission requise (macOS). Vérifiez "Confidentialité et sécurité" > "Microphone".', 'error', 10000);
+          } else if (isAndroid) {
+            showToast('🎤 Android : Cliquez sur le cadenas 🔒 > Permissions pour débloquer le micro.', 'error', 15000);
           } else {
-            showToast('🎤 Permission microphone requise. Cliquez sur l\'icône 🔒 dans la barre d\'adresse.', 'error', 10000);
+            showToast('🎤 Permission requise. Cliquez sur 🔒 > Paramètres du site.', 'error', 10000);
           }
         }, 100);
         return;
@@ -179,12 +186,24 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
     };
   }, [language]); // Recréer complètement l'objet à chaque changement de langue
 
-  const startListening = useCallback(() => {
+  const startListening = useCallback(async () => {
     console.log('🎬 Attempting to start listening...', { 
       hasRecognition: !!recognitionRef.current, 
       currentStatus: status,
       isListening: isListeningRef.current 
     });
+
+    // ANDROID FIX: Force permission request explicitly via getUserMedia
+    // This triggers the native browser prompt better than the SpeechRecognition API handles it on some Android browsers.
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Immediately release the stream as we only needed to trigger the permission check
+        stream.getTracks().forEach(track => track.stop());
+    } catch (permErr) {
+        console.warn('⚠️ Explicit getUserMedia permission check failed or cancelled. Proceeding with SpeechRecognition anyway, but it might fail.', permErr);
+        // We don't block here, we let the standard error handler catch the 'not-allowed' from recognition.start()
+        // so the UI feedback remains consistent.
+    }
     
     if (!recognitionRef.current) {
       console.error('❌ No recognition object available');

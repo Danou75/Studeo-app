@@ -128,8 +128,17 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
                  return; // Don't show error yet!
              } catch (hackErr: any) {
                  console.warn('❌ Hack failed:', hackErr);
+                 
+                 // Diagnostic: Check permission state
+                 let permState = 'unknown';
+                 try {
+                    // @ts-ignore
+                    const perm = await navigator.permissions.query({ name: 'microphone' });
+                    permState = perm.state;
+                 } catch (e) {}
+
                  // Fallthrough to standard error display with precise message
-                 setError(`Erreur micro Android (Retry failed): ${hackErr.name || hackErr.message}. Vérifiez les paramètres de site.`);
+                 setError(`Erreur micro Android (Retry failed): ${hackErr.name} (État: ${permState}). Réinitialisez les permissions du site via le cadenas.`);
              }
         } else {
             let detailedError = isTauri 

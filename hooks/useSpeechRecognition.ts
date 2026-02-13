@@ -193,16 +193,21 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
       isListening: isListeningRef.current 
     });
 
-    // ANDROID FIX: Force permission request explicitly via getUserMedia
-    // This triggers the native browser prompt better than the SpeechRecognition API handles it on some Android browsers.
+    // ANDROID FIX: Force permission request explicitly via getUserMedia with a delay
+    // Some Android devices need a small delay before stopping the stream to register the permission
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Immediately release the stream as we only needed to trigger the permission check
+        // Wait 500ms to ensure permission persistence on some Android versions
+        await new Promise(resolve => setTimeout(resolve, 500));
         stream.getTracks().forEach(track => track.stop());
-    } catch (permErr) {
-        console.warn('⚠️ Explicit getUserMedia permission check failed or cancelled. Proceeding with SpeechRecognition anyway, but it might fail.', permErr);
-        // We don't block here, we let the standard error handler catch the 'not-allowed' from recognition.start()
-        // so the UI feedback remains consistent.
+    } catch (permErr: any) {
+        console.warn('⚠️ Explicit getUserMedia failed:', permErr);
+        // Show exact error to help debugging
+        if (/Android/i.test(navigator.userAgent)) {
+            showToast(`Erreur micro Android: ${permErr.name || permErr.message}. Vérifiez les paramètres de site.`, 'error', 10000);
+            setStatus('error');
+            return; // Stop here if getUserMedia fails on Android, don't try SpeechRecognition which will likely fail silently
+        }
     }
     
     if (!recognitionRef.current) {

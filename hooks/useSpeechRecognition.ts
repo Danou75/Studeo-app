@@ -18,6 +18,7 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
   
   const recognitionRef = useRef<any>(null);
   const isListeningRef = useRef<boolean>(false);
+  const retryRef = useRef<number>(0);
 
   useEffect(() => {
     const { webkitSpeechRecognition, SpeechRecognition } = window as unknown as IWindow;
@@ -83,7 +84,7 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
       setTranscript(newTranscript);
     };
 
-    recognitionRef.current.onerror = (event: any) => {
+    recognitionRef.current.onerror = async (event: any) => {
       console.error('❌ Speech recognition error:', event.error);
       
       // Ignorer l'erreur "no-speech" qui est normale
@@ -103,19 +104,42 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
       }
       
       // Gérer spécifiquement l'erreur de permission
-      // Gérer spécifiquement l'erreur de permission
       if (event.error === 'not-allowed') {
         console.error('🚫 Microphone permission denied');
         const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
         const isAndroid = /Android/i.test(navigator.userAgent);
         
-        let detailedError = isTauri 
-            ? 'Permission microphone refusée (macOS). Vérifiez les Réglages Système.'
-            : isAndroid 
-                ? 'Accès refusé. Cliquez sur le Cadenas 🔒 > Permissions > Microphone > Autoriser. Si bloqué, réinitialisez les permissions du site.'
-                : 'Permission microphone refusée. Veuillez l\'autoriser dans les paramètres du navigateur.';
+        // RETRY LOGIC FOR ANDROID
+        if (isAndroid && retryRef.current === 0) {
+             console.log('🔄 First fail on Android. Attempting getUserMedia hack to force permission...');
+             retryRef.current++;
+             try {
+                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                 // Wait a bit just in case
+                 await new Promise(r => setTimeout(r, 200));
+                 stream.getTracks().forEach(t => t.stop());
+                 console.log('✅ Permission granted via hack. Retrying recognition...');
+                 
+                 if (recognitionRef.current) {
+                    setError(null);
+                    setStatus('listening');
+                    recognitionRef.current.start();
+                 }
+                 return; // Don't show error yet!
+             } catch (hackErr: any) {
+                 console.warn('❌ Hack failed:', hackErr);
+                 // Fallthrough to standard error display with precise message
+                 setError(`Erreur micro Android (Retry failed): ${hackErr.name || hackErr.message}. Vérifiez les paramètres de site.`);
+             }
+        } else {
+            let detailedError = isTauri 
+                ? 'Permission microphone refusée (macOS). Vérifiez les Réglages Système.'
+                : isAndroid 
+                    ? 'Accès refusé. Cliquez sur le Cadenas 🔒 > Permissions > Microphone > Autoriser. Si bloqué, réinitialisez les permissions du site.'
+                    : 'Permission microphone refusée. Veuillez l\'autoriser dans les paramètres du navigateur.';
+            setError(detailedError);
+        }
 
-        setError(detailedError);
         setStatus('error');
         isListeningRef.current = false;
         
@@ -193,22 +217,11 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
       isListening: isListeningRef.current 
     });
 
-    // ANDROID FIX: Force permission request explicitly via getUserMedia with a delay
-    // Some Android devices need a small delay before stopping the stream to register the permission
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Wait 500ms to ensure permission persistence on some Android versions
-        await new Promise(resolve => setTimeout(resolve, 500));
-        stream.getTracks().forEach(track => track.stop());
-    } catch (permErr: any) {
-        console.warn('⚠️ Explicit getUserMedia failed:', permErr);
-        // Show exact error to help debugging
-        if (/Android/i.test(navigator.userAgent)) {
-            showToast(`Erreur micro Android: ${permErr.name || permErr.message}. Vérifiez les paramètres de site.`, 'error', 10000);
-            setStatus('error');
-            return; // Stop here if getUserMedia fails on Android, don't try SpeechRecognition which will likely fail silently
-        }
-    }
+    // ANDROID: Reset retry count on new start attempt
+    if (retryRef.current > 0) retryRef.current = 0;
+
+    // Reset error
+    setError(null);
     
     if (!recognitionRef.current) {
       console.error('❌ No recognition object available');

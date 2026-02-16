@@ -712,37 +712,39 @@ CONTEXTE UTILISATEUR : ${context}
                             </div>
                         </div>
                     </div>
-                    <div className="flex border-b border-border mb-4">
+                    <div className="flex border-b border-border mb-4 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                        <div className="flex min-w-full">
                         <button
-                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${inputType === 'text' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}
+                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${inputType === 'text' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}
                             onClick={() => setInputType('text')}
                         >
                             <i className="fas fa-keyboard mr-2"></i> {t('ai.input.text')}
                         </button>
                         <button
-                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${inputType === 'file' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}
+                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${inputType === 'file' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}
                             onClick={() => setInputType('file')}
                         >
                             <i className="fas fa-file-alt mr-2"></i> {t('ai.input.file')}
                         </button>
                         <button
-                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${inputType === 'image' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}
+                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${inputType === 'image' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}
                             onClick={() => setInputType('image')}
                         >
                             <i className="fas fa-image mr-2"></i> {t('ai.input.image')}
                         </button>
                         <button
-                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${inputType === 'media' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}
+                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${inputType === 'media' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}
                             onClick={() => setInputType('media')}
                         >
                             <i className="fas fa-play-circle mr-2"></i> {t('ai.input.media')}
                         </button>
                         <button
-                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${inputType === 'transcript' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}
+                            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${inputType === 'transcript' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}
                             onClick={() => setInputType('transcript')}
                         >
                             <i className="fas fa-quote-right mr-2"></i> {t('ai.input.transcript')}
                         </button>
+                        </div>
                     </div>
 
                     {(inputType === 'file' || inputType === 'image' || (inputType === 'media' && mediaType === 'file')) && (

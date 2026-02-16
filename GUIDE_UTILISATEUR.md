@@ -71,8 +71,6 @@ Vous ne trouvez pas le prof de vos rêves ? Créez-le !
 
 #### 🌍 **Langues**
 
-#### 🌍 **Langues**
-
 - **Maestro Italiano** 🇮🇹 : Italien (grammaire, vocabulaire, culture)
 - **Mister English** 🇬🇧 : Anglais (ESL, phrasal verbs, idiomes)
 - **Maestro Español** 🇪🇸 : Espagnol (ser/estar, subjonctif, culture hispanique)
@@ -121,6 +119,7 @@ Lors de la génération (via le bouton ✨), vous pouvez désormais choisir le n
 - **Fichier Texte** : Importez vos notes `.txt` ou `.md`.
 - **Photo/PDF (Vision)** : Prenez en photo une page de manuel ou uploadez un PDF de cours. L'IA analyse le visuel.
 - **Audio/Vidéo** : Uploadez un enregistrement (cours, conférence) pour le transcrire et le transformer en fiche.
+- **Vidéo YouTube** 📺 : Collez une URL YouTube. L'IA récupère la transcription pour générer cours et quiz.
 
 ---
 

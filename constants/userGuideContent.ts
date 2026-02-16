@@ -7,15 +7,15 @@ Bienvenue dans l'univers de **Studeo**, votre plateforme d'apprentissage intelli
 
 ## 🧭 Navigation Rapide
 
-1. [Configuration & Tutoriel Clé API Gratuit](#configuration--tutoriel-cl-api-gratuit)
-2. [La Salle des Profs - Votre Équipe Pédagogique](#la-salle-des-profs---votre-quipe-pdagogique)
-3. [Génération de Contenu par IA (Niveaux & Modes)](#gnration-de-contenu-par-ia-niveaux--modes)
-4. [Gestion des Listes & Cartes](#gestion-des-listes--cartes)
-5. [Modes de Quiz & Apprentissage](#modes-de-quiz--apprentissage)
-6. [Algorithme de Révision (SRS)](#algorithme-de-rvision-srs)
-7. [Laboratoire Interactif & Défis](#laboratoire-interactif--dfis)
-8. [Le Conjugueur & Répétiteur Vocal](#le-conjugueur--rptiteur-vocal)
-9. [Sauvegarde & Synchronisation Cloud](#sauvegarde--synchronisation-cloud)
+1. [Configuration & Tutoriel Clé API Gratuit](#1-configuration--tutoriel-clé-api-gratuit)
+2. [La Salle des Profs - Votre Équipe Pédagogique](#2-la-salle-des-profs---votre-équipe-pédagogique)
+3. [Génération de Contenu par IA (Niveaux & Modes)](#3-génération-de-contenu-par-ia-niveaux--modes)
+4. [Gestion des Listes & Cartes](#4-gestion-des-listes--cartes)
+5. [Modes de Quiz & Apprentissage](#5-modes-de-quiz--apprentissage)
+6. [Algorithme de Révision (SRS)](#6-algorithme-de-révision-srs)
+7. [Laboratoire Interactif & Défis](#7-laboratoire-interactif--défis)
+8. [Le Conjugueur & Répétiteur Vocal](#8-le-conjugueur--répétiteur-vocal)
+9. [Sauvegarde & Synchronisation Cloud](#9-sauvegarde--synchronisation-cloud)
 
 ---
 
@@ -113,6 +113,7 @@ Lors de la génération (via le bouton ✨), vous pouvez désormais choisir le n
 - **Fichier Texte** : Importez vos notes \`.txt\` ou \`.md\`.
 - **Photo/PDF (Vision)** : Prenez en photo une page de manuel ou uploadez un PDF de cours. L'IA analyse le visuel.
 - **Audio/Vidéo** : Uploadez un enregistrement (cours, conférence) pour le transcrire et le transformer en fiche.
+- **Vidéo YouTube** 📺 : Collez une URL YouTube. L'IA récupère la transcription pour générer cours et quiz.
 
 ---
 

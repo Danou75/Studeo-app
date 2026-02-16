@@ -283,19 +283,19 @@ export const fr = {
             text: "Sujet Manuel",
             file: "Depuis un Fichier",
             image: "Depuis un PDF/Image",
-            media: "Depuis un Média",
+            media: "Média / YouTube",
             clickSelectFile: "Cliquez pour sélectionner un document texte",
             clickSelectImage: "Cliquez pour importer un PDF ou une photo",
             clickSelectMedia: "Cliquez pour importer un Audio/Vidéo",
             fileLoaded: "Fichier chargé",
             imageLoaded: "Image chargée",
             mediaLoaded: "Média chargé",
-            urlPlaceholder: "Collez l'URL d'une vidéo ou d'un podcast...",
-            urlHint: "L'IA analysera le contenu public accessible via ce lien.",
+            urlPlaceholder: "Lien YouTube (ou autre vidéo/podcast)...",
+            urlHint: "Lien YouTube supporté : L'IA récupère automatiquement la transcription.",
             fileHint: "Utilisez la zone de dépôt ci-dessus pour charger votre fichier.",
-            mediaRadioUrl: "Lien (YouTube)",
+            mediaRadioUrl: "Lien YouTube / Web",
             mediaRadioFile: "Fichier (MP3/MP4)",
-            transcript: "Depuis un Transcript",
+            transcript: "Copier/Coller Transcript",
             transcriptPlaceholder: "Collez votre texte ou transcription ici...",
             transcriptHint: "L'IA utilisera ce texte comme source unique pour générer le contenu."
         },
@@ -977,7 +977,7 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
             content: "Studeo est votre assistant d'apprentissage augmenté par l'IA. Transformez n'importe quel sujet en matériel d'étude interactif.",
             steps: [
                 "Studeo combine l'intelligence artificielle avec des méthodes d'apprentissage éprouvées.",
-                "Vous pouvez créer du contenu pédagogique à partir de n'importe quelle source : texte, PDF, images, audio ou vidéo.",
+                "Vous pouvez créer du contenu pédagogique à partir de n'importe quelle source : texte, PDF, images, audio, vidéo ou YouTube.",
                 "L'application utilise la répétition espacée pour optimiser votre mémorisation (Révision Assistée).",
                 "Toutes vos données sont stockées localement sur votre appareil pour garantir votre confidentialité."
             ]
@@ -989,13 +989,13 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
                 "**Étape 1** : Cliquez sur l'icône ⚙️ en bas à gauche pour accéder aux Paramètres.",
                 "**Étape 2** : Dans la section 'Configuration IA', choisissez votre fournisseur (Google Gemini, OpenAI, etc.).",
                 "**Étape 3** : Entrez votre clé API. Vous pouvez obtenir une clé gratuite sur le site du fournisseur.",
-                "**Étape 4** : Sélectionnez le modèle à utiliser (ex: gemini-1.5-flash pour Gemini, gpt-4o pour OpenAI).",
+                "**Étape 4** : Sélectionnez le modèle à utiliser (ex: gemini-2.5-flash pour Gemini, gpt-4o pour OpenAI).",
                 "**Astuce** : Vous pouvez configurer plusieurs IA et basculer entre elles selon vos besoins."
             ]
         },
         cardCreation: {
             title: "🧠 Création de Cartes",
-            content: "L'IA peut générer des fiches à partir de vos documents (PDF, Images, Audio, Vidéo). Utilisez le bouton **'Générer par IA'** ou le **Labo Vidéo** pour transformer n'importe quel contenu en matériel d'étude.",
+            content: "L'IA peut générer des fiches à partir de vos documents (PDF, Images, Audio, Vidéo, YouTube). Utilisez le bouton **'Générer par IA'** ou l'option **Média** pour transformer n'importe quel contenu en matériel d'étude.",
             steps: [
                 "**Méthode 1 - Texte** : Cliquez sur '**Générer par l'IA**', entrez un sujet et laissez l'IA créer des fiches.",
                 "**Méthode 2 - Document** : Importez un PDF, image, audio ou vidéo. L'IA en extraira le contenu.",

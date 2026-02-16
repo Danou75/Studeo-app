@@ -735,13 +735,13 @@ CONTEXTE UTILISATEUR : ${context}
                             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${inputType === 'media' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}
                             onClick={() => setInputType('media')}
                         >
-                            <i className="fas fa-microphone-alt mr-2"></i> {t('ai.input.media')}
+                            <i className="fas fa-play-circle mr-2"></i> {t('ai.input.media')}
                         </button>
                         <button
                             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${inputType === 'transcript' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'}`}
                             onClick={() => setInputType('transcript')}
                         >
-                            <i className="fas fa-file-signature mr-2"></i> {t('ai.input.transcript')}
+                            <i className="fas fa-quote-right mr-2"></i> {t('ai.input.transcript')}
                         </button>
                     </div>
 

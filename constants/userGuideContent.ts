@@ -113,7 +113,8 @@ Lors de la génération (via le bouton ✨), vous pouvez désormais choisir le n
 - **Fichier Texte** : Importez vos notes \`.txt\` ou \`.md\`.
 - **Photo/PDF (Vision)** : Prenez en photo une page de manuel ou uploadez un PDF de cours. L'IA analyse le visuel.
 - **Audio/Vidéo** : Uploadez un enregistrement (cours, conférence) pour le transcrire et le transformer en fiche.
-- **Vidéo YouTube** 📺 : Collez une URL YouTube. L'IA récupère la transcription pour générer cours et quiz.
+- **Vidéo YouTube** 📺 : Collez une URL YouTube. L'IA récupère la transcription automatiquement pour générer cours et quiz.
+- **Transcription (Copier/Coller)** 📝 : Collez directement un transcript complet pour une analyse encore plus précise.
 
 ---
 

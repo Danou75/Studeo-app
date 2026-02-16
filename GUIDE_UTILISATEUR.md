@@ -71,7 +71,16 @@ Vous ne trouvez pas le prof de vos rêves ? Créez-le !
 
 #### 🌍 **Langues**
 
-- **Maestro Italiano, Mister English, Maestro Español, Mestre Português, Herr Deutsch, Master Russe, Efendi Turco, Nauczyciel Polski**.
+#### 🌍 **Langues**
+
+- **Maestro Italiano** 🇮🇹 : Italien (grammaire, vocabulaire, culture)
+- **Mister English** 🇬🇧 : Anglais (ESL, phrasal verbs, idiomes)
+- **Maestro Español** 🇪🇸 : Espagnol (ser/estar, subjonctif, culture hispanique)
+- **Mestre Português** 🇵🇹 : Portugais (contractions, nasales, culture lusophone)
+- **Herr Deutsch** 🇩🇪 : Allemand (déclinaisons, genres, culture germanique)
+- **Master Russe** 🇷🇺 : Russe (alphabet cyrillique, cas, culture slave)
+- **Efendi Turco** 🇹🇷 : Turc (harmonie vocale, suffixes, culture anatolienne)
+- **Nauczyciel Polski** 🇵🇱 : Polonais (déclinaisons, aspects verbaux, culture slave)🆕
 
 #### 🏛️ **Culture & Humanités**
 

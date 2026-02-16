@@ -57,7 +57,7 @@ Google propose un accès gratuit généreux à ses modèles performants. Voici c
 
 ## 2. La Salle des Profs - Votre Équipe Pédagogique
 
-La **Salle des Profs** contient 30+ experts IA.
+**29 professeurs experts** répartis en 5 catégories, ainsi que vos propres **invités** :
 
 ### 🆕 Nouveauté : Le Professeur Invité
 Vous ne trouvez pas le prof de vos rêves ? Créez-le !
@@ -69,7 +69,14 @@ Vous ne trouvez pas le prof de vos rêves ? Créez-le !
 ### 📚 Catégories de Professeurs
 
 #### 🌍 **Langues**
-- **Maestro Italiano, Mister English, Maestro Español, Mestre Português, Herr Deutsch, Master Russe, Efendi Turco, Nauczyciel Polski**.
+- **Maestro Italiano** 🇮🇹 : Italien (grammaire, vocabulaire, culture)
+- **Mister English** 🇬🇧 : Anglais (ESL, phrasal verbs, idiomes)
+- **Maestro Español** 🇪🇸 : Espagnol (ser/estar, subjonctif, culture hispanique)
+- **Mestre Português** 🇵🇹 : Portugais (contractions, nasales, culture lusophone)
+- **Herr Deutsch** 🇩🇪 : Allemand (déclinaisons, genres, culture germanique)
+- **Master Russe** 🇷🇺 : Russe (alphabet cyrillique, cas, culture slave)
+- **Efendi Turco** 🇹🇷 : Turc (harmonie vocale, suffixes, culture anatolienne)
+- **Nauczyciel Polski** 🇵🇱 : Polonais (déclinaisons, aspects verbaux, culture slave)🆕
 
 #### 🏛️ **Culture & Humanités**
 - **Prof. Curio** (Culture G), **Prof. Chronos** (Histoire), **Prof. Atlas** (Géo), **Prof. Plume** (Littérature), **Prof. Sofia** (Philo), **Prof. Muse** (Arts), **Maître Lexis** (Droit).

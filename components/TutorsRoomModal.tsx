@@ -407,9 +407,9 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                                             onSelectTutor(tutor);
                                                             onOpenLanguageLab();
                                                         }}
-                                                        className="flex-1 py-3 bg-gradient-to-r from-blue-400 to-indigo-500 text-white rounded-lg font-bold hover:from-blue-500 hover:to-indigo-600 transition-all shadow-sm flex items-center justify-center gap-2 min-w-[120px]"
+                                                        className="flex-1 py-3 bg-gradient-to-r from-blue-400 to-indigo-500 text-white rounded-lg font-bold hover:from-blue-500 hover:to-indigo-600 transition-all shadow-sm flex flex-col items-center justify-center gap-1 min-w-[80px] text-sm leading-tight"
                                                     >
-                                                        <i className="fas fa-microphone-alt"></i> {t('tutors.actions.lab')}
+                                                        <i className="fas fa-microphone-alt"></i> <span>{t('tutors.actions.lab')}</span>
                                                     </button>
                                                 )}
 
@@ -417,23 +417,23 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                                 {onStartChat && (
                                                     <button
                                                         onClick={() => onStartChat(tutor.name, tutor.description)}
-                                                        className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-bold hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md flex items-center justify-center gap-2 min-w-[120px]"
+                                                        className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-bold hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md flex flex-col items-center justify-center gap-1 min-w-[80px] text-sm leading-tight"
                                                     >
-                                                        <i className="fas fa-comments"></i> Discuter
+                                                        <i className="fas fa-comments"></i> <span>Discuter</span>
                                                     </button>
                                                 )}
 
                                                 <button
                                                     onClick={() => onSelectTutor(tutor)}
-                                                    className="flex-1 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-colors shadow-md flex items-center justify-center gap-2 min-w-[100px]"
+                                                    className="flex-1 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-colors shadow-md flex flex-col items-center justify-center gap-1 min-w-[80px] text-sm leading-tight"
                                                 >
-                                                    <i className="fas fa-bolt"></i> {t('tutors.actions.quiz')}
+                                                    <i className="fas fa-bolt"></i> <span>{t('tutors.actions.quiz')}</span>
                                                 </button>
                                                 <button
                                                     onClick={() => onGenerateCurriculum(tutor)}
-                                                    className="flex-1 py-3 bg-background-tertiary border border-border text-text rounded-lg font-bold hover:bg-background-secondary transition-colors shadow-md flex items-center justify-center gap-2 min-w-[100px]"
+                                                    className="flex-1 py-3 bg-background-tertiary border border-border text-text rounded-lg font-bold hover:bg-background-secondary transition-colors shadow-md flex flex-col items-center justify-center gap-1 min-w-[80px] text-sm leading-tight"
                                                 >
-                                                    <i className="fas fa-map"></i> {t('tutors.actions.program')}
+                                                    <i className="fas fa-map"></i> <span>{t('tutors.actions.programShort')}</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -472,12 +472,10 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                                                 if (tutor.id === 'gm-kaspar' && onChessChallenge) onChessChallenge();
                                                                 if (tutor.id === 'prof-turing' && onCodingChallenge) onCodingChallenge();
                                                             }}
-                                                            className="flex-1 px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded font-medium text-sm hover:from-purple-700 hover:to-pink-700 transition-all shadow-md min-w-[80px]"
+                                                            className="flex-1 px-2 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded font-medium text-[10px] md:text-sm leading-tight hover:from-purple-700 hover:to-pink-700 transition-all shadow-md min-w-[60px] flex flex-col items-center justify-center text-center"
                                                         >
-                                                            {tutor.id === 'maitre-leonard' ? `🎨 ${t('tutors.actions.challenge')}` : 
-                                                             tutor.id === 'prof-melodia' ? `🎹 ${t('tutors.actions.challenge')}` : 
-                                                             tutor.id === 'prof-turing' ? `💻 Défi Code` :
-                                                             `♟️ ${t('tutors.actions.challenge')}`}
+                                                            <span className="mb-0.5">{tutor.id === 'maitre-leonard' ? '🎨' : tutor.id === 'prof-melodia' ? '🎹' : tutor.id === 'prof-turing' ? '💻' : '♟️'}</span>
+                                                            {tutor.id === 'prof-turing' ? 'Défi Code' : t('tutors.actions.challenge')}
                                                         </button>
                                                         {onStartTutorial && (
                                                             <button
@@ -485,12 +483,10 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                                                     e.stopPropagation();
                                                                     onStartTutorial(tutor.id);
                                                                 }}
-                                                                className="flex-1 px-3 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded font-medium text-sm hover:from-teal-600 hover:to-emerald-600 transition-all shadow-md min-w-[80px]"
+                                                                className="flex-1 px-2 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded font-medium text-[10px] md:text-sm leading-tight hover:from-teal-600 hover:to-emerald-600 transition-all shadow-md min-w-[60px] flex flex-col items-center justify-center text-center"
                                                             >
-                                                                {tutor.id === 'maitre-leonard' ? `✍️ ${t('tutors.actions.tuto')}` : 
-                                                                 tutor.id === 'prof-melodia' ? `🎵 ${t('tutors.actions.tuto')}` : 
-                                                                 tutor.id === 'prof-turing' ? `👨‍💻 ${t('tutors.actions.tuto')}` :
-                                                                 `♟️ ${t('tutors.actions.tuto')}`}
+                                                                <span className="mb-0.5">{tutor.id === 'maitre-leonard' ? '✍️' : tutor.id === 'prof-melodia' ? '🎵' : tutor.id === 'prof-turing' ? '👨‍💻' : '♟️'}</span>
+                                                                {t('tutors.actions.tuto')}
                                                             </button>
                                                         )}
                                                         {onStartChat && (
@@ -500,9 +496,9 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                                                     const subject = t(`tutors.descriptions.${tutor.id}` as any);
                                                                     onStartChat(tutor.name, subject);
                                                                 }}
-                                                                className="flex-1 px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded font-medium text-sm hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md min-w-[80px]"
+                                                                className="flex-1 px-2 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded font-medium text-[10px] md:text-sm leading-tight hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md min-w-[60px] flex flex-col items-center justify-center text-center"
                                                             >
-                                                                💬 Discuter
+                                                                <span className="mb-0.5">💬</span> Discuter
                                                             </button>
                                                         )}
                                                         <button
@@ -510,18 +506,18 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                                                 e.stopPropagation();
                                                                 onSelectTutor(tutor);
                                                             }}
-                                                            className="flex-1 px-3 py-2 bg-primary text-white rounded font-medium text-sm hover:bg-primary-dark transition-colors min-w-[70px]"
+                                                            className="flex-1 px-2 py-2 bg-primary text-white rounded font-medium text-[10px] md:text-sm leading-tight hover:bg-primary-dark transition-colors min-w-[60px] flex flex-col items-center justify-center text-center"
                                                         >
-                                                            ⚡️ {t('tutors.actions.quiz')}
+                                                            <span className="mb-0.5">⚡️</span> {t('tutors.actions.quiz')}
                                                         </button>
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 onGenerateCurriculum(tutor);
                                                             }}
-                                                            className="flex-1 px-3 py-2 bg-background-tertiary border border-border text-text rounded font-medium text-sm hover:bg-background-secondary transition-colors min-w-[70px]"
+                                                            className="flex-1 px-2 py-2 bg-background-tertiary border border-border text-text rounded font-medium text-[10px] md:text-sm leading-tight hover:bg-background-secondary transition-colors min-w-[60px] flex flex-col items-center justify-center text-center"
                                                         >
-                                                            🗺️ {t('tutors.actions.programShort')}
+                                                            <span className="mb-0.5">🗺️</span> {t('tutors.actions.programShort')}
                                                         </button>
                                                     </>
                                                 ) : (
@@ -533,9 +529,9 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                                                     onSelectTutor(tutor);
                                                                     onOpenLanguageLab();
                                                                 }}
-                                                                className="flex-1 px-3 py-2 bg-gradient-to-r from-blue-400 to-indigo-500 text-white rounded font-medium text-sm hover:from-blue-500 hover:to-indigo-600 transition-all shadow-sm"
+                                                                className="flex-1 px-2 py-2 bg-gradient-to-r from-blue-400 to-indigo-500 text-white rounded font-medium text-[10px] md:text-sm leading-tight hover:from-blue-500 hover:to-indigo-600 transition-all shadow-sm min-w-[60px] flex flex-col items-center justify-center text-center"
                                                             >
-                                                                🎙️ {t('tutors.actions.lab')}
+                                                                <span className="mb-0.5">🎙️</span> {t('tutors.actions.lab')}
                                                             </button>
                                                         )}
                                                         {onStartChat && (
@@ -546,9 +542,9 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                                                     const subject = t(`tutors.descriptions.${tutor.id}` as any);
                                                                     onStartChat(tutor.name, subject);
                                                                 }}
-                                                                className="flex-1 px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded font-medium text-sm hover:from-indigo-600 hover:to-purple-700 transition-all shadow-sm"
+                                                                className="flex-1 px-2 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded font-medium text-[10px] md:text-sm leading-tight hover:from-indigo-600 hover:to-purple-700 transition-all shadow-sm min-w-[60px] flex flex-col items-center justify-center text-center"
                                                             >
-                                                                💬 Discuter
+                                                                <span className="mb-0.5">💬</span> Discuter
                                                             </button>
                                                         )}
                                                         <button
@@ -556,18 +552,18 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                                                 e.stopPropagation();
                                                                 onSelectTutor(tutor);
                                                             }}
-                                                            className="flex-1 px-3 py-2 bg-primary text-white rounded font-medium text-sm hover:bg-primary-dark transition-colors min-w-[70px]"
+                                                            className="flex-1 px-2 py-2 bg-primary text-white rounded font-medium text-[10px] md:text-sm leading-tight hover:bg-primary-dark transition-colors min-w-[60px] flex flex-col items-center justify-center text-center"
                                                         >
-                                                            ⚡️ {t('tutors.actions.quiz')}
+                                                            <span className="mb-0.5">⚡️</span> {t('tutors.actions.quiz')}
                                                         </button>
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 onGenerateCurriculum(tutor);
                                                             }}
-                                                            className="flex-1 px-3 py-2 bg-background-tertiary border border-border text-text rounded font-medium text-sm hover:bg-background-secondary transition-colors min-w-[70px]"
+                                                            className="flex-1 px-2 py-2 bg-background-tertiary border border-border text-text rounded font-medium text-[10px] md:text-sm leading-tight hover:bg-background-secondary transition-colors min-w-[60px] flex flex-col items-center justify-center text-center"
                                                         >
-                                                            🗺️ {t('tutors.actions.programShort')}
+                                                            <span className="mb-0.5">🗺️</span> {t('tutors.actions.programShort')}
                                                         </button>
                                                     </>
                                                 )}

@@ -7,6 +7,7 @@ import { SkillsRadar } from './ui/SkillsRadar';
 import { NemesisWall } from './ui/NemesisWall';
 import { useTranslation } from '../contexts/LanguageContext';
 import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
+import { deduplicateCards } from '../utils/flashcardHelpers';
 
 interface DashboardScreenProps {
     gamificationData: GamificationData;
@@ -44,7 +45,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             autoPlayAudio: false,
             quizName: '😈 Nemesis Quiz'
         };
-        onStartQuiz(cards, config);
+        const uniqueCards = deduplicateCards(cards, config.questionLang, config.answerLang);
+        onStartQuiz(uniqueCards, config);
     };
 
     return (

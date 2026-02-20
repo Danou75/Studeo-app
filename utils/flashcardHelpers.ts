@@ -124,3 +124,49 @@ export function getDistractors(card: Flashcard, lang: string): string[] {
         .map(d => d[lang] || Object.values(d)[0])
         .filter((val): val is string => typeof val === 'string' && val.length > 0);
 }
+
+/**
+ * Normalise un texte pour comparaison (minuscules, sans ponctuation ni espaces superflus)
+ */
+export function normalizeText(str: string): string {
+    return str
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Supprime les accents
+        .replace(/[.,/#!$%\^&*;:{}=\-_`~()]/g, "") // Supprime la ponctuation
+        .replace(/\s+/g, " "); // Normalise les espaces
+}
+
+/**
+ * Déduplique un tableau de cartes en se basant sur leur contenu (Question + Réponse)
+ * @param cards Tableau de cartes à dédupliquer
+ * @param questionLang Langue de la question
+ * @param answerLang Langue de la réponse
+ * @returns Tableau de cartes uniques
+ */
+export function deduplicateCards(
+    cards: Flashcard[],
+    questionLang: string,
+    answerLang: string
+): Flashcard[] {
+    const seen = new Set<string>();
+    const uniqueCards: Flashcard[] = [];
+
+    cards.forEach(card => {
+        const q = normalizeText(getQuestionText(card, questionLang));
+        const a = normalizeText(getAnswerText(card, answerLang));
+        
+        // Clé basée sur l'ID (au cas où l'ID est dupliqué) ou le contenu
+        const contentKey = `${q}|${a}`;
+        const idKey = card.id;
+
+        if (!seen.has(idKey) && !seen.has(contentKey)) {
+            uniqueCards.push(card);
+            seen.add(idKey);
+            seen.add(contentKey);
+        }
+    });
+
+    return uniqueCards;
+}

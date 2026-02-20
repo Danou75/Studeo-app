@@ -10,6 +10,7 @@ import { useAIConfig } from '../contexts/AIConfigContext';
 import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
+import { deduplicateCards } from '../utils/flashcardHelpers';
 
 interface SetupScreenProps {
     allFlashcards: Flashcard[];
@@ -130,7 +131,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
         
         const quizSize = Math.max(1, Math.min(numCards, maxCards));
         
-        let cardsForQuiz = [...validCards];
+        const uniqueCards = deduplicateCards(validCards, questionLang, answerLang);
+        let cardsForQuiz = [...uniqueCards];
         if (isShuffled) {
             cardsForQuiz.sort(() => 0.5 - Math.random());
         }
@@ -174,7 +176,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
             return;
         }
         
-        const shuffledCards = [...validDueCards].sort(() => 0.5 - Math.random());
+        const uniqueCards = deduplicateCards(validDueCards, questionLang, answerLang);
+        const shuffledCards = [...uniqueCards].sort(() => 0.5 - Math.random());
         
         const finalMode = quizMode;
         

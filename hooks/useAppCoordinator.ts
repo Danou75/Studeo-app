@@ -19,6 +19,7 @@ import { ChatService } from '../services/chatService';
 import { TUTORS, DEFAULT_FLASHCARDS, DEFAULT_FLASHCARD_SET_NAME } from '../constants';
 import { INITIAL_GAMIFICATION_DATA } from '../utils/achievements';
 import { getAIClientConfig } from '../utils/aiConfigHelper';
+import { deduplicateCards } from '../utils/flashcardHelpers';
 
 
 
@@ -439,7 +440,8 @@ export const useAppCoordinator = () => {
             return;
         }
 
-        const shuffledCards = [...validDueCards].sort(() => 0.5 - Math.random());
+        const uniqueCards = deduplicateCards(validDueCards, questionLang, answerLang);
+        const shuffledCards = [...uniqueCards].sort(() => 0.5 - Math.random());
         onShowSRSPreview(shuffledCards, {
             questionLang,
             answerLang,

@@ -421,7 +421,7 @@ export const fr = {
     },
     tutors: {
         title: "Salle des Profs",
-        subtitle: "Choisissez votre expert pour créer des quiz et programmes sur-mesure. Entraînez-vous dans notre Lab interactif.",
+        subtitle: "Choisissez votre expert pour créer des quiz et programmes sur mesure. Entraînez-vous dans notre Lab interactif.",
         info: "💡 Chaque professeur utilise un prompt système optimisé pour son domaine d'expertise",
         categories: {
             languages: "Langues",

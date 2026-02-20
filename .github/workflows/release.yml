@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -45,8 +47,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__
-          releaseName: "Studeo v__VERSION__"
-          releaseBody: "See the assets to download this version and install."
+          tagName: v2.7.3
+          releaseName: "Studeo v2.7.3"
+          releaseBody: "Release v2.7.3"
           releaseDraft: false
           prerelease: false

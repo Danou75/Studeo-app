@@ -604,10 +604,14 @@ export const useAppCoordinator = () => {
                 return;
             }
 
+            // Détection de la langue cible basée sur le tuteur
+            const tutor = TUTORS.find(t => t.id === lesson.tutorId) || guestTutors.find(t => t.id === lesson.tutorId);
+            const targetLang = tutor?.language || 'fr';
+
             const cards = await generateFlashcardsWithAI({
                 topic: lesson.topic,
                 sourceLang: 'fr',
-                targetLang: 'fr',
+                targetLang: targetLang,
                 count: 10,
                 difficulty: 'intermediate',
                 context: lesson.content,

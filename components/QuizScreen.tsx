@@ -299,7 +299,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
   const handleOptionClick = (option: string) => {
     if (isRevealed) return;
     setUserInput(option); // Enregistrer la réponse sélectionnée
-    const isCorrectAnswer = option === answer;
+    const isCorrectAnswer = isAnswerCorrect(option, answer);
     evaluateAnswer(isCorrectAnswer);
     setIsRevealed(true);
   };
@@ -947,7 +947,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
               onClick={() => handleOptionClick(opt)}
               disabled={isRevealed}
               className={`px-3 py-3 rounded border transition-all notranslate relative text-left pl-8 ${
-                isRevealed && opt === answer
+                isRevealed && isAnswerCorrect(opt, answer)
                   ? 'bg-success text-white border-success'
                   : isRevealed
                   ? 'bg-background-tertiary border-border'

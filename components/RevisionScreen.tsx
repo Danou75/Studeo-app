@@ -47,9 +47,9 @@ export const RevisionScreen: React.FC<RevisionScreenProps> = ({ cards, quizConfi
                                                  const terms = (card as any).terms;
                                                  const mcqData = (card as any).mcqData;
                                                  const clozeData = (card as any).clozeData;
-                                                 if (terms) return terms[questionLang] || '–';
-                                                 if (mcqData) return mcqData.question[questionLang] || '–';
-                                                 if (clozeData) return clozeData.text[questionLang] || '–';
+                                                 if (terms) return terms[questionLang] || Object.values(terms)[0] || '–';
+                                                 if (mcqData) return mcqData.question[questionLang] || Object.values(mcqData.question)[0] || '–';
+                                                 if (clozeData) return clozeData.text[questionLang] || Object.values(clozeData.text)[0] || '–';
                                                  return (card as any)[questionLang] || '–';
                                              })()
                                          }</td>
@@ -58,9 +58,15 @@ export const RevisionScreen: React.FC<RevisionScreenProps> = ({ cards, quizConfi
                                                  const terms = (card as any).terms;
                                                  const mcqData = (card as any).mcqData;
                                                  const clozeData = (card as any).clozeData;
-                                                 if (terms) return terms[answerLang] || '–';
-                                                 if (mcqData) return mcqData.answer[answerLang] || '–';
-                                                 if (clozeData) return clozeData.answers[answerLang]?.join(', ') || '–';
+                                                 if (terms) return terms[answerLang] || Object.values(terms)[0] || '–';
+                                                 if (mcqData) return mcqData.answer[answerLang] || Object.values(mcqData.answer)[0] || '–';
+                                                 if (clozeData) {
+                                                     const primary = clozeData.answers[answerLang];
+                                                     if (primary && Array.isArray(primary)) return primary.join(', ');
+                                                     const fallback = Object.values(clozeData.answers)[0];
+                                                     if (Array.isArray(fallback)) return fallback.join(', ');
+                                                     return '–';
+                                                 }
                                                  return (card as any)[answerLang] || '–';
                                              })()
                                          }</td>

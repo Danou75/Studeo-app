@@ -462,7 +462,7 @@ Format JSON STRICT (tableau d'objets) :
                         size="sm" 
                         className={`transition-all w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
                     >
-                        <i className="fas fa-home mr-2 text-inherit"></i> Accueil
+                        <i className="fas fa-home md:mr-2 text-inherit"></i> <span className="hidden sm:inline">Accueil</span>
                     </Button>
 
                     {/* Toggle de vue centré */}
@@ -490,8 +490,8 @@ Format JSON STRICT (tableau d'objets) :
                                 onClick={onStartQuiz} 
                                 className={`transition-all border-transparent backdrop-blur-sm rounded-xl px-4 py-2 flex items-center gap-2 group ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80`}
                             >
-                                <i className="fas fa-play-circle text-lg animate-pulse"></i>
-                                <span className="font-bold uppercase tracking-wider text-[10px]">Lecteur de Quiz</span>
+                                <i className="fas fa-play-circle text-lg md:mr-2 animate-pulse"></i>
+                                <span className="font-bold uppercase tracking-wider text-[10px] hidden sm:inline">Lecteur de Quiz</span>
                             </Button>
                         )}
                     </div>
@@ -557,14 +557,14 @@ Format JSON STRICT (tableau d'objets) :
                                         className={`group relative bg-white dark:bg-gray-800 border-2 rounded-2xl transition-all cursor-pointer ${
                                             viewMode === 'grid' 
                                                 ? 'p-5 flex flex-col justify-between min-h-[160px]' 
-                                                : 'p-4 flex items-center gap-4 min-h-0'
+                                                : 'p-4 flex flex-col sm:flex-row sm:items-center gap-4 min-h-0'
                                         } ${
                                             set.isActive 
                                                 ? 'border-primary shadow-lg ring-4 ring-primary/5 bg-primary/[0.02]' 
                                                 : 'border-border hover:border-primary/50 hover:shadow-xl hover:bg-primary/[0.03]'
                                         }`}
                                     >
-                                        <div className={viewMode === 'grid' ? "flex justify-between items-start mb-2" : "flex items-center gap-4 flex-1"}>
+                                        <div className={viewMode === 'grid' ? "flex justify-between items-start mb-2" : "flex flex-wrap items-center gap-3 flex-1 min-w-0"}>
                                             <span className="px-2.5 py-0.5 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider rounded-lg outline outline-1 outline-primary/20 shrink-0">
                                                 {set.category}
                                             </span>
@@ -636,7 +636,7 @@ Format JSON STRICT (tableau d'objets) :
                                             </div>
                                         )}
                                         
-                                        <div className={viewMode === 'grid' ? "mt-4" : "shrink-0 w-32"}>
+                                        <div className={viewMode === 'grid' ? "mt-4" : "w-full sm:w-32 sm:shrink-0"}>
                                             {set.isActive ? (
                                                 <div className="flex items-center gap-2 text-[10px] font-black text-primary uppercase tracking-widest bg-primary/5 p-2 rounded-xl border border-primary/20">
                                                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.5)]"></div>
@@ -728,11 +728,11 @@ Format JSON STRICT (tableau d'objets) :
                                         className={`group bg-white dark:bg-gray-800 border border-border rounded-2xl transition-all hover:shadow-xl ${
                                             viewMode === 'grid'
                                                 ? 'p-5 flex flex-col justify-between min-h-[180px] hover:-translate-y-1'
-                                                : 'p-4 flex items-center gap-4 min-h-0'
+                                                : 'p-4 flex flex-col md:flex-row md:items-center gap-4 min-h-0'
                                         }`}
                                     >
-                                        <div className={viewMode === 'grid' ? "flex flex-col h-full" : "flex items-center gap-4 flex-1 min-w-0"}>
-                                            <div className={viewMode === 'grid' ? "flex justify-between items-start mb-2" : "flex items-center gap-4 shrink-0"}>
+                                        <div className={viewMode === 'grid' ? "flex flex-col h-full" : "flex flex-col sm:flex-row sm:items-center gap-4 flex-1 min-w-0"}>
+                                            <div className={viewMode === 'grid' ? "flex justify-between items-start mb-2" : "flex flex-wrap items-center gap-3 shrink-0"}>
                                                 <span className="px-2.5 py-0.5 bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-wider rounded-lg outline outline-1 outline-accent/20 shrink-0">
                                                     {item.category}
                                                 </span>
@@ -877,7 +877,7 @@ Format JSON STRICT (tableau d'objets) :
                                             )}
                                         </div>
                                         
-                                        <div className={`flex gap-2 shrink-0 ${viewMode === 'grid' ? 'flex-col mt-4' : 'flex-row w-64 items-center'}`}>
+                                        <div className={`flex gap-2 shrink-0 ${viewMode === 'grid' ? 'flex-col mt-4' : 'flex-row w-full md:w-64 items-center mt-2 md:mt-0'}`}>
                                             <Button 
                                                 variant="primary" 
                                                 className={`rounded-xl py-1.5 text-xs font-bold ${viewMode === 'grid' ? 'w-full' : 'flex-1'}`}

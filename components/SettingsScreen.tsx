@@ -266,15 +266,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setIsCheckingUpdate(true);
     setUpdateStatus(null);
     try {
-        // Fetch version from the deployed site instead of private GitHub
-        // En mode Tauri (Desktop), on doit vérifier la version sur le serveur de production
-        // En mode Web, on peut vérifier relative
-        const isTauri = !!(window as any).__TAURI_IPC__;
-        const checkUrl = isTauri 
-            ? 'https://multilingual-flashcards.vercel.app/version.json' 
-            : `/version.json?t=${Date.now()}`;
+        // GitHub raw content — toujours à jour dès le push, sans dépendre de Vercel
+        const checkUrl = `https://raw.githubusercontent.com/Danou75/Studeo-app/main/public/version.json?t=${Date.now()}`;
 
-        const response = await fetch(isTauri ? `${checkUrl}?t=${Date.now()}` : checkUrl);
+        const response = await fetch(checkUrl);
         if (!response.ok) throw new Error("Impossible de joindre le serveur de mise à jour.");
         
         const data = await response.json();

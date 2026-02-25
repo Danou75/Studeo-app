@@ -394,3 +394,9 @@ export type StudyProgram = {
   createdAt: string;           // Date de création
   lastActiveAt: string;        // Pour reprendre facilement
 };
+
+// ============================================
+// UPDATE TYPES
+// ============================================
+
+export type UpdateStatus = 'up-to-date' | 'available' | 'error' | null;

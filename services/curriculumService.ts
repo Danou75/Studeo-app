@@ -151,7 +151,7 @@ const executeAIRequest = async (
              
              const genAI = new GoogleGenerativeAI(apiKey);
              const model = genAI.getGenerativeModel({ 
-                 model: modelName || "gemini-2.0-flash-exp",
+                 model: modelName || "gemini-2.5-flash",
                  generationConfig: jsonMode ? { responseMimeType: "application/json" } : undefined
              });
              
@@ -172,7 +172,7 @@ export const generateStudyProgram = async (
     level: string,
     provider: AIProvider = 'gemini',
     apiKey?: string,
-    modelName: string = 'gemini-2.0-flash-exp',
+    modelName: string = 'gemini-2.5-flash',
     apiUrl?: string,
     media?: { data: string; mimeType: string }
 ): Promise<StudyProgram> => {
@@ -235,7 +235,7 @@ export const generateStudyProgram = async (
 
              if (provider === 'gemini') {
                  if (!apiKey) throw new Error("Clé API nécessaire pour le mode Média (Gemini)");
-                 url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel || 'gemini-2.0-flash-exp'}:generateContent?key=${apiKey}`;
+                 url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel || 'gemini-2.5-flash'}:generateContent?key=${apiKey}`;
                  payload = {
                     contents: [{
                         parts: [
@@ -384,7 +384,7 @@ export const generateModuleContent = async (
     module: StudyModule,
     provider: AIProvider = 'gemini',
     apiKey?: string,
-    modelName: string = 'gemini-2.0-flash-exp',
+    modelName: string = 'gemini-2.5-flash',
     apiUrl?: string
 ): Promise<{ lessonContent: string; flashcards: any[] }> => {
     
@@ -519,7 +519,7 @@ export const generateBonusExercises = async (
     lessonContent: string,
     provider: AIProvider = 'gemini',
     apiKey?: string,
-    modelName: string = 'gemini-2.0-flash-exp',
+    modelName: string = 'gemini-2.5-flash',
     apiUrl?: string
 ): Promise<any[]> => {
     

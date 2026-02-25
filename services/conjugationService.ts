@@ -6,7 +6,7 @@ export const conjugateVerb = async (
   verb: string,
   language: string,
   provider: AIProvider = 'gemini',
-  modelName: string = 'gemini-2.0-flash-exp',
+  modelName: string = 'gemini-2.5-flash',
   apiUrl?: string,
   apiKey?: string
 ): Promise<ConjugationResult> => {
@@ -132,7 +132,7 @@ export const conjugateVerb = async (
 
                 const genAI = new GoogleGenerativeAI(effectiveKey);
                 const model = genAI.getGenerativeModel({ 
-                    model: modelName || "gemini-2.0-flash-exp",
+                    model: modelName || "gemini-2.5-flash",
                     generationConfig: { responseMimeType: "application/json" }
                 });
                 

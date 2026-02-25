@@ -255,7 +255,7 @@ export const MusicChallengeScreen: React.FC<MusicChallengeScreenProps> = ({ onBa
         // Configuration selon le provider
         if (provider === 'gemini') {
             apiKey = config.geminiApiKey;
-            model = config.geminiModel || 'gemini-1.5-flash';
+            model = config.geminiModel || 'gemini-2.5-flash';
             if (!apiKey) {
                 setFeedbackMessage({ text: t('music.missingApiKey', { provider: 'Gemini' }), type: 'error' });
                 return;
@@ -405,7 +405,7 @@ export const MusicChallengeScreen: React.FC<MusicChallengeScreenProps> = ({ onBa
 
         if (provider === 'gemini') {
             apiKey = config.geminiApiKey;
-            model = config.geminiModel || 'gemini-1.5-flash';
+            model = config.geminiModel || 'gemini-2.5-flash';
             if (!apiKey) {
                 setFeedbackMessage({ text: "⚠️ Clé API Gemini manquante.", type: 'error' });
                 setIsRenewing(false);
@@ -1230,7 +1230,7 @@ export const MusicChallengeScreen: React.FC<MusicChallengeScreenProps> = ({ onBa
                 modelName={
                     config.provider === 'mistral' ? (config.mistralModel || 'pixtral-12b-2409') :
                     config.provider === 'openai' ? (config.openaiModel || 'gpt-4o') :
-                    (config.geminiModel || 'gemini-1.5-flash')
+                    (config.geminiModel || 'gemini-2.5-flash')
                 }
                 tutorName="Mélodia"
             />

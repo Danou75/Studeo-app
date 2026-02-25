@@ -7,7 +7,7 @@ export const generateMnemonic = async (
     answer: string,
     provider: AIProvider = 'gemini',
     apiKey?: string,
-    modelName: string = 'gemini-2.0-flash-exp',
+    modelName: string = 'gemini-2.5-flash',
     apiUrl?: string
 ): Promise<string> => {
     
@@ -121,7 +121,7 @@ export const generateMnemonic = async (
                     modelName: modelName
                 });
             } else {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName || 'gemini-2.0-flash-exp'}:generateContent?key=${apiKey}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName || 'gemini-2.5-flash'}:generateContent?key=${apiKey}`;
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

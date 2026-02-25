@@ -681,6 +681,10 @@ const AppContent: React.FC = () => {
             onReloadApp={reloadApp}
             onShowAuth={() => setIsAuthModalOpen(true)}
             user={user}
+            latestVersion={coordinator.latestVersion}
+            updateStatus={coordinator.updateStatus}
+            isCheckingUpdate={coordinator.isCheckingUpdate}
+            onCheckUpdate={coordinator.checkForUpdates}
           />
         );
 

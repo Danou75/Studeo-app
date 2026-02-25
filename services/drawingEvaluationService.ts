@@ -50,7 +50,7 @@ RÈGLES :
         let body: any = {};
 
         if (provider === 'gemini') {
-            const model = modelName || 'gemini-1.5-flash';
+            const model = modelName || 'gemini-2.5-flash';
             url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             body = {
                 contents: [{

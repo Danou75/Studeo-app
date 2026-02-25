@@ -295,7 +295,7 @@ Réponds UNIQUEMENT avec le JSON.`;
         let responseText = '';
 
         if (provider === 'gemini') {
-            const model = modelName || 'gemini-1.5-flash';
+            const model = modelName || 'gemini-2.5-flash';
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             
             const response = await fetch(url, {
@@ -570,7 +570,7 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
         apiKey: string,
         modelName?: string
     ): Promise<string> {
-        const model = modelName || 'gemini-1.5-flash';
+        const model = modelName || 'gemini-2.5-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
         console.log('[callGemini] Début appel Gemini:', {

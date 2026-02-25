@@ -973,7 +973,7 @@ export const en: typeof fr = {
                 "**Step 1**: Click the ⚙️ icon at the bottom left to access Settings.",
                 "**Step 2**: In the 'AI Configuration' section, choose your provider (Google Gemini, OpenAI, etc.).",
                 "**Step 3**: Enter my API key. You can get a free key from the provider's website.",
-                "**Step 4**: Select the model to use (e.g., gemini-1.5-flash for Gemini, gpt-4o for OpenAI).",
+                "**Step 4**: Select the model to use (e.g., gemini-2.5-flash for Gemini, gpt-4o for OpenAI).",
                 "**Tip**: You can configure multiple AIs and switch between them as needed."
             ]
         },

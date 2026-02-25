@@ -181,7 +181,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                 context: `Génère une collection de référence EXACTE de ${countToGen} fiches pour un utilisateur de bibliothèque sur le thème : ${topicToGen}. Sois très académique et précis. Tu DOIS fournir précisément ${countToGen} concepts distincts.`,
                 provider: config.provider,
                 apiKey: apiKey || '',
-                modelName: modelName || 'gemini-1.5-flash',
+                modelName: modelName || 'gemini-2.5-flash',
                 apiUrl: apiUrl || ''
             });
 
@@ -247,7 +247,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                 context: `Génère EXACTEMENT ${countToGen} fiches COMPLÉMENTAIRES (différentes des fiches de base) sur le thème : ${item.title}. Tu DOIS impérativement fournir ${countToGen} nouvelles fiches.`,
                 provider: config.provider,
                 apiKey: apiKey || '',
-                modelName: modelName || 'gemini-1.5-flash',
+                modelName: modelName || 'gemini-2.5-flash',
                 apiUrl: apiUrl || ''
             });
 
@@ -343,7 +343,7 @@ Format JSON STRICT (tableau d'objets) :
                 provider: config.provider,
                 apiKey: apiKey || '',
                 apiUrl: apiUrl || '',
-                modelName: modelName || 'gemini-1.5-flash',
+                modelName: modelName || 'gemini-2.5-flash',
                 prompt: userPrompt,
                 systemPrompt
             });

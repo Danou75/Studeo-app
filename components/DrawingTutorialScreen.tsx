@@ -512,7 +512,7 @@ export const DrawingTutorialScreen: React.FC<DrawingTutorialScreenProps> = ({ on
                 modelName={
                     config.provider === 'mistral' ? (config.mistralModel || 'pixtral-12b-2409') :
                     config.provider === 'openai' ? (config.openaiModel || 'gpt-4o') :
-                    (config.geminiModel || 'gemini-1.5-flash')
+                    (config.geminiModel || 'gemini-2.5-flash')
                 }
                 tutorName={tutorName}
             />

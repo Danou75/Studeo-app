@@ -506,7 +506,7 @@ export const generateDrawingTutorial = async (
         } else {
             // Gemini (Défaut)
             const genAI = new GoogleGenerativeAI(config.geminiApiKey);
-            const model = genAI.getGenerativeModel({ model: config.geminiModel || "gemini-2.0-flash-exp" });
+            const model = genAI.getGenerativeModel({ model: config.geminiModel || "gemini-2.5-flash" });
             const result = await model.generateContent(prompt);
             rawResponse = result.response.text();
         }

@@ -150,7 +150,7 @@ Format JSON STRICT (tableau d'objets) :
                 provider: config.provider,
                 apiKey: apiKey || '',
                 apiUrl: apiUrl || '',
-                modelName: modelName || 'gemini-1.5-flash',
+                modelName: modelName || 'gemini-2.5-flash',
                 prompt: userPrompt,
                 systemPrompt
             });

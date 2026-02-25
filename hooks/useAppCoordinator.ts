@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAIConfig } from '../contexts/AIConfigContext';
 import { useToast } from '../contexts/ToastContext';
 import { useFlashcards } from '../hooks/useFlashcards';
@@ -10,7 +10,7 @@ import { useSRS } from '../hooks/useSRS';
 import { useAppNavigation } from '../hooks/useAppNavigation';
 import { useStudyContent } from '../hooks/useStudyContent';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { Flashcard, QuizConfig, Lesson, StudyProgram, StudyModule, Tutor, TutorCategory, QuizResult } from '../types';
+import { Flashcard, QuizConfig, Lesson, StudyProgram, StudyModule, Tutor, TutorCategory, QuizResult, UpdateStatus } from '../types';
 
 import { generateModuleContent, generateBonusExercises } from '../services/curriculumService';
 import { generateExercisesFromLesson } from '../services/exerciseGenerationService';
@@ -67,6 +67,11 @@ export const useAppCoordinator = () => {
     const [videoLabURL, setVideoLabURL] = useState("");
     const [videoLabAnalysis, setVideoLabAnalysis] = useState<{ summary?: string; videoTitle?: string } | null>(null);
 
+    // Update State
+    const [latestVersion, setLatestVersion] = useState<string | null>(null);
+    const [updateStatus, setUpdateStatus] = useState<UpdateStatus>(null);
+    const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+
     // ------------------------------------------------------------
     // 2. LOGIC HOOKS INTEGRATION
     // ------------------------------------------------------------
@@ -106,6 +111,54 @@ export const useAppCoordinator = () => {
         })
     ));
     const availableLanguages = Array.from(new Set(["fr", "en", "es", "it", "pt", "de", ...detectedLanguages]));
+
+    // ------------------------------------------------------------
+    // 4. AUTO-UPDATE CHECK
+    // ------------------------------------------------------------
+    const checkForUpdates = async (silent = true) => {
+        setIsCheckingUpdate(true);
+        console.log("[UpdateCheck] Starting check...");
+        try {
+            const checkUrl = `https://raw.githubusercontent.com/Danou75/Studeo-app/main/public/version.json?t=${Date.now()}`;
+            const response = await fetch(checkUrl);
+            if (!response.ok) throw new Error("Impossible de joindre le serveur de mise à jour.");
+            
+            const data = await response.json();
+            const remoteVersion = data.version;
+            
+            // @ts-ignore - __APP_VERSION__ is defined by Vite
+            const currentVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '2.7.2';
+
+            console.log(`[UpdateCheck] Version Comparison - Local: v${currentVersion}, Remote: v${remoteVersion}`);
+            setLatestVersion(remoteVersion);
+            
+            if (remoteVersion === currentVersion) {
+                setUpdateStatus('up-to-date');
+                console.log("[UpdateCheck] Application is up to date.");
+                if (!silent) showToast("Votre application est à jour ! 🎉", "success");
+            } else {
+                setUpdateStatus('available');
+                console.log(`[UpdateCheck] Update available: v${remoteVersion}`);
+                showToast(`🚀 Une nouvelle version (v${remoteVersion}) est disponible ! Allez dans les paramètres pour mettre à jour.`, "info", 10000);
+            }
+        } catch (err) {
+            console.error("[UpdateCheck] Error:", err);
+            setUpdateStatus('error');
+            if (!silent) showToast("Erreur lors de la vérification des mises à jour.", "error");
+        } finally {
+            setIsCheckingUpdate(false);
+        }
+    };
+
+    // Initial check at launch
+    useEffect(() => {
+        // En différé pour ne pas ralentir le démarrage immédiat
+        console.log("[UpdateCheck] Initial check scheduled in 5s...");
+        const timer = setTimeout(() => {
+            checkForUpdates(true);
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, []);
 
 
     // ------------------------------------------------------------
@@ -738,6 +791,12 @@ export const useAppCoordinator = () => {
         // Video Lab State
         videoLabURL, setVideoLabURL,
         videoLabAnalysis, setVideoLabAnalysis,
-        isProgramCompleted, setIsProgramCompleted
+        isProgramCompleted, setIsProgramCompleted,
+        
+        // Update Management
+        latestVersion,
+        updateStatus,
+        isCheckingUpdate,
+        checkForUpdates
     };
 };

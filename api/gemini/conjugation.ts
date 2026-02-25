@@ -41,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Tentative REST directe pour être sûr (compatible Gemini 1.5/2.0)
         // URL: https://generativelanguage.googleapis.com/v1beta/models/[MODEL]:generateContent?key=[KEY]
         
-        const model = modelName || 'gemini-2.0-flash-exp';
+        const model = modelName || 'gemini-2.5-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${finalApiKey}`;
         
         const response = await fetch(url, {

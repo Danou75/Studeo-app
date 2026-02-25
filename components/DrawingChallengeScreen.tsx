@@ -98,7 +98,7 @@ export const DrawingChallengeScreen: React.FC<DrawingChallengeScreenProps> = ({ 
 
         if (provider === 'gemini') {
             apiKey = config.geminiApiKey;
-            model = config.geminiModel || 'gemini-1.5-flash';
+            model = config.geminiModel || 'gemini-2.5-flash';
             url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         } else if (provider === 'mistral') {
             apiKey = config.mistralApiKey || '';

@@ -15,7 +15,13 @@ interface SettingsScreenProps {
   onReloadApp?: () => void;
   onShowAuth?: () => void;
   user: any;
+  latestVersion: string | null;
+  updateStatus: UpdateStatus;
+  isCheckingUpdate: boolean;
+  onCheckUpdate: (silent?: boolean) => void;
 }
+
+import { UpdateStatus } from '../types';
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
   onBack, 
@@ -23,7 +29,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onSyncPull,
   onReloadApp,
   onShowAuth,
-  user
+  user,
+  latestVersion,
+  updateStatus,
+  isCheckingUpdate,
+  onCheckUpdate
 }) => {
   const { config, updateConfig, setGeminiApiKey } = useAIConfig();
   const { showToast } = useToast();
@@ -32,9 +42,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [showApiKey, setShowApiKey] = useState(false);
   const [backupStatus, setBackupStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   
-  const [latestVersion, setLatestVersion] = useState<string | null>(null);
-  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
-  const [updateStatus, setUpdateStatus] = useState<'up-to-date' | 'available' | 'error' | null>(null);
+
 
   const [knownDevices, setKnownDevices] = useState<string[]>(() => {
     const saved = localStorage.getItem('studeo_known_devices');
@@ -45,7 +53,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Recommandé - Stable ✅)' },
     { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash-Lite (Rapide & Éco ✨)' },
     { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Héritage)' },
-    { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash (Expérimental 🚀)' },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.0 Flash (Expérimental 🚀)' },
     { id: 'gemini-3-flash', name: 'Gemini 3.0 Flash (Nouveau 🆕)' },
     { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Héritage)' },
   ];
@@ -262,33 +270,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   };
 
-  const checkUpdate = async () => {
-    setIsCheckingUpdate(true);
-    setUpdateStatus(null);
-    try {
-        // GitHub raw content — toujours à jour dès le push, sans dépendre de Vercel
-        const checkUrl = `https://raw.githubusercontent.com/Danou75/Studeo-app/main/public/version.json?t=${Date.now()}`;
 
-        const response = await fetch(checkUrl);
-        if (!response.ok) throw new Error("Impossible de joindre le serveur de mise à jour.");
-        
-        const data = await response.json();
-        const remoteVersion = data.version;
-        setLatestVersion(remoteVersion);
-        
-        if (remoteVersion === __APP_VERSION__) {
-            setUpdateStatus('up-to-date');
-        } else {
-            setUpdateStatus('available');
-        }
-    } catch (err: any) {
-        console.error("Update check error:", err);
-        setUpdateStatus('error');
-        showToast(err.message || "Erreur de connexion", 'error');
-    } finally {
-        setIsCheckingUpdate(false);
-    }
-  };
 
   // Récupérer les appareils connus depuis le cloud
   React.useEffect(() => {
@@ -555,7 +537,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             </h3>
                             <button 
                                 id="btn-check-update"
-                                onClick={checkUpdate}
+                                onClick={() => onCheckUpdate(false)}
                                 disabled={isCheckingUpdate}
                                 className="text-xs text-primary hover:underline flex items-center gap-1"
                             >
@@ -590,7 +572,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         {updateStatus === 'error' && (
                             <div className="mt-3 text-center text-red-500 text-[10px] leading-tight">
                                 Impossible de joindre le serveur.<br/>
-                                <span className="opacity-70 font-normal">Assurez-vous que la version est déployée sur Vercel.</span>
+                                <span className="opacity-70 font-normal">Vérifiez la connexion au dépôt public GitHub.</span>
                             </div>
                         )}
                     </div>

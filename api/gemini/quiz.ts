@@ -64,7 +64,7 @@ Ne mets rien d'autre que le JSON.
              return res.status(400).json({ error: 'Prompt or Topic is required' });
         }
 
-        const model = modelName || 'gemini-2.0-flash-exp';
+        const model = modelName || 'gemini-2.5-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         
         const response = await fetch(url, {

@@ -289,7 +289,7 @@ export const ChessChallengeScreen: React.FC<ChessChallengeScreenProps> = ({ onBa
 
         if (provider === 'gemini') {
             apiKey = config.geminiApiKey;
-            model = config.geminiModel || 'gemini-1.5-flash';
+            model = config.geminiModel || 'gemini-2.5-flash';
             if (!apiKey) {
                 setFeedbackMessage({ text: "⚠️ Clé API Gemini manquante.", type: 'error' });
                 setIsRenewing(false);

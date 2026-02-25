@@ -141,7 +141,7 @@ async fn generate_speech(text: String, lang: String, api_key: Option<String>) ->
     };
     
     let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={}",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={}",
         final_api_key
     );
 
@@ -200,7 +200,7 @@ async fn generate_flashcards_command(prompt: String, api_key: Option<String>, mo
         env::var("GEMINI_API_KEY").map_err(|_| "API key not configured (env var missing and not provided)".to_string())?
     };
 
-    let model = model_name.unwrap_or_else(|| "gemini-1.5-flash".to_string());
+    let model = model_name.unwrap_or_else(|| "gemini-2.5-flash".to_string());
 
     let url = format!(
         "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",

@@ -7,9 +7,11 @@
   },
   "type": "module",
   "scripts": {
+    "update:version": "node scripts/update-version.js",
     "dev:vite": "vite",
     "dev": "vite --mode web",
     "dev:tauri": "tauri dev",
+    "prebuild": "node scripts/update-version.js",
     "build": "tsc -b && vite build",
     "build:web": "npx tsc -b && npx vite build --mode web",
     "tauri": "tauri",

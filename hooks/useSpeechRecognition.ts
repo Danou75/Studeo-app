@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { SpeechRecognitionStatus, DictationResult } from '../types';
 import { isAnswerAcceptable, calculateSimilarity } from '../utils/phonetic';
+import { isIOSStandalonePWA, useMediaRecorderTranscribe } from './useMediaRecorderTranscribe';
 
 // Définition de l'interface pour l'API Web Speech (non standard en TS par défaut)
 interface IWindow extends Window {
@@ -10,7 +11,11 @@ interface IWindow extends Window {
 
 import { useToast } from '../contexts/ToastContext';
 
-export const useSpeechRecognition = (language: string = 'fr-FR') => {
+/**
+ * Hook interne — implémentation native via webkitSpeechRecognition.
+ * Ne pas utiliser directement, utiliser useSpeechRecognition() à la place.
+ */
+const useNativeSpeechRecognition = (language: string = 'fr-FR') => {
   const { showToast } = useToast();
   const [status, setStatus] = useState<SpeechRecognitionStatus>('idle');
   const [transcript, setTranscript] = useState<string>('');
@@ -156,15 +161,21 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
         return;
       }
       
-      // Gérer spécifiquement l'erreur de service non autorisé (souvent lié à la Dictée macOS/iOS désactivée)
+      // Gérer spécifiquement l'erreur de service non autorisé
+      // Sur iOS en mode navigateur (non-PWA), la Dictée est peut-être vraiment désactivée.
+      // En mode PWA, ce cas ne devrait plus arriver car le fallback MediaRecorder est utilisé.
       if (event.error === 'service-not-allowed') {
         const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isStandalone = (navigator as any).standalone === true;
 
         if (isTauri) {
           setError('Service de dictée bloqué. Vérifiez que la "Dictée" est activée dans Réglages Système > Clavier.');
+        } else if (isIOS && isStandalone) {
+          // Mode PWA Safari sur iOS — ne devrait pas arriver ici (le fallback doit être actif)
+          setError('Microphone non disponible en mode app. Réessayez depuis Safari ou Chrome.');
         } else if (isIOS) {
-          setError('Service de dictée non autorisé. Activez la "Dictée" dans les Réglages de l\'iPad (Général > Clavier).');
+          setError('Activez la "Dictée" dans Réglages iOS > Général > Clavier > Activer la Dictée.');
         } else {
           setError('Service de dictée non autorisé par le navigateur ou désactivé sur votre système.');
         }
@@ -175,8 +186,10 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
         setTimeout(() => {
           if (isTauri) {
             showToast('🎙️ SERVICE DE DICTÉE DÉSACTIVÉ. Activez "Dictée" dans Réglages Système > Clavier.', 'error', 10000);
+          } else if (isIOS && isStandalone) {
+            showToast('🎙️ Microphone indisponible en mode app raccourci. Ouvrez Studeo dans Safari pour utiliser le micro.', 'error', 15000);
           } else if (isIOS) {
-            showToast('🎙️ DICTÉE IPAD DÉSACTIVÉE. Allez dans Réglages > Général > Clavier et activez "Activer la Dictée".', 'error', 15000);
+            showToast('🎙️ Activez la Dictée : Réglages > Général > Clavier > Activer la Dictée.', 'error', 15000);
           } else {
             showToast('🎙️ Service de dictée non autorisé. Vérifiez les paramètres de votre navigateur ou de votre système.', 'error', 8000);
           }
@@ -293,7 +306,7 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
 
     return {
       transcript,
-      confidence: 1, // L'API ne donne pas toujours la confiance facilement ici, on simplifie
+      confidence: 1,
       isCorrect,
       similarity
     };
@@ -313,4 +326,38 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
     validateAnswer,
     isSupported: !!((window as unknown as IWindow).webkitSpeechRecognition || (window as unknown as IWindow).SpeechRecognition)
   };
+};
+
+/**
+ * Hook public — Speech Recognition avec fallback automatique pour iOS PWA.
+ *
+ * Sur iPad Air 2 / anciens iPads en mode "Ajouté à l'écran d'accueil" (standalone PWA),
+ * webkitSpeechRecognition lève "service-not-allowed" même si la Dictée est activée.
+ * → On bascule automatiquement sur MediaRecorder + Gemini AI dans ce contexte.
+ *
+ * En Safari/Chrome normal et sur tous les autres appareils → comportement inchangé.
+ */
+export const useSpeechRecognition = (language: string = 'fr-FR') => {
+  // Les deux hooks sont TOUJOURS appelés (règle des hooks React),
+  // mais seul l'un des deux est actif selon le contexte détecté.
+  const isPWAFallback = typeof window !== 'undefined' && isIOSStandalonePWA();
+
+  const nativeRecognition = useNativeSpeechRecognition(language);
+  const pwaFallback = useMediaRecorderTranscribe({ language });
+
+  if (isPWAFallback) {
+    // iOS PWA standalone → MediaRecorder + Gemini
+    console.log('📱 iOS PWA mode: using MediaRecorder fallback for speech recognition');
+    return {
+      ...pwaFallback,
+      validateAnswer: (correctAnswer: string): DictationResult => {
+        const similarity = calculateSimilarity(pwaFallback.transcript, correctAnswer);
+        const isCorrect = isAnswerAcceptable(pwaFallback.transcript, correctAnswer);
+        return { transcript: pwaFallback.transcript, confidence: 1, isCorrect, similarity };
+      },
+    };
+  }
+
+  // Mode normal → webkitSpeechRecognition natif
+  return nativeRecognition;
 };

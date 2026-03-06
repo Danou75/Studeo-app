@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/health-ping",
+      "schedule": "0 8 * * *"
+    }
+  ],
   "buildCommand": "npm run build:web",
   "framework": "vite",
   "outputDirectory": "dist",

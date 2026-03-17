@@ -17,7 +17,6 @@ export const syncService = {
         last_sync_device?: string;
         known_devices?: string[];
         guest_tutors?: any[];
-        conjugation_cache?: any[];
     }) {
         const { error } = await supabase
             .from('profiles')

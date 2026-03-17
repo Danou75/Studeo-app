@@ -153,11 +153,14 @@ const AppContent: React.FC = () => {
             localStorage.setItem('studeo_known_devices', JSON.stringify(knownDevices));
         }
 
-        // 1. Sync Profile
+        // 1. Sync Profile (with cache nested in gamification_data)
         const profileSync = await syncService.syncProfile(user.id, {
             theme_mode: theme.themeMode,
             theme_style: theme.themeStyle,
-            gamification_data: gamification.gamificationData,
+            gamification_data: {
+                ...gamification.gamificationData,
+                conjugation_cache: langCache.entries
+            },
             analytics_data: analyticsData,
             curriculum_suggestions: coordinator.curriculumSuggestions,
             library_suggestions: coordinator.librarySuggestions,
@@ -165,8 +168,7 @@ const AppContent: React.FC = () => {
             persistent_errors: quizSession.persistentErrors,
             last_sync_device: deviceName,
             known_devices: knownDevices,
-            guest_tutors: coordinator.guestTutors,
-            conjugation_cache: langCache.entries
+            guest_tutors: coordinator.guestTutors
         });
         if (!profileSync.success) {
             throw new Error(`Profil: ${profileSync.error?.message || "Erreur inconnue"}`);
@@ -307,9 +309,10 @@ const AppContent: React.FC = () => {
                   localStorage.setItem('studeo_known_devices', JSON.stringify(cloudProfile.known_devices));
               }
 
-              // ── Conjugation Cache Pull & Merge ──
-              if (cloudProfile.conjugation_cache && Array.isArray(cloudProfile.conjugation_cache)) {
-                  const cloudLangCache = cloudProfile.conjugation_cache;
+              // ── Conjugation Cache Pull & Merge from gamification_data ──
+              const cloudCacheFromGamif = cloudProfile.gamification_data?.conjugation_cache;
+              if (cloudCacheFromGamif && Array.isArray(cloudCacheFromGamif)) {
+                  const cloudLangCache = cloudCacheFromGamif;
                   const localEntries = [...langCache.entries];
                   const localKeys = new Set(localEntries.map(e => e.key));
                   let hasChanges = false;
@@ -320,7 +323,7 @@ const AppContent: React.FC = () => {
                           hasChanges = true;
                       } else {
                           const idx = localEntries.findIndex(le => le.key === ce.key);
-                          if (new Date(ce.lastAccessedAt) > new Date(localEntries[idx].lastAccessedAt)) {
+                          if (idx !== -1 && new Date(ce.lastAccessedAt) > new Date(localEntries[idx].lastAccessedAt)) {
                               localEntries[idx] = ce;
                               hasChanges = true;
                           }

@@ -144,9 +144,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             {/* Header / Top Bar */}
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8 pt-2">
                 {/* Logo & Slogan */}
-                <div className="text-center lg:text-left flex-1">
+                <div className="text-center lg:text-left flex-1 min-w-0">
                     <h1 
-                        className="text-4xl sm:text-5xl md:text-6xl font-black mb-1 lg:mb-0 tracking-tighter drop-shadow-sm filter bg-clip-text text-transparent"
+                        className="text-4xl sm:text-5xl md:text-6xl font-black mb-1 lg:mb-0 tracking-tighter drop-shadow-sm filter bg-clip-text text-transparent truncate"
                         style={{ 
                             backgroundImage: brandGradient,
                             backgroundSize: '200% auto',
@@ -154,7 +154,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     >
                         Studeo
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium tracking-wide">
+                    <p className="text-gray-500 dark:text-gray-400 text-[10px] md:text-xs lg:text-sm font-medium tracking-wide line-clamp-1">
                         {themeStyle === 'french' && "L'outil pour tout apprendre"}
                         {themeStyle === 'english' && "The tool to learn everything"}
                         {themeStyle === 'spanish' && "La herramienta para aprender todo"}
@@ -168,7 +168,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 {/* Zone des Contrôles - Toujours visible et accessible */}
                 <div className="flex flex-col items-center lg:items-end gap-3 z-30">
                     {/* Sélecteurs Style & Langue */}
-                    <div className="flex flex-wrap justify-center items-center gap-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-md">
+                    <div className="flex flex-wrap justify-center items-center gap-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-md relative z-40">
                         <div className="flex items-center gap-1 px-1 border-r border-gray-200 dark:border-gray-700">
                              <span className="text-sm">🎨</span>
                              <select 

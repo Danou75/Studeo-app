@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useColumns } from '../hooks/useColumns';
 import { useSRS } from '../hooks/useSRS';
 import { save } from '@tauri-apps/api/dialog';
@@ -78,24 +78,68 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
     
     const isOnlineVoiceSupported = questionLang in LANGUAGE_CONFIG;
 
+    const validCards = useMemo(() => {
+        return allFlashcards.filter(card => {
+            const terms = (card as any).terms;
+            const mcqData = (card as any).mcqData;
+            const clozeData = (card as any).clozeData;
+
+            if (terms) return terms[questionLang] && terms[answerLang];
+            if (mcqData) return mcqData.question[questionLang] && mcqData.answer[answerLang];
+            if (clozeData) return clozeData.text[questionLang] && clozeData.answers[answerLang];
+            
+            // Fallback for flat objects
+            return (card as any)[questionLang] && (card as any)[answerLang];
+        });
+    }, [allFlashcards, questionLang, answerLang]);
+
+    const validCount = validCards.length;
+
     useEffect(() => {
         if (allColumns.length > 0) {
             const currentQuestionLangIsValid = allColumns.includes(questionLang);
             const currentAnswerLangIsValid = allColumns.includes(answerLang);
 
-            if (!currentQuestionLangIsValid) {
-                setQuestionLang(allColumns.find(c => c.toLowerCase() === 'fr' || c.toLowerCase() === 'recto') || allColumns[0] || '');
-            }
-            if (!currentAnswerLangIsValid) {
-                const defaultAnswer = allColumns.find(c => c.toLowerCase() === 'en' || c.toLowerCase() === 'it' || c.toLowerCase() === 'es' || c.toLowerCase() === 'verso');
-                const candidate = allColumns.length > 1 ? (defaultAnswer || allColumns[1]) : (allColumns[0] || '');
-                setAnswerLang(candidate);
+            if (!currentQuestionLangIsValid || !currentAnswerLangIsValid) {
+                // Find the best pair: the one that covers the most cards
+                let bestPair = { q: '', a: '', count: -1 };
+                
+                // Try to find fr/en, it/fr etc first
+                const priorityPairs = [
+                    ['fr', 'en'], ['en', 'fr'], 
+                    ['fr', 'it'], ['it', 'fr'],
+                    ['fr', 'es'], ['es', 'fr'],
+                    ['recto', 'verso'], ['verso', 'recto']
+                ];
+
+                for (const [q, a] of priorityPairs) {
+                    if (allColumns.includes(q) && allColumns.includes(a)) {
+                        const count = allFlashcards.filter(card => {
+                            const terms = (card as any).terms;
+                            if (terms) return terms[q] && terms[a];
+                            return (card as any)[q] && (card as any)[a];
+                        }).length;
+                        if (count > bestPair.count) {
+                            bestPair = { q, a, count };
+                        }
+                    }
+                }
+
+                // If no priority pair found, just take common ones
+                if (bestPair.count <= 0) {
+                    const qDefault = allColumns.find(c => ['fr', 'recto', 'french'].includes(c.toLowerCase())) || allColumns[0];
+                    const aDefault = allColumns.find(c => c !== qDefault && ['en', 'it', 'es', 'verso', 'english', 'italian', 'spanish'].includes(c.toLowerCase())) || allColumns[1] || allColumns[0];
+                    bestPair = { q: qDefault, a: aDefault, count: 0 };
+                }
+
+                if (!currentQuestionLangIsValid) setQuestionLang(bestPair.q);
+                if (!currentAnswerLangIsValid) setAnswerLang(bestPair.a);
             }
         } else {
             setQuestionLang('');
             setAnswerLang('');
         }
-    }, [allColumns, questionLang, answerLang]);
+    }, [allColumns, flashcardSetName]); // Depend on set name to reset if needed
 
     useEffect(() => {
         if (!isOnlineVoiceSupported && voiceEngine === 'gemini') {
@@ -109,27 +153,12 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
             return;
         }
         
-        const validCards = allFlashcards.filter(card => {
-            const terms = (card as any).terms;
-            const mcqData = (card as any).mcqData;
-            const clozeData = (card as any).clozeData;
-
-            if (terms) return terms[questionLang] && terms[answerLang];
-            if (mcqData) return mcqData.question[questionLang] && mcqData.answer[answerLang];
-            if (clozeData) return clozeData.text[questionLang] && clozeData.answers[answerLang];
-            
-            // Fallback for flat objects
-            return (card as any)[questionLang] && (card as any)[answerLang];
-        });
-
-        const maxCards = validCards.length;
-        
-        if (maxCards === 0) {
+        if (validCount === 0) {
             showToast(t('setup.noCardsFound'), 'warning');
             return;
         }
         
-        const quizSize = Math.max(1, Math.min(numCards, maxCards));
+        const quizSize = Math.max(1, Math.min(numCards, validCount));
         
         const uniqueCards = deduplicateCards(validCards, questionLang, answerLang);
         let cardsForQuiz = [...uniqueCards];
@@ -226,7 +255,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
         <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
             {/* Header */}
             <div 
-                className={`pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 transition-all duration-500 group ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                className={`pt-safe p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 transition-all duration-500 group ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
                 {onShowSettings && (
@@ -238,23 +267,23 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                         <i className="fas fa-cog text-inherit"></i>
                     </button>
                 )}
-                <div className="relative z-10 flex justify-between items-start">
-                    <div className="flex flex-col">
+                <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center sm:items-start gap-4">
+                    <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
                         <Button 
                             variant="secondary" 
                             onClick={onBack} 
                             size="sm" 
-                            className={`mb-2 md:mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm transition-all`}
+                            className={`mb-3 md:mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm transition-all`}
                         >
                             <i className="fas fa-home mr-2"></i> {t('common.home')}
                         </Button>
-                        <h1 className="text-xl md:text-3xl font-black drop-shadow-sm text-inherit">
+                        <h1 className="text-2xl md:text-3xl font-black drop-shadow-sm text-inherit">
                             {t('setup.title')}
                         </h1>
                         <p className="opacity-80 mt-1 text-xs md:text-base text-inherit line-clamp-1">{t('setup.readySubtitle')}</p>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 md:gap-3">
                         <button 
                             onClick={onShowDashboard} 
                             className={`flex items-center gap-2 px-4 py-2 rounded-xl border-transparent backdrop-blur-sm transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80`}
@@ -277,7 +306,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                                 'fa-cloud'
                             }`}></i>
                             <span className="text-[10px] font-black uppercase tracking-tighter">
-                                {cloudStatus === 'syncing' ? 'Cloud...' : (cloudStatus === 'synced' ? 'À Jour' : (cloudStatus === 'error' ? 'Erreur' : 'Sync OK'))}
+                                {cloudStatus === 'syncing' ? '...' : (cloudStatus === 'synced' ? 'OK' : (cloudStatus === 'error' ? '!!' : 'Sync'))}
                             </span>
                         </div>
                     </div>
@@ -339,17 +368,6 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                     </div>
                 </div>
                 {(() => {
-                    const validCount = allFlashcards.filter(card => {
-                        const terms = (card as any).terms;
-                        const mcqData = (card as any).mcqData;
-                        const clozeData = (card as any).clozeData;
-                        if (terms) return terms[questionLang] && terms[answerLang];
-                        if (mcqData) return mcqData.question[questionLang] && mcqData.answer[answerLang];
-                        if (clozeData) return clozeData.text[questionLang] && clozeData.answers[answerLang];
-                        // Flat object fallback
-                        return (card as any)[questionLang] && (card as any)[answerLang];
-                    }).length;
-
                     if (allColumns.length === 0) {
                         return (
                             <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900 rounded-xl">
@@ -365,7 +383,27 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                         );
                     }
                     if (validCount === 0 && questionLang && answerLang) {
-                        return <p className="text-orange-400 text-center mt-6 font-bold"><i className="fas fa-exclamation-triangle mr-2"></i> {t('setup.noCardsFound')}</p>;
+                        return (
+                            <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl text-center">
+                                <p className="text-orange-500 dark:text-orange-400 font-bold text-sm">
+                                    <i className="fas fa-exclamation-triangle mr-2"></i> {t('setup.noCardsFound')}
+                                </p>
+                                <p className="text-[10px] text-gray-500 mt-1 italic">Vérifiez vos colonnes ou essayez une autre paire.</p>
+                            </div>
+                        );
+                    }
+                    
+                    if (validCount > 0) {
+                        return (
+                            <div className="mt-4 flex justify-center">
+                                <div className="px-4 py-1.5 bg-primary/5 dark:bg-primary/20 rounded-full border border-primary/20 flex items-center gap-2">
+                                    <i className="fas fa-check-circle text-primary text-xs"></i>
+                                    <span className="text-xs font-bold text-primary">
+                                        {validCount} fiches disponibles pour cette sélection
+                                    </span>
+                                </div>
+                            </div>
+                        );
                     }
                     return null;
                 })()}
@@ -408,16 +446,26 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
                         {/* Number selector */}
                         <div className="flex flex-col">
-                            <h4 className="font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+                            <h4 className="font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                                 <i className="fas fa-sort-numeric-up text-info"></i> {t('setup.placeholders.numCards')}
                             </h4>
-                            <input 
-                                type="number" 
-                                value={numCards} 
-                                onChange={e => setNumCards(Math.max(1, parseInt(e.target.value) || 1))} 
-                                min="1" 
-                                className="w-full text-center py-3 text-2xl font-black rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-4 focus:ring-info/20 outline-none text-info dark:text-info shadow-inner"
-                            />
+                            <div className="relative">
+                                <input 
+                                    type="number" 
+                                    value={numCards} 
+                                    onChange={e => setNumCards(Math.max(1, parseInt(e.target.value) || 1))} 
+                                    min="1" 
+                                    className={`w-full text-center py-3 text-2xl font-black rounded-xl border-2 bg-white dark:bg-gray-800 focus:ring-4 outline-none shadow-inner transition-all ${numCards > validCount ? 'border-orange-400 text-orange-400 focus:ring-orange-400/20' : 'border-gray-200 dark:border-gray-700 text-info dark:text-info focus:ring-info/20'}`}
+                                />
+                                {numCards > validCount && validCount > 0 && (
+                                    <div className="absolute -top-2 -right-2 bg-orange-400 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] shadow-lg animate-bounce" title={`Seulement ${validCount} fiches disponibles`}>
+                                        !
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-[9px] font-black uppercase text-center mt-2 opacity-50 text-gray-500 dark:text-gray-400 italic">
+                                {numCards > validCount ? `Reduit à ${validCount} car fiches insuffisantes` : `Test de ${numCards} fiches`}
+                            </p>
                         </div>
 
                         {/* Toggles */}

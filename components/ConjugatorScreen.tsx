@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
 import { Button } from './ui/Button';
 import { conjugateVerb } from '../services/conjugationService';
@@ -11,6 +11,7 @@ import { useTTS } from '../hooks/useTTS';
 import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { AILoader } from './ui/AILoader';
+import { useConjugationCache, CacheEntry } from '../hooks/useConjugationCache';
 
 import { save } from '@tauri-apps/api/dialog';
 import { writeTextFile } from '@tauri-apps/api/fs';
@@ -42,8 +43,8 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
   const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
   
-  // Mode selection: 'conjugate' or 'translate'
-  const [mode, setMode] = useState<'conjugate' | 'translate'>('conjugate');
+  // Mode selection: 'conjugate' | 'translate' | 'library'
+  const [mode, setMode] = useState<'conjugate' | 'translate' | 'library'>('conjugate');
   const [translationResult, setTranslationResult] = useState<TranslationResult | null>(null);
   
   // Selection state
@@ -57,6 +58,39 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
   // Utiliser la configuration IA globale
   const { config } = useAIConfig();
   const { showToast } = useToast();
+
+  // ── Cache & autocomplete ──────────────────────────────
+  const cache = useConjugationCache();
+  const [suggestions, setSuggestions] = useState<CacheEntry[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [fromCache, setFromCache] = useState(false);
+  const [libraryFilter, setLibraryFilter] = useState<'all' | 'conjugation' | 'translation'>('all');
+  const [librarySearch, setLibrarySearch] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node) &&
+        inputRef.current && !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Update suggestions as the query changes
+  const updateSuggestions = useCallback((query: string, currentMode: 'conjugate' | 'translate' | 'library', currentLang: string) => {
+    if (currentMode === 'library') return;
+    const effectiveMode = currentMode === 'conjugate' ? 'conjugate' : 'translate';
+    const s = cache.getSuggestions(query, effectiveMode, currentLang);
+    setSuggestions(s);
+    setShowSuggestions(s.length > 0);
+  }, [cache]);
 
   const getOppositeLang = (lang: string) => {
       // In Studeo, we usually study towards English or French.
@@ -95,9 +129,24 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
     { code: 'tr', name: t('languages.tr'), flag: '🇹🇷' },
   ];
 
-  const handleConjugate = async (e?: React.FormEvent) => {
+  const handleConjugate = async (e?: React.FormEvent, forcedVerb?: string) => {
     e?.preventDefault();
-    if (!verb.trim()) return;
+    const targetVerb = (forcedVerb ?? verb).trim();
+    if (!targetVerb) return;
+
+    setShowSuggestions(false);
+    setFromCache(false);
+
+    // ── Check cache first ────────────────────
+    const cached = cache.findConjugation(targetVerb, language);
+    if (cached) {
+      setResult(cached.result);
+      setSelectedItems({});
+      setSetName(`${t('conjugator.title')}: ${cached.result.verb} (${cached.result.language})`);
+      setFromCache(true);
+      showToast('⚡ Chargé depuis la bibliothèque', 'success');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -105,7 +154,6 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
     setSelectedItems({});
 
     try {
-      // Déterminer la configuration selon le provider
       let modelName = config.geminiModel;
       let apiKey: string | undefined = undefined;
       let apiUrl: string | undefined = undefined;
@@ -133,17 +181,12 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
               break;
       }
 
-      const data = await conjugateVerb(
-          verb, 
-          LANGUAGES.find(l => l.code === language)?.name || language,
-          config.provider,
-          modelName,
-          apiUrl,
-          apiKey
-      );
+      const langName = LANGUAGES.find(l => l.code === language)?.name || language;
+      const data = await conjugateVerb(targetVerb, langName, config.provider, modelName, apiUrl, apiKey);
       setResult(data);
-      // Pré-remplir le nom du set
       setSetName(`${t('conjugator.title')}: ${data.verb} (${data.language})`);
+      // Save to cache
+      cache.saveConjugation(targetVerb, language, langName, data);
     } catch (err: any) {
       console.error(err);
       setError(`${t('common.error')}: ${err.message || String(err)}`);
@@ -152,9 +195,23 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
     }
   };
 
-  const handleTranslate = async (e?: React.FormEvent) => {
+  const handleTranslate = async (e?: React.FormEvent, forcedText?: string) => {
     e?.preventDefault();
-    if (!verb.trim()) return;
+    const targetText = (forcedText ?? verb).trim();
+    if (!targetText) return;
+
+    setShowSuggestions(false);
+    setFromCache(false);
+
+    // ── Check cache first ────────────────────
+    const cached = cache.findTranslation(targetText, language);
+    if (cached) {
+      setTranslationResult(cached.result);
+      setSetName(`Traduction: ${cached.result.original} (${cached.result.language})`);
+      setFromCache(true);
+      showToast('⚡ Chargé depuis la bibliothèque', 'success');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -162,7 +219,6 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
     setResult(null);
 
     try {
-      // Déterminer la configuration selon le provider
       let modelName = config.geminiModel;
       let apiKey: string | undefined = undefined;
       let apiUrl: string | undefined = undefined;
@@ -190,17 +246,12 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
               break;
       }
 
-      const data = await translateText(
-          verb, 
-          LANGUAGES.find(l => l.code === language)?.name || language,
-          config.provider,
-          modelName,
-          apiUrl,
-          apiKey
-      );
+      const langName = LANGUAGES.find(l => l.code === language)?.name || language;
+      const data = await translateText(targetText, langName, config.provider, modelName, apiUrl, apiKey);
       setTranslationResult(data);
-      // Pré-remplir le nom du set
       setSetName(`Traduction: ${data.original} (${data.language})`);
+      // Save to cache
+      cache.saveTranslation(targetText, language, langName, data);
     } catch (err: any) {
       console.error(err);
       setError(`${t('common.error')}: ${err.message || String(err)}`);
@@ -509,7 +560,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                       {t('conjugator.title')}
                   </h1>
                   <p className="opacity-80 mt-1 text-base text-inherit">
-                      {mode === 'conjugate' ? t('conjugator.conjugateSubtitle') : t('conjugator.translateSubtitle')}
+                      {mode === 'conjugate' ? t('conjugator.conjugateSubtitle') : mode === 'translate' ? t('conjugator.translateSubtitle') : '📚 Vos conjugaisons & traductions sauvegardées'}
                   </p>
                   
                   {/* Mode Selector */}
@@ -520,6 +571,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                               setResult(null);
                               setTranslationResult(null);
                               setError(null);
+                              setShowSuggestions(false);
                           }}
                           className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
                               mode === 'conjugate'
@@ -537,6 +589,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                               setResult(null);
                               setTranslationResult(null);
                               setError(null);
+                              setShowSuggestions(false);
                           }}
                           className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
                               mode === 'translate'
@@ -547,6 +600,29 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                           }`}
                       >
                           <i className="fas fa-language mr-1.5"></i>Traduction
+                      </button>
+                      <button
+                          onClick={() => {
+                              setMode('library');
+                              setResult(null);
+                              setTranslationResult(null);
+                              setError(null);
+                              setShowSuggestions(false);
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all relative ${
+                              mode === 'library'
+                                  ? 'bg-white text-primary shadow-md'
+                                  : themeStyle === 'apple' && themeMode === 'light' 
+                                      ? 'text-primary/40 hover:text-primary/60' 
+                                      : 'text-white/70 hover:text-white'
+                          }`}
+                      >
+                          <i className="fas fa-database mr-1.5"></i>Bibliothèque
+                          {cache.entries.length > 0 && (
+                              <span className="absolute -top-1 -right-1 bg-accent text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">
+                                  {cache.entries.length > 99 ? '99+' : cache.entries.length}
+                              </span>
+                          )}
                       </button>
                   </div>
               </div>
@@ -643,17 +719,25 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
         )}
         
 
+        {/* Search + cache form — hidden in library mode */}
+        {mode !== 'library' && (
         <div className="bg-background-secondary p-6 rounded-xl shadow-lg border border-border/50">
         <form onSubmit={mode === 'conjugate' ? handleConjugate : handleTranslate} className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1 w-full">
                 <label className="block text-sm font-medium mb-1 text-text-secondary">
                     {mode === 'conjugate' ? t('conjugator.verbLabel') : t('conjugator.textToTranslate')}
                 </label>
+                {/* Input + autocomplete dropdown */}
                 <div className="relative group/input">
                     <input
+                        ref={inputRef}
                         type="text"
                         value={verb}
-                        onChange={(e) => setVerb(e.target.value)}
+                        onChange={(e) => {
+                            setVerb(e.target.value);
+                            updateSuggestions(e.target.value, mode, language);
+                        }}
+                        onFocus={() => updateSuggestions(verb, mode, language)}
                         placeholder={mode === 'conjugate' ? t('conjugator.verbPlaceholder') : t('conjugator.translatePlaceholder')}
                         className="w-full p-3 pr-10 rounded-lg bg-background border border-border focus:ring-2 focus:ring-primary outline-none transition-all text-lg text-text"
                         autoFocus
@@ -666,6 +750,8 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                                 setResult(null);
                                 setTranslationResult(null);
                                 setError(null);
+                                setFromCache(false);
+                                setShowSuggestions(false);
                             }}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-red-500 transition-colors p-1"
                             title={t('common.clear')}
@@ -673,14 +759,71 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                             <i className="fas fa-times-circle"></i>
                         </button>
                     )}
+
+                    {/* Autocomplete dropdown */}
+                    {showSuggestions && suggestions.length > 0 && (
+                        <div
+                            ref={suggestionsRef}
+                            className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-xl shadow-2xl overflow-hidden animate-fade-in"
+                        >
+                            <div className="px-3 pt-2 pb-1">
+                                <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Bibliothèque</span>
+                            </div>
+                            {suggestions.map((entry) => {
+                                const label = entry.type === 'conjugation'
+                                    ? (entry as any).verb
+                                    : (entry as any).text;
+                                const langFlag = LANGUAGES.find(l => l.code === entry.langCode)?.flag ?? '';
+                                const dateStr = new Date(entry.lastAccessedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+                                return (
+                                    <button
+                                        key={entry.key}
+                                        type="button"
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            setVerb(label);
+                                            setShowSuggestions(false);
+                                            if (mode === 'conjugate') handleConjugate(undefined, label);
+                                            else handleTranslate(undefined, label);
+                                        }}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-primary/5 transition-colors text-left"
+                                    >
+                                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center">
+                                            <i className="fas fa-bolt text-accent text-[10px]"></i>
+                                        </span>
+                                        <span className="flex-1 font-semibold text-text text-sm capitalize">{label}</span>
+                                        <span className="text-xs text-text-muted">{langFlag}</span>
+                                        <span className="text-[10px] text-text-muted/70 hidden sm:block">{dateStr}</span>
+                                    </button>
+                                );
+                            })}
+                            <div className="h-px bg-border/40 mx-3"></div>
+                            <button
+                                type="button"
+                                onMouseDown={() => { setMode('library'); setShowSuggestions(false); }}
+                                className="w-full px-3 py-2 text-[11px] text-primary font-semibold hover:bg-primary/5 transition-colors text-left flex items-center gap-2"
+                            >
+                                <i className="fas fa-database text-xs"></i>
+                                Voir toute la bibliothèque
+                            </button>
+                        </div>
+                    )}
                 </div>
+
+                {/* "From cache" badge */}
+                {fromCache && (
+                    <div className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-accent font-semibold">
+                        <i className="fas fa-bolt"></i>
+                        Chargé instantanément depuis la bibliothèque
+                    </div>
+                )}
             </div>
             
             <div className="w-full md:w-48">
                 <label className="block text-sm font-medium mb-1 text-text-secondary">{t('conjugator.targetLang')}</label>
                 <select
                     value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
+                    onChange={(e) => { setLanguage(e.target.value); setShowSuggestions(false); }}
                     className="w-full p-3 rounded-lg bg-background border border-border focus:ring-2 focus:ring-primary outline-none appearance-none cursor-pointer text-text"
                 >
                     {LANGUAGES.map(lang => (
@@ -707,6 +850,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
             </Button>
         </form>
       </div>
+        )}
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 text-red-500 p-4 rounded-lg animate-fade-in">
@@ -842,7 +986,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                 <i className="fas fa-info-circle mr-1"></i> {t('conjugator.selectionInfo')}
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
                 {result.tables.map((table, index) => (
                     <div key={index} className="bg-background-secondary rounded-xl overflow-hidden shadow-lg border border-border/30 hover:shadow-xl transition-all duration-300 group">
                         <div className="bg-gradient-to-r from-primary/20 to-accent/20 p-3 border-b border-border/30 flex justify-between items-center gap-2 group-hover:from-primary/30 group-hover:to-accent/30 transition-all min-h-[64px]">
@@ -872,14 +1016,14 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                                 return (
                                     <div 
                                         key={pronoun} 
-                                        className={`grid grid-cols-[24px_minmax(60px,80px)_minmax(80px,1fr)_40px] md:grid-cols-[24px_minmax(80px,120px)_minmax(100px,1fr)_40px] items-center gap-2 py-2 px-3 rounded transition-colors cursor-pointer border ${isSelected ? 'bg-primary/10 border-primary' : 'bg-transparent border-transparent hover:bg-background/40'}`}
+                                        className={`grid grid-cols-[24px_auto_1fr_32px] md:grid-cols-[24px_auto_1fr_40px] items-center gap-3 py-2 px-3 rounded transition-colors cursor-pointer border ${isSelected ? 'bg-primary/10 border-primary' : 'bg-transparent border-transparent hover:bg-background/40'}`}
                                         onClick={() => toggleSelection(table.tenseName, pronoun)}
                                     >
                                         <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary' : 'border-text-secondary'}`}>
                                             {isSelected && <i className="fas fa-check text-white text-[10px]"></i>}
                                         </div>
 
-                                        <span className="text-text-muted font-medium text-right text-xs md:text-sm truncate pr-1">
+                                        <span className="text-text-muted font-medium text-right text-xs md:text-sm whitespace-nowrap pr-1">
                                             {pronoun}
                                         </span>
 
@@ -959,7 +1103,173 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
         </div>
       )}
       
-      {!result && !translationResult && !loading && !error && (
+      {/* Library panel */}
+      {mode === 'library' && (
+        <div className="space-y-4 animate-slide-up">
+          {/* Header bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1 relative">
+              <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm"></i>
+              <input
+                type="text"
+                value={librarySearch}
+                onChange={(e) => setLibrarySearch(e.target.value)}
+                placeholder="Rechercher dans la bibliothèque…"
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary outline-none text-sm text-text"
+              />
+            </div>
+            <div className="flex gap-1 p-1 bg-background border border-border rounded-xl">
+              {(['all', 'conjugation', 'translation'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setLibraryFilter(f)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    libraryFilter === f
+                      ? 'bg-primary text-white shadow'
+                      : 'text-text-muted hover:text-text'
+                  }`}
+                >
+                  {f === 'all' ? 'Tout' : f === 'conjugation' ? '📖 Conjugaisons' : '🌐 Traductions'}
+                </button>
+              ))}
+            </div>
+            {cache.entries.length > 0 && (
+              <button
+                onClick={() => { if (window.confirm('Vider toute la bibliothèque ?')) cache.clearAll(); }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/10 border border-red-400/20 transition-all"
+              >
+                <i className="fas fa-trash-alt"></i>
+                Tout vider
+              </button>
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-background-secondary rounded-xl p-3 border border-border/30 flex items-center gap-3">
+              <span className="text-2xl">📖</span>
+              <div>
+                <div className="text-xl font-black text-primary">{cache.conjugationEntries.length}</div>
+                <div className="text-xs text-text-muted">Conjugaisons</div>
+              </div>
+            </div>
+            <div className="bg-background-secondary rounded-xl p-3 border border-border/30 flex items-center gap-3">
+              <span className="text-2xl">🌐</span>
+              <div>
+                <div className="text-xl font-black text-accent">{cache.translationEntries.length}</div>
+                <div className="text-xs text-text-muted">Traductions</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Entries list */}
+          {(() => {
+            const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const q = norm(librarySearch);
+            const filtered = cache.entries.filter((e) => {
+              if (libraryFilter === 'conjugation' && e.type !== 'conjugation') return false;
+              if (libraryFilter === 'translation' && e.type !== 'translation') return false;
+              if (q) {
+                const label = e.type === 'conjugation' ? (e as any).verb : (e as any).text;
+                return norm(label).includes(q);
+              }
+              return true;
+            });
+
+            if (filtered.length === 0) {
+              return (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <span className="text-5xl mb-4">📭</span>
+                  <p className="font-bold text-text text-lg mb-1">
+                    {cache.entries.length === 0 ? 'Bibliothèque vide' : 'Aucun résultat'}
+                  </p>
+                  <p className="text-text-muted text-sm max-w-xs">
+                    {cache.entries.length === 0
+                      ? 'Conjuguez ou traduisez un mot pour le sauvegarder automatiquement.'
+                      : 'Essayez un autre terme de recherche.'}
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                {filtered.map((entry) => {
+                  const isConj = entry.type === 'conjugation';
+                  const label = isConj ? (entry as any).verb : (entry as any).text;
+                  const langFlag = LANGUAGES.find(l => l.code === entry.langCode)?.flag ?? '';
+                  const langName = entry.langName;
+                  const dateStr = new Date(entry.savedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+                  const preview = isConj
+                    ? `${Object.keys((entry as any).result.tables[0]?.forms ?? {}).length > 0 ? Object.entries((entry as any).result.tables[0]?.forms ?? {}).slice(0,2).map(([p,f]) => `${p} ${f}`).join(' · ') : ''}…`
+                    : (entry as any).result.translated?.slice(0, 60) + '…';
+
+                  return (
+                    <div
+                      key={entry.key}
+                      className="group bg-background-secondary rounded-xl border border-border/30 hover:border-primary/40 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                    >
+                      <div className={`h-1 ${isConj ? 'bg-gradient-to-r from-primary to-primary/50' : 'bg-gradient-to-r from-accent to-accent/50'}`}></div>
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider border" style={{ color: isConj ? 'var(--color-primary)' : 'var(--color-accent)', borderColor: isConj ? 'var(--color-primary)' : 'var(--color-accent)', background: isConj ? 'var(--color-primary-light, #fdf)' : 'var(--color-accent-light, #eff)' }}>
+                                {isConj ? '📖 Conjugaison' : '🌐 Traduction'}
+                              </span>
+                              <span className="text-sm">{langFlag}</span>
+                            </div>
+                            <h3 className="font-black text-lg text-text capitalize leading-tight truncate">{label}</h3>
+                            <p className="text-xs text-text-muted mt-0.5">{langName} · {dateStr}</p>
+                          </div>
+                          <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => cache.deleteEntry(entry.key)}
+                              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-red-400 transition-colors"
+                              title="Supprimer"
+                            >
+                              <i className="fas fa-trash-alt text-xs"></i>
+                            </button>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-text-muted italic truncate mb-3">{preview}</p>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-text-muted">
+                            <i className="fas fa-eye mr-1"></i>{entry.accessCount} accès
+                          </span>
+                          <button
+                            onClick={() => {
+                              setVerb(label);
+                              setFromCache(false);
+                              if (isConj) {
+                                setMode('conjugate');
+                                setResult((entry as any).result);
+                                setTranslationResult(null);
+                              } else {
+                                setMode('translate');
+                                setTranslationResult((entry as any).result);
+                                setResult(null);
+                              }
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold transition-all"
+                          >
+                            <i className="fas fa-bolt text-[10px]"></i>
+                            Charger
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {!result && !translationResult && !loading && !error && mode !== 'library' && (
         <div className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
             {/* L'utilisateur veut cet espace vide par défaut */}
         </div>

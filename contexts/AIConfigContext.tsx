@@ -38,7 +38,7 @@ interface AIConfigContextType {
 const defaultConfig: AIConfig = {
   provider: 'gemini',
   
-  geminiModel: 'gemini-2.5-flash',
+  geminiModel: 'gemini-2.0-flash-lite',
   geminiApiKey: '',
 
   localApiUrl: 'http://localhost:11434/v1/chat/completions',

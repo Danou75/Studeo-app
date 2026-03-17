@@ -165,7 +165,8 @@ const AppContent: React.FC = () => {
             persistent_errors: quizSession.persistentErrors,
             last_sync_device: deviceName,
             known_devices: knownDevices,
-            guest_tutors: coordinator.guestTutors
+            guest_tutors: coordinator.guestTutors,
+            conjugation_cache: langCache.entries
         });
         if (!profileSync.success) {
             throw new Error(`Profil: ${profileSync.error?.message || "Erreur inconnue"}`);
@@ -187,11 +188,6 @@ const AppContent: React.FC = () => {
         const chatSessions = ChatService.getSessions();
         if (chatSessions.length > 0) {
             await syncService.syncChatSessions(user.id, chatSessions);
-        }
-
-        // 6. Sync Conjugation Cache
-        if (langCache.entries.length > 0) {
-            await syncService.syncConjugationCache(user.id, langCache.entries);
         }
         
         console.log("☁️ Cloud Push: OK");
@@ -309,6 +305,31 @@ const AppContent: React.FC = () => {
 
               if (cloudProfile.known_devices) {
                   localStorage.setItem('studeo_known_devices', JSON.stringify(cloudProfile.known_devices));
+              }
+
+              // ── Conjugation Cache Pull & Merge ──
+              if (cloudProfile.conjugation_cache && Array.isArray(cloudProfile.conjugation_cache)) {
+                  const cloudLangCache = cloudProfile.conjugation_cache;
+                  const localEntries = [...langCache.entries];
+                  const localKeys = new Set(localEntries.map(e => e.key));
+                  let hasChanges = false;
+                  
+                  cloudLangCache.forEach((ce: any) => {
+                      if (!localKeys.has(ce.key)) {
+                          localEntries.push(ce);
+                          hasChanges = true;
+                      } else {
+                          const idx = localEntries.findIndex(le => le.key === ce.key);
+                          if (new Date(ce.lastAccessedAt) > new Date(localEntries[idx].lastAccessedAt)) {
+                              localEntries[idx] = ce;
+                              hasChanges = true;
+                          }
+                      }
+                  });
+                  
+                  if (hasChanges || force) {
+                      langCache.hydrate(localEntries);
+                  }
               }
 
               if (cloudProfile.updated_at) {
@@ -447,41 +468,6 @@ const AppContent: React.FC = () => {
               if (merged.length > 0 && hasChanges) {
                   await syncService.syncChatSessions(user.id, merged);
               }
-          }
-
-          // 6. Conjugation Cache
-          const cloudLangCache = await syncService.getConjugationCache(user.id);
-          if (cloudLangCache && Array.isArray(cloudLangCache) && cloudLangCache.length > 0) {
-              // Fusion simple (prend le plus récent si conflit de clé n'est pas géré ici, 
-              // mais hydrate remplace le local par le cloud qui est censé être global)
-              if (force) {
-                  langCache.hydrate(cloudLangCache);
-              } else {
-                  // Merge intelligent
-                  const localEntries = [...langCache.entries];
-                  const localKeys = new Set(localEntries.map(e => e.key));
-                  let hasNew = false;
-                  
-                  cloudLangCache.forEach((ce: any) => {
-                      if (!localKeys.has(ce.key)) {
-                          localEntries.push(ce);
-                          hasNew = true;
-                      } else {
-                          // Update if cloud is newer
-                          const idx = localEntries.findIndex(le => le.key === ce.key);
-                          if (new Date(ce.lastAccessedAt) > new Date(localEntries[idx].lastAccessedAt)) {
-                              localEntries[idx] = ce;
-                              hasNew = true;
-                          }
-                      }
-                  });
-                  
-                  if (hasNew) {
-                      langCache.hydrate(localEntries);
-                  }
-              }
-          } else if (force) {
-              langCache.hydrate([]);
           }
 
           if (!silent) {

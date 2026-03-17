@@ -247,6 +247,12 @@ export function useConjugationCache() {
     setEntries([]);
   }, []);
 
+  // ── Hydrate from cloud ──────────────────
+  const hydrate = useCallback((newEntries: CacheEntry[]) => {
+    setEntries(newEntries);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newEntries));
+  }, []);
+
   // ── Stats ──────────────────
   const conjugationEntries = entries.filter(e => e.type === 'conjugation') as ConjugationCacheEntry[];
   const translationEntries = entries.filter(e => e.type === 'translation') as TranslationCacheEntry[];
@@ -262,5 +268,6 @@ export function useConjugationCache() {
     getSuggestions,
     deleteEntry,
     clearAll,
+    hydrate,
   };
 }

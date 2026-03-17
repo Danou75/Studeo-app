@@ -243,5 +243,41 @@ export const syncService = {
             createdAt: new Date(s.created_at),
             updatedAt: new Date(s.updated_at)
         }));
+    },
+
+    /**
+     * Synchronise le cache de conjugaisons & traductions
+     */
+    async syncConjugationCache(userId: string, cache: any[]) {
+        const { error } = await supabase
+            .from('profiles')
+            .upsert({
+                id: userId,
+                conjugation_cache: cache,
+                updated_at: new Date().toISOString()
+            });
+        if (error) {
+            console.error('Sync ConjugationCache Error:', error.message);
+        }
+        return { success: !error, error };
+    },
+
+    /**
+     * Récupère le cache de conjugaisons & traductions
+     */
+    async getConjugationCache(userId: string): Promise<any[] | null> {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('conjugation_cache')
+            .eq('id', userId)
+            .setHeader('Cache-Control', 'no-cache')
+            .setHeader('Pragma', 'no-cache')
+            .single();
+
+        if (error) {
+            console.error('Get ConjugationCache Error:', error.message);
+            return null;
+        }
+        return data?.conjugation_cache ?? null;
     }
 };

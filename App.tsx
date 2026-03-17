@@ -51,6 +51,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { migrateLocalStorage } from "./utils/migration";
 import { ChatService } from "./services/chatService";
 import { getDeviceName } from "./utils/deviceInfo";
+import { useConjugationCache } from "./hooks/useConjugationCache";
 
 
 const AppContent: React.FC = () => {
@@ -73,6 +74,7 @@ const AppContent: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
   
   const { user } = useAuth();
+  const langCache = useConjugationCache();
 
 
   
@@ -186,6 +188,11 @@ const AppContent: React.FC = () => {
         if (chatSessions.length > 0) {
             await syncService.syncChatSessions(user.id, chatSessions);
         }
+
+        // 6. Sync Conjugation Cache
+        if (langCache.entries.length > 0) {
+            await syncService.syncConjugationCache(user.id, langCache.entries);
+        }
         
         console.log("☁️ Cloud Push: OK");
         setCanAutoPush(true); // Une fois qu'on a poussé ou tiré manuellement, on peut auto-sync
@@ -233,7 +240,8 @@ const AppContent: React.FC = () => {
       gamification.gamificationData,
       analyticsData,
       quizSession.persistentErrors,
-      coordinator.guestTutors
+      coordinator.guestTutors,
+      langCache.entries
   ]);
 
   // Synchronisation automatique (Réactive)
@@ -261,7 +269,8 @@ const AppContent: React.FC = () => {
       analyticsData,
       quizSession.persistentErrors,
       config, // Ajouté pour déclencher la synchro quand on change le nom de l'appareil
-      coordinator.guestTutors
+      coordinator.guestTutors,
+      langCache.entries
   ]);
 
 
@@ -438,6 +447,41 @@ const AppContent: React.FC = () => {
               if (merged.length > 0 && hasChanges) {
                   await syncService.syncChatSessions(user.id, merged);
               }
+          }
+
+          // 6. Conjugation Cache
+          const cloudLangCache = await syncService.getConjugationCache(user.id);
+          if (cloudLangCache && Array.isArray(cloudLangCache) && cloudLangCache.length > 0) {
+              // Fusion simple (prend le plus récent si conflit de clé n'est pas géré ici, 
+              // mais hydrate remplace le local par le cloud qui est censé être global)
+              if (force) {
+                  langCache.hydrate(cloudLangCache);
+              } else {
+                  // Merge intelligent
+                  const localEntries = [...langCache.entries];
+                  const localKeys = new Set(localEntries.map(e => e.key));
+                  let hasNew = false;
+                  
+                  cloudLangCache.forEach((ce: any) => {
+                      if (!localKeys.has(ce.key)) {
+                          localEntries.push(ce);
+                          hasNew = true;
+                      } else {
+                          // Update if cloud is newer
+                          const idx = localEntries.findIndex(le => le.key === ce.key);
+                          if (new Date(ce.lastAccessedAt) > new Date(localEntries[idx].lastAccessedAt)) {
+                              localEntries[idx] = ce;
+                              hasNew = true;
+                          }
+                      }
+                  });
+                  
+                  if (hasNew) {
+                      langCache.hydrate(localEntries);
+                  }
+              }
+          } else if (force) {
+              langCache.hydrate([]);
           }
 
           if (!silent) {

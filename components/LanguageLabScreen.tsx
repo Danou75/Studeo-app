@@ -534,6 +534,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     const [scenarioStepIndex, setScenarioStepIndex] = useState(0);
     const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
     const [scenarioFeedback, setScenarioFeedback] = useState<'waiting' | 'success' | 'retry'>('waiting');
+    const [showScenarioEndPrompt, setShowScenarioEndPrompt] = useState(false);
 
     // --- EXPORT STATE ---
     const [showExportMenu, setShowExportMenu] = useState(false);
@@ -683,7 +684,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                 } else {
                     // Scenario finished!
                     showToast(t('lab.scenarios.finished'), 'success');
-                    setLabMode('scenario_list');
+                    setShowScenarioEndPrompt(true);
                 }
             }, 1500);
         } else {
@@ -1071,6 +1072,40 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                 className="px-6 py-2 rounded-lg bg-primary text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:scale-100"
                             >
                                 {t('lab.scenarios.modal.start')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* SCENARIO END MODAL (EXPORT OR EXIT) */}
+            {showScenarioEndPrompt && (
+                <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-sm shadow-2xl p-8 animate-scale-in text-center flex flex-col items-center border border-gray-100 dark:border-gray-700">
+                        <div className="w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-6 ring-4 ring-green-50 dark:ring-green-900/50">
+                            <i className="fas fa-check text-4xl text-green-500"></i>
+                        </div>
+                        <h3 className="text-2xl font-bold mb-3 text-gray-800 dark:text-white">Scénario terminé !</h3>
+                        <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-xs text-sm">Félicitations pour cet échange. Voulez-vous exporter le dialogue pour vos révisions ?</p>
+                        
+                        <div className="flex flex-col gap-3 w-full">
+                            <button 
+                                onClick={() => { handleExport('md'); setLabMode('scenario_list'); setShowScenarioEndPrompt(false); }}
+                                className="w-full py-3.5 rounded-xl bg-blue-50 text-blue-600 font-bold hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <i className="fab fa-markdown"></i> Markdown (.md)
+                            </button>
+                            <button 
+                                onClick={() => { handleExport('rtf'); setLabMode('scenario_list'); setShowScenarioEndPrompt(false); }}
+                                className="w-full py-3.5 rounded-xl bg-indigo-50 text-indigo-600 font-bold hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <i className="fas fa-file-word"></i> Rich Text (.rtf)
+                            </button>
+                            <button 
+                                onClick={() => { setLabMode('scenario_list'); setShowScenarioEndPrompt(false); }}
+                                className="w-full py-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-400 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors mt-2"
+                            >
+                                <i className="fas fa-times mr-2 text-xs"></i> Non merci, quitter
                             </button>
                         </div>
                     </div>

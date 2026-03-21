@@ -37,6 +37,7 @@ function getSupportedMimeType(): string {
 
 interface UseMediaRecorderTranscribeOptions {
   language?: string;
+  apiKey?: string;
   onTranscript?: (text: string) => void;
   onError?: (err: string) => void;
   onStatusChange?: (status: SpeechRecognitionStatus) => void;
@@ -53,6 +54,7 @@ interface UseMediaRecorderTranscribeOptions {
  */
 export function useMediaRecorderTranscribe({
   language = 'fr-FR',
+  apiKey,
   onTranscript,
   onError,
   onStatusChange,
@@ -136,6 +138,7 @@ export function useMediaRecorderTranscribe({
               audioBase64,
               mimeType: actualMimeType,
               language,
+              apiKey,
             }),
           });
 

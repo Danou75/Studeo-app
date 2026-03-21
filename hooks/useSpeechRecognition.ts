@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { SpeechRecognitionStatus, DictationResult } from '../types';
 import { isAnswerAcceptable, calculateSimilarity } from '../utils/phonetic';
 import { isIOSStandalonePWA, useMediaRecorderTranscribe } from './useMediaRecorderTranscribe';
+import { useAIConfig } from '../contexts/AIConfigContext';
 
 // Définition de l'interface pour l'API Web Speech (non standard en TS par défaut)
 interface IWindow extends Window {
@@ -343,7 +344,17 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
   const isPWAFallback = typeof window !== 'undefined' && isIOSStandalonePWA();
 
   const nativeRecognition = useNativeSpeechRecognition(language);
-  const pwaFallback = useMediaRecorderTranscribe({ language });
+
+  // Tentative de récupération de la clé API si disponible dans le contexte (pour bypass limiter)
+  let apiKey = '';
+  try {
+    const { config } = useAIConfig();
+    if (config?.geminiApiKey) apiKey = config.geminiApiKey;
+  } catch (e) {
+    // Si hors contexte, utiliser le fallback système
+  }
+
+  const pwaFallback = useMediaRecorderTranscribe({ language, apiKey });
 
   if (isPWAFallback) {
     // iOS PWA standalone → MediaRecorder + Gemini

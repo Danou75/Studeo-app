@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_API_KEY;
-const GEMINI_MODEL = 'gemini-2.5-flash'; // Modèle actif du projet (v1beta)
+const BACKEND_API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_API_KEY;
+const GEMINI_MODEL = 'gemini-1.5-flash'; // Fallback sur 1.5 flash pour de meilleurs quotas de rate-limit (anti-429)
 
 /**
  * /api/gemini/transcribe
@@ -10,7 +10,7 @@ const GEMINI_MODEL = 'gemini-2.5-flash'; // Modèle actif du projet (v1beta)
  * Utilisé comme fallback pour iOS PWA (iPad Air 2) où webkitSpeechRecognition
  * est bloqué en mode standalone (service-not-allowed).
  *
- * Body attendu : { audioBase64: string, mimeType: string, language: string }
+ * Body attendu : { audioBase64: string, mimeType: string, language: string, apiKey?: string }
  * Réponse : { transcript: string }
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -28,11 +28,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  const { audioBase64, mimeType, language, apiKey: requestApiKey } = req.body;
+  const API_KEY = requestApiKey || BACKEND_API_KEY;
+
   if (!API_KEY) {
     return res.status(500).json({ error: 'Server configuration error: API Key missing' });
   }
-
-  const { audioBase64, mimeType, language } = req.body;
 
   if (!audioBase64) {
     return res.status(400).json({ error: 'audioBase64 is required' });

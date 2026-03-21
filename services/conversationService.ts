@@ -250,6 +250,7 @@ export interface ScenarioStep {
     tutorTranslation: string;
     userTarget: string;
     userTargetTranslation: string;
+    userResponse?: string;
     hint?: string;
 }
 

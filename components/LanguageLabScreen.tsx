@@ -535,6 +535,57 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
     const [scenarioFeedback, setScenarioFeedback] = useState<'waiting' | 'success' | 'retry'>('waiting');
 
+    // --- EXPORT STATE ---
+    const [showExportMenu, setShowExportMenu] = useState(false);
+    
+    const handleExport = (format: 'md' | 'rtf') => {
+        let content = "";
+        let fileName = "";
+        const dateStr = new Date().toLocaleDateString('fr-FR').replace(/\//g, '-');
+
+        if (labMode === 'chat') {
+            fileName = `Discussion_Labo_${tutor?.name || 'Session'}_${dateStr}`;
+            content = `# Discussion avec ${tutor?.name || 'Tuteur'} (${activeLang})\n\n`;
+            messages.forEach(msg => {
+                if (msg.role !== 'system') {
+                    content += `**${msg.role === 'user' ? 'Moi' : (tutor?.name || 'Tuteur')}:** ${msg.content}\n\n`;
+                }
+            });
+        } else if (labMode === 'scenario_play') {
+            fileName = `Dialogue_Scenario_${tutor?.name || 'Session'}_${dateStr}`;
+            content = `# Scénario avec ${tutor?.name || 'Tuteur'} (${activeLang})\n\n`;
+            activeScenario.forEach((step, idx) => {
+                if (idx < scenarioStepIndex || (idx === scenarioStepIndex && step.userResponse)) {
+                   content += `**${tutor?.name || 'Tuteur'}:** ${step.tutorText}\n\n`;
+                   if (step.userResponse) {
+                       content += `**Moi:** ${step.userResponse}\n\n`;
+                   }
+                }
+            });
+        }
+
+        if (format === 'rtf') {
+            const { markdownToRTF } = require('../utils/rtfExport');
+            const rtfContent = markdownToRTF(content);
+            const blob = new Blob([rtfContent], { type: 'application/rtf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}.rtf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } else {
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        setShowExportMenu(false);
+    };
+
     // Auto-scroll to bottom (Chat Mode)
     useEffect(() => {
         if (labMode === 'chat') {
@@ -609,6 +660,16 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
 
         if (successRate > 0.4 || attempt === target) {
             setScenarioFeedback('success');
+            // Save user response
+            setActiveScenario(prev => {
+                const newScenario = [...prev];
+                newScenario[scenarioStepIndex] = {
+                    ...newScenario[scenarioStepIndex],
+                    userResponse: userText
+                };
+                return newScenario;
+            });
+
             // Play success sound logic here if needed
             setTimeout(() => {
                 if (scenarioStepIndex < activeScenario.length - 1) {
@@ -823,7 +884,44 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                         </div>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 relative">
+                        {/* Export Button (Discrete) */}
+                        {(labMode === 'chat' || (labMode === 'scenario_play' && activeScenario.length > 0)) && (
+                            <>
+                                <button 
+                                    onClick={() => setShowExportMenu(!showExportMenu)}
+                                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                                        showExportMenu 
+                                            ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-primary text-white' : 'bg-white text-primary') 
+                                            : (themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white')
+                                    } hover:opacity-80`}
+                                    title="Exporter la session"
+                                >
+                                    <i className="fas fa-file-export text-inherit"></i>
+                                </button>
+                                
+                                {showExportMenu && (
+                                    <>
+                                        <div className="fixed inset-0 z-20" onClick={() => setShowExportMenu(false)}></div>
+                                        <div className="absolute top-full right-10 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-2 z-30 min-w-[150px] animate-scale-in origin-top-right text-text">
+                                            <button 
+                                                onClick={() => handleExport('md')}
+                                                className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-200 flex items-center gap-3"
+                                            >
+                                                <i className="fab fa-markdown text-blue-500"></i> (.md)
+                                            </button>
+                                            <button 
+                                                onClick={() => handleExport('rtf')}
+                                                className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-200 flex items-center gap-3"
+                                            >
+                                                <i className="fas fa-file-word text-blue-600"></i> (.rtf)
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </>
+                        )}
+
                          {/* Settings Button */}
                          <button onClick={() => setShowVoiceSettings(!showVoiceSettings)}
                             className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${

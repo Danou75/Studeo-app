@@ -1103,7 +1103,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
 
                 {/* 3. SCENARIO PLAY MODE */}
                 {labMode === 'scenario_play' && (
-                    <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-900 text-center">
+                    <div className="flex-1 flex flex-col items-center justify-start p-6 bg-gray-50 dark:bg-gray-900 text-center overflow-y-auto pb-32">
                         {isGeneratingScenario ? (
                              <div className="flex flex-col items-center justify-center animate-fade-in space-y-6 opacity-80">
                                 <div className="relative">
@@ -1127,10 +1127,10 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                     <div className="relative inline-block">
                                         <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-2xl p-6 shadow-sm relative">
                                             <div className="absolute -top-6 -left-4 text-4xl shadow-sm bg-white dark:bg-gray-800 rounded-full p-1">{tutor?.emoji}</div>
-                                            <p className="text-xl font-medium text-text mb-2 leading-relaxed">
+                                            <p className="text-lg md:text-xl font-medium text-text mb-2 leading-relaxed">
                                                 "{activeScenario[scenarioStepIndex].tutorText}"
                                             </p>
-                                            <p className="text-sm text-text-muted italic border-t pt-2 mt-2">{activeScenario[scenarioStepIndex].tutorTranslation}</p>
+                                            <p className="text-xs md:text-sm text-text-muted italic border-t pt-2 mt-2">{activeScenario[scenarioStepIndex].tutorTranslation}</p>
                                             <div className="absolute -right-4 -top-5 flex gap-2">
                                                 <button 
                                                     onClick={() => speak(activeScenario[scenarioStepIndex].tutorText)} 
@@ -1165,11 +1165,11 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                     scenarioFeedback === 'retry' ? 'border-orange-300 bg-orange-50 dark:bg-orange-900/20' :
                                     'border-primary/30 bg-primary/5'
                                 }`}>
-                                    <h3 className="text-sm uppercase tracking-wider font-bold text-text-muted mb-2">{t('lab.scenarios.userGoal')}</h3>
-                                    <p className="text-2xl font-bold text-primary mb-2">
+                                    <h3 className="text-[10px] md:text-xs uppercase tracking-wider font-bold text-text-muted mb-2">{t('lab.scenarios.userGoal')}</h3>
+                                    <p className="text-xl md:text-2xl font-bold text-primary mb-2">
                                         "{activeScenario[scenarioStepIndex].userTarget}"
                                     </p>
-                                    <p className="text-sm text-text-muted italic">({activeScenario[scenarioStepIndex].userTargetTranslation})</p>
+                                    <p className="text-xs md:text-sm text-text-muted italic">({activeScenario[scenarioStepIndex].userTargetTranslation})</p>
 
                                     {/* FEEDBACK OVERLAY */}
                                     {scenarioFeedback === 'success' && (

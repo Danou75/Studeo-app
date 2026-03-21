@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const BACKEND_API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_API_KEY;
-const GEMINI_MODEL = 'gemini-1.5-flash'; // Fallback sur 1.5 flash pour de meilleurs quotas de rate-limit (anti-429)
+const GEMINI_MODEL = 'gemini-2.5-flash'; // Fallback sur le souhait de l'utilisateur (mais expose à plus de rate-limits 429 sans clé app)
 
 /**
  * /api/gemini/transcribe

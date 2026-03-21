@@ -539,7 +539,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     // --- EXPORT STATE ---
     const [showExportMenu, setShowExportMenu] = useState(false);
     
-    const handleExport = (format: 'md' | 'rtf') => {
+    const handleExport = async (format: 'md' | 'rtf') => {
         let content = "";
         let fileName = "";
         const dateStr = new Date().toLocaleDateString('fr-FR').replace(/\//g, '-');
@@ -552,7 +552,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     content += `**${msg.role === 'user' ? 'Moi' : (tutor?.name || 'Tuteur')}:** ${msg.content}\n\n`;
                 }
             });
-        } else if (labMode === 'scenario_play') {
+        } else if (labMode === 'scenario_play' || labMode === 'scenario_list') {
             fileName = `Dialogue_Scenario_${tutor?.name || 'Session'}_${dateStr}`;
             content = `# Scénario avec ${tutor?.name || 'Tuteur'} (${activeLang})\n\n`;
             activeScenario.forEach((step, idx) => {
@@ -565,24 +565,59 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
             });
         }
 
-        if (format === 'rtf') {
-            const { markdownToRTF } = require('../utils/rtfExport');
-            const rtfContent = markdownToRTF(content);
-            const blob = new Blob([rtfContent], { type: 'application/rtf' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${fileName}.rtf`;
-            a.click();
-            URL.revokeObjectURL(url);
-        } else {
-            const blob = new Blob([content], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${fileName}.md`;
-            a.click();
-            URL.revokeObjectURL(url);
+        try {
+            const isTauri = typeof window !== 'undefined' && window.__TAURI__ !== undefined;
+            if (isTauri) {
+                const { save } = await import('@tauri-apps/api/dialog');
+                const { writeTextFile } = await import('@tauri-apps/api/fs');
+                if (format === 'rtf') {
+                    const { markdownToRTF } = require('../utils/rtfExport');
+                    const rtfContent = markdownToRTF(content);
+                    const filePath = await save({
+                        defaultPath: `${fileName}.rtf`,
+                        filters: [{ name: 'Rich Text Format', extensions: ['rtf'] }]
+                    });
+                    if (filePath) {
+                        await writeTextFile(filePath, rtfContent);
+                        showToast(t('common.saved') || 'Fichier sauvegardé avec succès', 'success');
+                    }
+                } else {
+                    const filePath = await save({
+                        defaultPath: `${fileName}.md`,
+                        filters: [{ name: 'Markdown', extensions: ['md'] }]
+                    });
+                    if (filePath) {
+                        await writeTextFile(filePath, content);
+                        showToast(t('common.saved') || 'Fichier sauvegardé avec succès', 'success');
+                    }
+                }
+            } else {
+                // Web/Mobile Fallback (Blob a.click)
+                if (format === 'rtf') {
+                    const { markdownToRTF } = require('../utils/rtfExport');
+                    const rtfContent = markdownToRTF(content);
+                    const blob = new Blob([rtfContent], { type: 'application/rtf' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${fileName}.rtf`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast(t('common.saved') || 'Fichier téléchargé avec succès', 'success');
+                } else {
+                    const blob = new Blob([content], { type: 'text/markdown' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${fileName}.md`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast(t('common.saved') || 'Fichier téléchargé avec succès', 'success');
+                }
+            }
+        } catch (error) {
+            console.error('Erreur export :', error);
+            showToast('Erreur lors de l\'exportation du fichier', 'error');
         }
         setShowExportMenu(false);
     };

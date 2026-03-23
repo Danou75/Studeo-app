@@ -2,14 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFlashcards } from '../../hooks/useFlashcards';
 
-// Mock dependencies
-vi.mock('../../hooks/useLocalStorage', () => ({
-    useLocalStorage: (key: string, initialValue: any) => {
-        const setValue = vi.fn();
-        return [initialValue, setValue] as const;
-    }
-}));
-
 vi.mock('../../services/fileParser', () => ({
     parseFile: vi.fn()
 }));
@@ -18,56 +10,82 @@ vi.mock('../../utils/security', () => ({
     sanitizeFileName: (name: string) => name.replace(/[^a-zA-Z0-9_\-\.]/g, '_')
 }));
 
+// Mock ToastContext
+const mockShowToast = vi.fn();
+vi.mock('../../contexts/ToastContext', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
+    ToastProvider: ({ children }: { children: any }) => children,
+}));
+
+// Mock ConfirmationContext
+vi.mock('../../contexts/ConfirmationContext', () => ({
+    useConfirmation: () => ({
+        showConfirmation: vi.fn((config: any) => {
+            if (config.onConfirm) config.onConfirm();
+        }),
+    }),
+    ConfirmationProvider: ({ children }: { children: any }) => children,
+}));
+
+// Pas de mock de useLocalStorage : jsdom fournit window.localStorage
+
 describe('useFlashcards', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        global.alert = vi.fn();
+        localStorage.clear();
     });
 
     it('should initialize with default flashcards', () => {
         const { result } = renderHook(() => useFlashcards());
-        
         expect(result.current.allFlashcards).toBeDefined();
         expect(result.current.currentSetName).toBeDefined();
     });
 
     it('should provide handleFileImport function', () => {
         const { result } = renderHook(() => useFlashcards());
-        
         expect(typeof result.current.handleFileImport).toBe('function');
     });
 
     it('should provide handleSaveEditedCards function', () => {
         const { result } = renderHook(() => useFlashcards());
-        
         expect(typeof result.current.handleSaveEditedCards).toBe('function');
     });
 
     it('should validate JSON structure in handleSaveEditedCards', () => {
         const { result } = renderHook(() => useFlashcards());
-        
-        const invalidJson = 'not a json';
-        const success = result.current.handleSaveEditedCards(invalidJson);
-        
-        expect(success).toBe(false);
-        expect(global.alert).toHaveBeenCalled();
+
+        let success: boolean;
+        act(() => {
+            success = result.current.handleSaveEditedCards('not a json');
+        });
+
+        expect(success!).toBe(false);
+        // Le hook appelle showToast (pas alert) pour signaler les erreurs de validation
+        expect(mockShowToast).toHaveBeenCalledWith(expect.stringContaining('Erreur'), 'error');
     });
 
     it('should reject non-array JSON in handleSaveEditedCards', () => {
         const { result } = renderHook(() => useFlashcards());
-        
-        const nonArrayJson = JSON.stringify({ type: 'classic' });
-        const success = result.current.handleSaveEditedCards(nonArrayJson);
-        
-        expect(success).toBe(false);
+
+        let success: boolean;
+        act(() => {
+            success = result.current.handleSaveEditedCards(JSON.stringify({ type: 'classic' }));
+        });
+
+        expect(success!).toBe(false);
+        expect(mockShowToast).toHaveBeenCalledWith(expect.stringContaining('Erreur'), 'error');
     });
 
     it('should validate flashcard structure', () => {
         const { result } = renderHook(() => useFlashcards());
-        
-        const invalidCard = JSON.stringify([{ type: 'classic' }]); // Missing terms
-        const success = result.current.handleSaveEditedCards(invalidCard);
-        
-        expect(success).toBe(false);
+
+        let success: boolean;
+        act(() => {
+            // Carte "classic" sans le champ terms — doit être rejetée
+            success = result.current.handleSaveEditedCards(JSON.stringify([{ type: 'classic' }]));
+        });
+
+        expect(success!).toBe(false);
+        expect(mockShowToast).toHaveBeenCalledWith(expect.stringContaining('Erreur'), 'error');
     });
 });

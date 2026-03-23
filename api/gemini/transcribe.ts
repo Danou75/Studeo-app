@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { checkRateLimit } from '../_rateLimit';
 
 const BACKEND_API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_API_KEY;
-const GEMINI_MODEL = 'gemini-2.5-flash'; // Fallback sur le souhait de l'utilisateur (mais expose à plus de rate-limits 429 sans clé app)
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 /**
  * /api/gemini/transcribe
@@ -26,6 +27,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  // Rate limiting
+  const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown';
+  if (!checkRateLimit(clientIp)) {
+    return res.status(429).json({ error: 'Too many requests. Please wait before retrying.' });
   }
 
   const { audioBase64, mimeType, language, apiKey: requestApiKey } = req.body;

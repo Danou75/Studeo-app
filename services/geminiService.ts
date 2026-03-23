@@ -23,8 +23,57 @@ async function decodeAudioData(
   return buffer;
 }
 
-// Global cache for audio buffers to avoid repeated API calls for the same text.
-const audioCache = new Map<string, AudioBuffer>();
+// ── LRU Cache pour AudioBuffer ───────────────────────────────────────────────
+// Chaque AudioBuffer peut peser plusieurs MB (PCM non compressé).
+// On limite à MAX_AUDIO_CACHE_SIZE entrées pour éviter les fuites mémoire,
+// notamment sur iPad où Safari tue l'onglet si trop de RAM est utilisée.
+const MAX_AUDIO_CACHE_SIZE = 50;
+
+class LRUCache<K, V> {
+    private cache = new Map<K, V>();
+    private maxSize: number;
+
+    constructor(maxSize: number) {
+        this.maxSize = maxSize;
+    }
+
+    get(key: K): V | undefined {
+        const value = this.cache.get(key);
+        if (value !== undefined) {
+            // Déplacer à la fin = marquer comme "récemment utilisé"
+            this.cache.delete(key);
+            this.cache.set(key, value);
+        }
+        return value;
+    }
+
+    has(key: K): boolean {
+        return this.cache.has(key);
+    }
+
+    set(key: K, value: V): void {
+        // Supprimer d'abord si l'entrée existe (pour la repositionner)
+        this.cache.delete(key);
+        // Si plein, évincer l'entrée la plus ancienne (1ère de la Map)
+        if (this.cache.size >= this.maxSize) {
+            const oldestKey = this.cache.keys().next().value;
+            if (oldestKey !== undefined) {
+                this.cache.delete(oldestKey);
+            }
+        }
+        this.cache.set(key, value);
+    }
+
+    clear(): void {
+        this.cache.clear();
+    }
+
+    get size(): number {
+        return this.cache.size;
+    }
+}
+
+const audioCache = new LRUCache<string, AudioBuffer>(MAX_AUDIO_CACHE_SIZE);
 // Per Web Audio API best practices, a single AudioContext should be used for decoding.
 const audioContextForDecoding = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
 
@@ -116,3 +165,12 @@ export function playAudioBuffer(buffer: AudioBuffer, context: AudioContext, onEn
     }
     source.start();
 }
+
+/**
+ * Libère tous les AudioBuffer du cache (utile en fin de session de quiz
+ * pour libérer de la mémoire, notamment sur iPad).
+ */
+export function clearAudioCache(): void {
+    audioCache.clear();
+}
+

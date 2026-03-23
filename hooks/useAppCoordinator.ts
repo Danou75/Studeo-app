@@ -20,6 +20,7 @@ import { TUTORS, DEFAULT_FLASHCARDS, DEFAULT_FLASHCARD_SET_NAME } from '../const
 import { INITIAL_GAMIFICATION_DATA } from '../utils/achievements';
 import { getAIClientConfig } from '../utils/aiConfigHelper';
 import { deduplicateCards } from '../utils/flashcardHelpers';
+import { clearAudioCache } from '../services/geminiService';
 
 
 
@@ -538,6 +539,10 @@ export const useAppCoordinator = () => {
                 duration: result.duration || 0,
                 language: quizSession.quizConfig?.answerLang || "unknown",
             });
+
+            // Libère les AudioBuffer du cache LRU après chaque session
+            // pour éviter les fuites mémoire (important sur iPad / Safari)
+            clearAudioCache();
 
             navigation.setScreen("completion");
         } catch (error) {

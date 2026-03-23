@@ -66,8 +66,15 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
   const [fromCache, setFromCache] = useState(false);
   const [libraryFilter, setLibraryFilter] = useState<'all' | 'conjugation' | 'translation'>('all');
   const [librarySearch, setLibrarySearch] = useState('');
+  const [libraryViewMode, setLibraryViewMode] = useState<'grid' | 'list'>(() => {
+    return (localStorage.getItem('studeo_library_view_mode') as 'grid' | 'list') || 'grid';
+  });
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    localStorage.setItem('studeo_library_view_mode', libraryViewMode);
+  }, [libraryViewMode]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -1133,6 +1140,32 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                 </button>
               ))}
             </div>
+
+            {/* View Mode Toggle */}
+            <div className="flex gap-1 p-1 bg-background border border-border rounded-xl">
+              <button
+                onClick={() => setLibraryViewMode('grid')}
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                  libraryViewMode === 'grid'
+                    ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm'
+                    : 'text-text-muted hover:text-text hover:bg-background-secondary'
+                }`}
+                title="Affichage Grille"
+              >
+                <i className="fas fa-th-large"></i>
+              </button>
+              <button
+                onClick={() => setLibraryViewMode('list')}
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                  libraryViewMode === 'list'
+                    ? 'bg-primary/20 text-primary border border-primary/30 shadow-sm'
+                    : 'text-text-muted hover:text-text hover:bg-background-secondary'
+                }`}
+                title="Affichage Liste"
+              >
+                <i className="fas fa-list"></i>
+              </button>
+            </div>
             {cache.entries.length > 0 && (
               <button
                 onClick={() => { if (window.confirm('Vider toute la bibliothèque ?')) cache.clearAll(); }}
@@ -1193,13 +1226,79 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
             }
 
             return (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              <div className={libraryViewMode === 'grid' 
+                ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" 
+                : "flex flex-col gap-2"
+              }>
                 {filtered.map((entry) => {
                   const isConj = entry.type === 'conjugation';
                   const label = isConj ? (entry as any).verb : (entry as any).text;
                   const langFlag = LANGUAGES.find(l => l.code === entry.langCode)?.flag ?? '';
                   const langName = entry.langName;
                   const dateStr = new Date(entry.savedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+                  
+                  const handleLoad = () => {
+                    setVerb(label);
+                    setFromCache(false);
+                    if (isConj) {
+                      setMode('conjugate');
+                      setResult((entry as any).result);
+                      setTranslationResult(null);
+                    } else {
+                      setMode('translate');
+                      setTranslationResult((entry as any).result);
+                      setResult(null);
+                    }
+                  };
+
+                  if (libraryViewMode === 'list') {
+                    return (
+                        <div
+                          key={entry.key}
+                          className="group bg-background-secondary rounded-xl border border-border/30 hover:border-primary/40 hover:shadow-sm transition-all duration-200 overflow-hidden flex items-center p-3 gap-3"
+                        >
+                           <div className={`w-1 self-stretch rounded-full ${isConj ? 'bg-primary' : 'bg-accent'}`}></div>
+                           <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="font-bold text-text capitalize truncate">{label}</h3>
+                                    <span className="text-sm shrink-0">{langFlag}</span>
+                                </div>
+                                <div className="flex items-center gap-3 mt-0.5">
+                                    <span className="text-[10px] text-text-muted flex items-center gap-1">
+                                        <i className={isConj ? "fas fa-book-open" : "fas fa-language"}></i>
+                                        {isConj ? 'Conjugaison' : 'Traduction'}
+                                    </span>
+                                    <span className="text-[10px] text-text-muted hidden sm:inline">
+                                        {langName}
+                                    </span>
+                                    <span className="text-[10px] text-text-muted">
+                                        {dateStr}
+                                    </span>
+                                </div>
+                           </div>
+                           <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-[10px] text-text-muted hidden md:block group-hover:block transition-all">
+                                    <i className="fas fa-eye mr-1"></i>{entry.accessCount}
+                                </span>
+                                <button
+                                    onClick={handleLoad}
+                                    className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold transition-all flex items-center gap-1.5"
+                                >
+                                    <i className="fas fa-bolt text-[10px]"></i>
+                                    <span className="hidden sm:inline">Charger</span>
+                                </button>
+                                <button
+                                    onClick={() => cache.deleteEntry(entry.key)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                    title="Supprimer"
+                                >
+                                    <i className="fas fa-trash-alt text-xs"></i>
+                                </button>
+                           </div>
+                        </div>
+                    );
+                  }
+
                   const preview = isConj
                     ? `${Object.keys((entry as any).result.tables[0]?.forms ?? {}).length > 0 ? Object.entries((entry as any).result.tables[0]?.forms ?? {}).slice(0,2).map(([p,f]) => `${p} ${f}`).join(' · ') : ''}…`
                     : (entry as any).result.translated?.slice(0, 60) + '…';
@@ -1240,19 +1339,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                             <i className="fas fa-eye mr-1"></i>{entry.accessCount} accès
                           </span>
                           <button
-                            onClick={() => {
-                              setVerb(label);
-                              setFromCache(false);
-                              if (isConj) {
-                                setMode('conjugate');
-                                setResult((entry as any).result);
-                                setTranslationResult(null);
-                              } else {
-                                setMode('translate');
-                                setTranslationResult((entry as any).result);
-                                setResult(null);
-                              }
-                            }}
+                            onClick={handleLoad}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold transition-all"
                           >
                             <i className="fas fa-bolt text-[10px]"></i>

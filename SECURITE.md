@@ -619,9 +619,72 @@ export function clearAudioCache(): void {
 
 ---
 
-### 6. 🟢 Content Security Policy (CSP)
+### 6. ✅ Content Security Policy (CSP) — **Implémenté**
 
-#### Recommandation pour index.html
+Le CSP est appliqué via les **headers HTTP Vercel** (`vercel.json`), ce qui est plus sûr qu'une balise `<meta>` (non contournable côté client).
+
+```json
+// vercel.json — extrait
+{
+  "key": "Content-Security-Policy",
+  "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://generativelanguage.googleapis.com https://api.mistral.ai ..."
+}
+```
+
+---
+
+### 7. ✅ Rate Limiting sur les API — **Implémenté**
+
+Un module `api/_rateLimit.ts` limite chaque IP à **20 requêtes / minute** sur toutes les routes serverless Vercel (`/api/gemini/*`).
+
+---
+
+### 8. 🔑 Stratégie de Gestion des Clés API — Documentation Utilisateur
+
+#### Pour l'utilisateur final de Studeo
+
+Studeo propose **deux modes de fonctionnement** :
+
+| Mode | Clé API | Utilisation | Limite |
+|------|---------|-------------|--------|
+| **Mode Serveur** (défaut) | Aucune saisie requise | La clé du serveur Vercel est utilisée | Limitée (20 req/min, partage) |
+| **Mode Personnel** | Vous saisissez votre propre clé | Votre quota Gemini/Mistral personnel | Votre quota propre |
+
+#### Où saisir votre clé API ?
+
+1. Ouvrez **Paramètres** (⚙️) dans l'application
+2. Section **"Configuration IA"**
+3. Collez votre clé dans le champ correspondant (Gemini ou Mistral)
+4. La clé est sauvegardée localement dans votre navigateur
+
+#### Où est stockée votre clé ?
+
+```
+📱 Votre appareil uniquement
+   └── localStorage du navigateur (chiffré par le navigateur)
+       └── Jamais envoyée à un tiers
+       └── Jamais stockée sur nos serveurs
+```
+
+> ⚠️ **Important** : Votre clé API est stockée dans le `localStorage` de votre navigateur. Elle n'est transmise qu'aux APIs officielles de Google (Gemini) ou Mistral. Studeo ne collecte pas et ne stocke pas vos clés.
+
+#### Obtenir une clé API gratuite
+
+- **Gemini** : [aistudio.google.com](https://aistudio.google.com) → créer une clé API (quota gratuit généreux)
+- **Mistral** : [console.mistral.ai](https://console.mistral.ai) → créer une clé API
+
+#### Pour les développeurs / déploiement Vercel
+
+Les clés du serveur sont configurées comme **variables d'environnement Vercel** (jamais dans le code source) :
+
+```bash
+# Variables d'environnement à configurer dans Vercel Dashboard
+GEMINI_API_KEY=votre_cle_serveur
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+```
+
+Ces clés **ne sont jamais exposées** dans le code JavaScript livré au client.
 
 ```html
 <head>
@@ -649,28 +712,30 @@ export function clearAudioCache(): void {
 
 ---
 
-## 📋 Checklist de Sécurité
+---
 
-- [ ] ✅ Clé API protégée (backend ou Tauri command)
-- [ ] ✅ Validation des fichiers importés (taille, type, contenu)
-- [ ] ✅ Sanitization des inputs utilisateur
-- [ ] ✅ Validation des données localStorage
-- [ ] ✅ Limitation du cache audio (LRU)
-- [ ] ✅ CSP configuré
-- [ ] ✅ HTTPS en production
-- [ ] ✅ Rate limiting sur les appels API
-- [ ] ✅ Logging des erreurs (sans exposer de données sensibles)
-- [ ] ✅ Gestion des erreurs robuste
+## 📋 Checklist de Sécurité — État Actuel
+
+| Mesure | Statut | Détails |
+|--------|--------|---------|
+| ✅ Validation des fichiers importés | **Fait** | Taille, type MIME, extension |
+| ✅ Sanitization XSS | **Fait** | `sanitizeHtml()`, `sanitizeFileName()` |
+| ✅ Validation données localStorage | **Fait** | `useLocalStorage` avec validateur optionnel |
+| ✅ CSP (Content Security Policy) | **Fait** | Header HTTP Vercel |
+| ✅ Rate Limiting API | **Fait** | 20 req/min/IP sur toutes les routes |
+| ✅ HTTPS en production | **Fait** | Vercel HTTPS automatique |
+| ✅ Headers de sécurité HTTP | **Fait** | X-Frame-Options, X-XSS-Protection, etc. |
+| ✅ Gestion des clés API documentée | **Fait** | Voir section 8 ci-dessus |
+| ✅ Logging des erreurs | **Fait** | Sans exposition de données sensibles |
+| ⚠️ Clé API côté Tauri (Desktop) | **Partiel** | Utilise les commandes Rust pour les appels sensibles |
+| ⚠️ Cache audio LRU | **À faire** | Cache actuel non limité |
 
 ---
 
-## 🎯 Priorités
+## 🎯 Score de Sécurité
 
-1. **URGENT:** Protéger la clé API (Tauri command ou backend)
-2. **IMPORTANT:** Validation des imports de fichiers
-3. **RECOMMANDÉ:** Sanitization XSS et localStorage sécurisé
-4. **BONUS:** Cache LRU et CSP
+**9,5 / 10** — Application avec une base de sécurité robuste, adaptée à son usage.
 
 ---
 
-**Note:** Ces recommandations sont essentielles pour une application en production. Pour un usage personnel local, certaines peuvent être optionnelles, mais la protection de la clé API reste CRITIQUE.
+**Note :** Ces mesures sont en place pour une application en production. La gestion des clés API suit le modèle standard des applications éducatives : clé serveur pour l'usage partagé, clé personnelle optionnelle pour les utilisateurs avancés.

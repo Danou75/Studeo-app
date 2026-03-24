@@ -120,9 +120,10 @@ export const useAppCoordinator = () => {
         setIsCheckingUpdate(true);
         console.log("[UpdateCheck] Starting check...");
         try {
-            const checkUrl = `https://raw.githubusercontent.com/Danou75/Studeo-app/main/public/version.json?t=${Date.now()}`;
+            // Use refs/heads/main for more reliable updates from GitHub Raw
+            const checkUrl = `https://raw.githubusercontent.com/Danou75/Studeo-app/refs/heads/main/public/version.json?t=${Date.now()}`;
             const response = await fetch(checkUrl);
-            if (!response.ok) throw new Error("Impossible de joindre le serveur de mise à jour.");
+            if (!response.ok) throw new Error(`Serveur injoignable (${response.status})`);
             
             const data = await response.json();
             const remoteVersion = data.version;
@@ -133,19 +134,41 @@ export const useAppCoordinator = () => {
             console.log(`[UpdateCheck] Version Comparison - Local: v${currentVersion}, Remote: v${remoteVersion}`);
             setLatestVersion(remoteVersion);
             
-            if (remoteVersion === currentVersion) {
+            // Proper semantic version comparison (v1.v2.v3)
+            const remoteParts = remoteVersion.split('.').map(Number);
+            const currentParts = currentVersion.split('.').map(Number);
+            
+            let isNewer = false;
+            for (let i = 0; i < 3; i++) {
+                if ((remoteParts[i] || 0) > (currentParts[i] || 0)) {
+                    isNewer = true;
+                    break;
+                }
+                if ((remoteParts[i] || 0) < (currentParts[i] || 0)) {
+                    break;
+                }
+            }
+
+            if (isNewer) {
+                setUpdateStatus('available');
+                console.log(`[UpdateCheck] Update available: v${remoteVersion}`);
+                if (!silent) showToast(`🚀 Une nouvelle version (v${remoteVersion}) est disponible !`, "info", 10000);
+            } else {
                 setUpdateStatus('up-to-date');
                 console.log("[UpdateCheck] Application is up to date.");
                 if (!silent) showToast("Votre application est à jour ! 🎉", "success");
-            } else {
-                setUpdateStatus('available');
-                console.log(`[UpdateCheck] Update available: v${remoteVersion}`);
-                showToast(`🚀 Une nouvelle version (v${remoteVersion}) est disponible ! Allez dans les paramètres pour mettre à jour.`, "info", 10000);
             }
         } catch (err) {
             console.error("[UpdateCheck] Error:", err);
             setUpdateStatus('error');
-            if (!silent) showToast("Erreur lors de la vérification des mises à jour.", "error");
+            // Check if it's a network error (no internet or blocked)
+            const isNetworkError = err instanceof Error && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'));
+            if (!silent) {
+                const message = isNetworkError 
+                    ? "Connexion au serveur GitHub impossible. Vérifiez votre internet."
+                    : "Erreur lors de la vérification des mises à jour.";
+                showToast(message, "error");
+            }
         } finally {
             setIsCheckingUpdate(false);
         }

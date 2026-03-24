@@ -26,16 +26,16 @@ Réponds UNIQUEMENT avec un objet JSON dans ce format exact :
   "original": "texte original",
   "translated": "traduction",
   "language": "${targetLanguage}",
-  "context": "contexte d'utilisation (optionnel)",
+  "context": "contexte d'utilisation (optionnel, utilise du Markdown pour la structure)",
   "examples": ["exemple 1", "exemple 2"],
-  "notes": "notes grammaticales ou culturelles (optionnel)"
+  "notes": "notes grammaticales ou culturelles (optionnel, utilise une liste Markdown avec des sauts de ligne \\n\\n entre les points)"
 }
 
 IMPORTANT : 
 - Fournis une traduction naturelle et idiomatique
 - Si c'est un verbe, donne l'infinitif
 - Ajoute 2-3 exemples d'utilisation en contexte
-- Ajoute des notes si pertinent (genre, pluriel, usage, etc.)`;
+- Ajoute des notes structurelles si pertinent (genre, pluriel, usage, registre) sous forme de liste numérotée ou à puces Markdown.`;
 
     let response = '';
 

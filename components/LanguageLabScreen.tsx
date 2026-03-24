@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTTS } from '../hooks/useTTS';
-import { generateLabResponse, generateScenario, ChatMessage, ScenarioStep, executeAIRequest } from '../services/conversationService';
+import { generateLabResponse, generateScenario, generateConversationalOpener, generateConversationSummary, ChatMessage, ScenarioStep, ConversationSummary, LessonSuggestion, executeAIRequest } from '../services/conversationService';
 import { useAIConfig } from '../contexts/AIConfigContext';
 import { generateFlashcardsWithAI } from '../services/aiCardGenerator';
 import { AIGenerationConfig } from '../types';
@@ -272,7 +272,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     };
     
     // --- MODES: 'chat', 'scenario_list', 'scenario_play', 'study', 'pronunciation' ---
-    const [labMode, setLabMode] = useState<'chat' | 'scenario_list' | 'scenario_play' | 'study' | 'pronunciation'>('chat');
+    const [labMode, setLabMode] = useState<'chat' | 'scenario_list' | 'scenario_play' | 'study' | 'pronunciation' | 'conversation_select' | 'conversation_active' | 'conversation_summary'>('chat');
 
     // --- STUDY MODE STATE ---
     const [studyAudioSrc, setStudyAudioSrc] = useState<string | null>(null);
@@ -536,8 +536,19 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     const [scenarioFeedback, setScenarioFeedback] = useState<'waiting' | 'success' | 'retry'>('waiting');
     const [showScenarioEndPrompt, setShowScenarioEndPrompt] = useState(false);
 
-    // --- EXPORT STATE ---
     const [showExportMenu, setShowExportMenu] = useState(false);
+
+    // --- CONVERSATION MODE STATE ---
+    const [convTheme, setConvTheme] = useState<string>('');
+    const [convThemeLabel, setConvThemeLabel] = useState<string>('');
+    const [convMessages, setConvMessages] = useState<ChatMessage[]>([]);
+    const [convSummary, setConvSummary] = useState<ConversationSummary | null>(null);
+    const [isGeneratingOpener, setIsGeneratingOpener] = useState(false);
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+    const [showCustomConvModal, setShowCustomConvModal] = useState(false);
+    const [customConvTopic, setCustomConvTopic] = useState('');
+    const convMessagesEndRef = useRef<HTMLDivElement>(null);
+    const [convRateLimitSeconds, setConvRateLimitSeconds] = useState(0);
     
     const handleExport = async (format: 'md' | 'rtf') => {
         let content = "";
@@ -563,7 +574,41 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                    }
                 }
             });
+        } else if (labMode === 'conversation_active' || labMode === 'conversation_summary') {
+            fileName = `Causerie_${convThemeLabel || 'Session'}_${tutor?.name || ''}_${dateStr}`;
+            content = `# Causerie : ${convThemeLabel}\nAvec ${tutor?.name || 'Tuteur'} (${activeLang})\n\n`;
+            convMessages.forEach(msg => {
+                if (msg.role !== 'system') {
+                    const mainText = msg.content.split('|||')[0].replace(/\[.*?\]/g, '').trim();
+                    content += `**${msg.role === 'user' ? 'Moi' : (tutor?.name || 'Tuteur')}:** ${mainText}\n\n`;
+                }
+            });
+            if (convSummary) {
+                content += `\n---\n\n## Bilan de session\n\n`;
+                content += `**Score de fluidité :** ${convSummary.fluency_score}/100\n\n`;
+                if (convSummary.strong_points.length > 0) {
+                    content += `**Points forts :** ${convSummary.strong_points.join(', ')}\n\n`;
+                }
+                if (convSummary.errors.length > 0) {
+                    content += `**Corrections :**\n`;
+                    convSummary.errors.forEach(e => {
+                        content += `- ~~${e.original}~~ → **${e.corrected}** *(${e.explanation})*\n`;
+                    });
+                    content += '\n';
+                }
+                if (convSummary.vocabulary.length > 0) {
+                    content += `**Vocabulaire clé :**\n`;
+                    convSummary.vocabulary.forEach(v => {
+                        content += `- **${v.word}** : ${v.translation}\n`;
+                    });
+                    content += '\n';
+                }
+                if (convSummary.next_theme_suggestion) {
+                    content += `**Suggestion pour la prochaine session :** ${convSummary.next_theme_suggestion}\n`;
+                }
+            }
         }
+
 
         try {
             const isTauri = typeof window !== 'undefined' && window.__TAURI__ !== undefined;
@@ -855,6 +900,105 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     const [showCustomScenarioModal, setShowCustomScenarioModal] = useState(false);
     const [customTopic, setCustomTopic] = useState('');
 
+    // --- CONVERSATION MODE LOGIC ---
+    const getConversationThemes = () => [
+        { id: 'travel',  emoji: '✈️', label: 'Voyages & découvertes', desc: 'Destinations, cultures, expériences...' },
+        { id: 'cinema',  emoji: '🎬', label: 'Cinéma & Séries',       desc: 'Films, séries, acteurs préférés...' },
+        { id: 'food',    emoji: '🍽️', label: 'Gastronomie',           desc: 'Plats, restaurants, recettes...' },
+        { id: 'work',    emoji: '💼', label: 'Travail & Ambitions',    desc: 'Carrière, projets, rêves...' },
+        { id: 'culture', emoji: '🎨', label: 'Culture & Art',          desc: 'Musique, livres, expositions...' },
+        { id: 'sport',   emoji: '⚽', label: 'Sport & Loisirs',        desc: 'Pratiques sportives, bien-être...' },
+        { id: 'tech',    emoji: '💻', label: 'Technologie',            desc: 'IA, réseaux sociaux, gadgets...' },
+        { id: 'nature',  emoji: '🌿', label: 'Nature & Planète',       desc: 'Écologie, animaux, environnement...' },
+    ];
+
+    const startConversation = async (theme: string, themeLabel: string) => {
+        if (!tutor || convRateLimitSeconds > 0) return;
+        setConvTheme(theme);
+        setConvThemeLabel(themeLabel);
+        setConvMessages([]);
+        setConvSummary(null);
+        setLabMode('conversation_active');
+        setIsGeneratingOpener(true);
+        try {
+            const opener = await generateConversationalOpener(tutor, theme, config, activeLang);
+            const aiMsg: ChatMessage = { role: 'assistant', content: opener };
+            setConvMessages([aiMsg]);
+            speak(opener.split('|||')[0].replace(/\[.*?\]/g, '').trim());
+        } catch (e) {
+            console.error('Error generating opener', e);
+            const errMsg = e instanceof Error ? e.message : String(e);
+            const is429 = errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('quota');
+            if (is429) {
+                // Extract retry delay from the error message
+                const retryMatch = errMsg.match(/retry in (\d+(?:\.\d+)?)s/i);
+                const retrySecs = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) + 2 : 35;
+                setConvRateLimitSeconds(retrySecs);
+                showToast(`Quota API atteint — réessaie dans ${retrySecs}s`, 'error');
+            } else {
+                showToast(t('common.error'), 'error');
+            }
+            setLabMode('conversation_select');
+        } finally {
+            setIsGeneratingOpener(false);
+        }
+    };
+
+    const handleSendConvMessage = async (text: string) => {
+        if (!text.trim() || !tutor) return;
+        const userMsg: ChatMessage = { role: 'user', content: text };
+        setConvMessages(prev => [...prev, userMsg]);
+        setIsProcessing(true);
+        setTextInput('');
+        setDraftMessage('');
+        resetTranscript();
+        try {
+            const responseText = await generateLabResponse(
+                tutor, convMessages, text, config,
+                { enableCorrection: true, activeLanguage: activeLang, conversationTheme: convTheme }
+            );
+            const aiMsg: ChatMessage = { role: 'assistant', content: responseText };
+            setConvMessages(prev => [...prev, aiMsg]);
+            speak(responseText.split('|||')[0].replace(/\[.*?\]/g, '').trim());
+        } catch (error) {
+            console.error(error);
+            setConvMessages(prev => [...prev, { role: 'system', content: t('lab.chat.errorConnection') }]);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleEndConversation = async () => {
+        if (convMessages.length < 2) { setLabMode('conversation_select'); return; }
+        // Set spinner BEFORE switching mode to avoid flash of empty state
+        setIsGeneratingSummary(true);
+        setLabMode('conversation_summary');
+        try {
+            const summary = await generateConversationSummary(convMessages, activeLang, config);
+            setConvSummary(summary);
+        } catch (e) {
+            console.error('Error generating summary', e);
+            // Service should never throw now, but just in case
+            setConvSummary({ errors: [], vocabulary: [], fluency_score: 0, strong_points: [], next_theme_suggestion: '', error_patterns: [], lesson_suggestions: [] });
+        } finally {
+            setIsGeneratingSummary(false);
+        }
+    };
+
+    // Auto-scroll conversation
+    useEffect(() => {
+        if (labMode === 'conversation_active') {
+            convMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [convMessages, draftMessage, labMode]);
+
+    // Rate-limit countdown
+    useEffect(() => {
+        if (convRateLimitSeconds <= 0) return;
+        const timer = setTimeout(() => setConvRateLimitSeconds(s => Math.max(0, s - 1)), 1000);
+        return () => clearTimeout(timer);
+    }, [convRateLimitSeconds]);
+
     return (
         <div className="flex flex-col h-full bg-background text-text animate-fade-in font-sans relative">
             {/* Header */}
@@ -922,7 +1066,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     
                     <div className="flex gap-2 relative">
                         {/* Export Button (Discrete) */}
-                        {(labMode === 'chat' || (labMode === 'scenario_play' && activeScenario.length > 0)) && (
+                        {(labMode === 'chat' || labMode === 'conversation_active' || labMode === 'conversation_summary' || (labMode === 'scenario_play' && activeScenario.length > 0)) && (
                             <>
                                 <button 
                                     onClick={() => setShowExportMenu(!showExportMenu)}
@@ -976,27 +1120,33 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     <div className={`p-1 rounded-full flex gap-1 ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5' : 'bg-black/20'}`}>
                         <button 
                             onClick={() => setLabMode('chat')} 
-                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${labMode === 'chat' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode === 'chat' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
                         >
                             {t('lab.tabs.chat')}
                         </button>
                         <button 
+                            onClick={() => setLabMode('conversation_select')} 
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode.startsWith('conversation') ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
+                        >
+                            🗣️ Causerie
+                        </button>
+                        <button 
                             onClick={() => setLabMode('scenario_list')} 
-                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${labMode.startsWith('scenario') ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode.startsWith('scenario') ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
                         >
                             {t('lab.tabs.scenarios')}
                         </button>
                         <button 
                             onClick={() => setLabMode('study')} 
-                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${labMode === 'study' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode === 'study' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
                         >
                             {t('lab.tabs.study')}
                         </button>
                         <button 
                             onClick={() => setLabMode('pronunciation')} 
-                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${labMode === 'pronunciation' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode === 'pronunciation' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
                         >
-                            <i className="fas fa-microphone-alt mr-1.5"></i> Coach
+                            <i className="fas fa-microphone-alt mr-1"></i> Coach
                         </button>
                     </div>
                 </div>
@@ -1231,6 +1381,308 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     </div>
                 )}
 
+                {/* ===== CAUSERIE : THEME SELECTION ===== */}
+                {labMode === 'conversation_select' && (
+                    <div className="flex-1 overflow-y-auto p-5 bg-gray-50 dark:bg-gray-900">
+                        <div className="max-w-2xl mx-auto">
+                            <div className="text-center mb-6">
+                                <div className="text-5xl mb-3">🗣️</div>
+                                <h2 className="text-xl font-bold text-text">Causerie guidée</h2>
+                                <p className="text-sm text-text-muted mt-1">L'IA lance la conversation. Réponds librement et sois corrigé en temps réel.</p>
+                            </div>
+                            {/* Rate-limit warning banner */}
+                            {convRateLimitSeconds > 0 && (
+                                <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-2xl px-4 py-3 mb-1 animate-fade-in">
+                                    <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/60 flex items-center justify-center shrink-0">
+                                        <i className="fas fa-clock text-amber-500"></i>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-amber-700 dark:text-amber-300">Quota API temporairement atteint</p>
+                                        <p className="text-xs text-amber-600 dark:text-amber-400">Réessaie dans <span className="font-mono font-bold">{convRateLimitSeconds}s</span> — ou change de modèle dans les paramètres ⚙️</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className={`grid grid-cols-2 gap-3 mb-4 transition-opacity ${convRateLimitSeconds > 0 ? 'opacity-40 pointer-events-none' : ''}`}>
+                                {getConversationThemes().map(theme => (
+                                    <button key={theme.id} onClick={() => startConversation(theme.label, theme.label)}
+                                        disabled={convRateLimitSeconds > 0}
+                                        className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 dark:border-gray-700 transition-all hover:scale-[1.02] flex flex-col items-start gap-2 text-left group disabled:cursor-not-allowed">
+                                        <span className="text-3xl group-hover:scale-110 transition-transform">{theme.emoji}</span>
+                                        <div>
+                                            <span className="font-semibold text-text dark:text-white text-sm block">{theme.label}</span>
+                                            <span className="text-xs text-text-muted">{theme.desc}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                            <button onClick={() => setShowCustomConvModal(true)}
+                                disabled={convRateLimitSeconds > 0}
+                                className={`w-full bg-primary/5 dark:bg-primary/10 p-4 rounded-2xl border border-primary/20 transition-all hover:scale-[1.01] hover:shadow-md flex items-center gap-4 group disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none`}>
+                                <span className="text-3xl group-hover:rotate-12 transition-transform">✨</span>
+                                <div className="text-left">
+                                    <span className="font-bold text-primary block">Thème personnalisé</span>
+                                    <span className="text-xs text-text-muted">Propose ton propre sujet de conversation</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ===== CAUSERIE : ACTIVE ===== */}
+                {labMode === 'conversation_active' && (
+                    <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900 space-y-4 min-h-0">
+                        <div className="flex items-center justify-between px-1">
+                            <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-bold">
+                                <i className="fas fa-comments"></i> {convThemeLabel}
+                            </div>
+                            <button onClick={handleEndConversation} disabled={convMessages.length < 2}
+                                className="text-xs px-3 py-1.5 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-40 shadow-sm">
+                                <i className="fas fa-flag-checkered mr-1"></i> Terminer
+                            </button>
+                        </div>
+                        {isGeneratingOpener && (
+                            <div className="flex justify-start">
+                                <div className="bg-white dark:bg-gray-800 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm border border-gray-200 dark:border-gray-700">
+                                    <div className="flex gap-1">
+                                        <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce"></span>
+                                        <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce delay-100"></span>
+                                        <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce delay-200"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {convMessages.map((msg, idx) => (
+                            <LabMessageBubble key={idx} msg={msg} onSpeak={speak} onPin={handlePinMessage} onSuggestionClick={handleSendConvMessage} />
+                        ))}
+                        {draftMessage && (
+                            <div className="flex w-full justify-end animate-fade-in-up">
+                                <div className={`max-w-[85%] rounded-2xl rounded-br-none px-4 py-3 shadow-sm ${listeningStatus === 'listening' ? 'bg-primary/5 border border-primary/30 text-primary' : 'bg-primary text-white'}`}>
+                                    {listeningStatus === 'listening'
+                                        ? <div className="flex items-center gap-2"><span className="animate-pulse w-2 h-2 rounded-full bg-red-500"></span><span>{draftMessage}</span></div>
+                                        : <span>{draftMessage}</span>}
+                                </div>
+                            </div>
+                        )}
+                        {isProcessing && (
+                            <div className="flex justify-start w-full">
+                                <div className="bg-white dark:bg-gray-800 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm border border-gray-200 dark:border-gray-700">
+                                    <div className="flex gap-1">
+                                        <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce"></span>
+                                        <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce delay-100"></span>
+                                        <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce delay-200"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={convMessagesEndRef} />
+                    </div>
+                )}
+
+                {/* ===== CAUSERIE : SUMMARY ===== */}
+                {labMode === 'conversation_summary' && (
+                    <div className="flex-1 overflow-y-auto p-5 bg-gray-50 dark:bg-gray-900">
+                        {isGeneratingSummary ? (
+                            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                                <div className="w-14 h-14 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                                <p className="text-primary font-medium animate-pulse">Analyse de ta session en cours…</p>
+                                <p className="text-xs text-text-muted">Cela peut prendre quelques secondes</p>
+                            </div>
+                        ) : convSummary ? (
+                            <div className="max-w-lg mx-auto space-y-5 animate-fade-in-up pb-10">
+
+                                {/* Score + points forts */}
+                                <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+                                    <p className="text-xs uppercase tracking-widest text-text-muted mb-2">Score de fluidité</p>
+                                    <div className={`text-7xl font-black mb-1 ${convSummary.fluency_score >= 75 ? 'text-green-500' : convSummary.fluency_score >= 50 ? 'text-yellow-500' : 'text-orange-500'}`}>
+                                        {convSummary.fluency_score > 0 ? convSummary.fluency_score : '—'}
+                                    </div>
+                                    <p className="text-text-muted text-sm">/ 100</p>
+                                    {convSummary.strong_points.length > 0 && (
+                                        <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                                            {convSummary.strong_points.map((pt, i) => (
+                                                <span key={i} className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-xs font-medium">✓ {pt}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Corrections — always visible */}
+                                <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+                                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-orange-600">
+                                        <i className="fas fa-graduation-cap"></i> Corrections
+                                    </h3>
+                                    {convSummary.errors.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {convSummary.errors.map((err, i) => (
+                                                <div key={i} className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-3 border-l-4 border-orange-400">
+                                                    <p className="text-sm">
+                                                        <span className="line-through text-gray-400">{err.original}</span>
+                                                        {' → '}
+                                                        <span className="font-semibold text-orange-700 dark:text-orange-300">{err.corrected}</span>
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">{err.explanation}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 rounded-xl p-3 border border-green-200 dark:border-green-800">
+                                            <span className="text-2xl">🎉</span>
+                                            <p className="text-sm text-green-700 dark:text-green-300 font-medium">Aucune erreur significative détectée — excellent travail !</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Vocabulaire clé — always visible */}
+                                <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+                                    <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-blue-600">
+                                        <i className="fas fa-book-open"></i> Vocabulaire clé
+                                    </h3>
+                                    {convSummary.vocabulary.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2">
+                                            {convSummary.vocabulary.map((v, i) => (
+                                                <div key={i} className="bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-xl text-sm border border-blue-100 dark:border-blue-800">
+                                                    <span className="font-bold text-blue-700 dark:text-blue-300">{v.word}</span>
+                                                    <span className="text-gray-400 mx-1">·</span>
+                                                    <span className="text-gray-600 dark:text-gray-400">{v.translation}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-text-muted italic">Pas de vocabulaire clé relevé pour cette session.</p>
+                                    )}
+                                </div>
+
+                                {/* Erreurs récurrentes (patterns) */}
+                                {convSummary.error_patterns && convSummary.error_patterns.length > 0 && (
+                                    <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl px-5 py-4 border border-amber-200 dark:border-amber-800">
+                                        <p className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-2">⚠️ Points à travailler</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {convSummary.error_patterns.map((pattern, i) => (
+                                                <span key={i} className="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full text-xs font-medium">{pattern}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Plan de révision personnalisé */}
+                                {convSummary.lesson_suggestions && convSummary.lesson_suggestions.length > 0 && (
+                                    <div className="space-y-3">
+                                        <h3 className="font-bold text-text flex items-center gap-2 text-sm">
+                                            <i className="fas fa-graduation-cap text-primary"></i> Plan de révision personnalisé
+                                        </h3>
+                                        {convSummary.lesson_suggestions.map((lesson: LessonSuggestion, i: number) => (
+                                            <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+                                                {lesson.type === 'vocabulary' && (
+                                                    <>
+                                                        <div className="flex items-center gap-2 mb-3"><span className="text-2xl">📚</span><h4 className="font-bold text-sm">{lesson.title}</h4></div>
+                                                        {lesson.vocabulary_words && lesson.vocabulary_words.length > 0 ? (
+                                                            <div className="space-y-2">
+                                                                {lesson.vocabulary_words.map((v, j) => (
+                                                                    <div key={j} className="bg-blue-50 dark:bg-blue-900/20 rounded-xl px-4 py-2.5">
+                                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                                            <span className="font-bold text-blue-700 dark:text-blue-300">{v.word}</span>
+                                                                            <span className="text-gray-400">·</span>
+                                                                            <span className="text-sm text-gray-600 dark:text-gray-400">{v.translation}</span>
+                                                                        </div>
+                                                                        {v.example && <p className="text-xs text-gray-500 italic mt-1">{v.example}</p>}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : <p className="text-sm text-text-muted italic">Liste de vocabulaire non disponible.</p>}
+                                                    </>
+                                                )}
+                                                {lesson.type === 'grammar' && lesson.grammar_focus && (
+                                                    <>
+                                                        <div className="flex items-center gap-2 mb-3"><span className="text-2xl">📐</span><h4 className="font-bold text-sm">{lesson.title}</h4></div>
+                                                        <div className="bg-gray-100 dark:bg-gray-700 rounded-xl px-4 py-3 mb-3">
+                                                            <p className="text-xs font-bold text-text-muted uppercase tracking-wide mb-1">Règle</p>
+                                                            <p className="text-sm font-semibold text-text">{lesson.grammar_focus.rule}</p>
+                                                        </div>
+                                                        <p className="text-sm text-text mb-3">{lesson.grammar_focus.explanation}</p>
+                                                        {lesson.grammar_focus.example_incorrect && (
+                                                            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl px-4 py-3 border-l-4 border-orange-400">
+                                                                <p className="text-xs font-bold text-orange-600 mb-1">Exemple</p>
+                                                                <p className="text-sm">
+                                                                    <span className="line-through text-gray-400">{lesson.grammar_focus.example_incorrect}</span>
+                                                                    {' → '}
+                                                                    <span className="font-semibold text-green-600 dark:text-green-400">{lesson.grammar_focus.example_correct}</span>
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                                {lesson.type === 'scenario' && (
+                                                    <>
+                                                        <div className="flex items-center gap-2 mb-3"><span className="text-2xl">🎭</span><h4 className="font-bold text-sm">{lesson.title}</h4></div>
+                                                        {lesson.scenario_prompt && (
+                                                            <p className="text-sm text-text-muted mb-4 bg-gray-50 dark:bg-gray-700 rounded-xl px-4 py-3 italic">{lesson.scenario_prompt}</p>
+                                                        )}
+                                                        <button
+                                                            onClick={() => { if (lesson.scenario_prompt) { setLabMode('scenario_list'); setTimeout(() => startScenario(lesson.scenario_prompt!), 100); } }}
+                                                            className="w-full py-2.5 rounded-xl bg-primary text-white font-bold hover:opacity-90 transition-opacity text-sm flex items-center justify-center gap-2"
+                                                        >
+                                                            <i className="fas fa-play-circle"></i> Lancer ce scénario
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Suggestion prochaine causerie */}
+                                {convSummary.next_theme_suggestion && (
+                                    <div className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-4 border border-primary/20 flex items-center gap-3">
+                                        <span className="text-2xl">💡</span>
+                                        <div>
+                                            <p className="text-xs font-bold text-primary uppercase tracking-wide">Prochaine session suggérée</p>
+                                            <p className="text-sm text-text mt-0.5">{convSummary.next_theme_suggestion}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Actions */}
+                                <div className="flex gap-3">
+                                    <button onClick={() => handleExport('md')} className="flex-1 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold hover:bg-blue-100 transition-colors text-sm flex items-center justify-center gap-2">
+                                        <i className="fab fa-markdown"></i> Exporter
+                                    </button>
+                                    <button onClick={() => setLabMode('conversation_select')} className="flex-1 py-3 rounded-xl bg-primary text-white font-bold hover:opacity-90 transition-opacity text-sm flex items-center justify-center gap-2">
+                                        <i className="fas fa-redo"></i> Nouvelle causerie
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-text-muted">
+                                <span className="text-4xl">😕</span>
+                                <p className="text-sm">Le bilan n'a pas pu être généré.</p>
+                                <button onClick={handleEndConversation} className="px-6 py-2 rounded-xl bg-primary text-white font-bold">Réessayer</button>
+                                <button onClick={() => setLabMode('conversation_select')} className="text-sm underline">Nouvelle causerie</button>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+
+                {/* Custom conv topic modal */}
+                {showCustomConvModal && (
+                    <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md shadow-2xl p-6 animate-scale-in">
+                            <h3 className="text-xl font-bold mb-2 text-gray-800 dark:text-white">🗣️ Thème personnalisé</h3>
+                            <textarea value={customConvTopic} onChange={(e) => setCustomConvTopic(e.target.value)}
+                                placeholder="Ex: Mon dernier voyage, Les séries Netflix, Mon travail..."
+                                className="w-full bg-gray-100 dark:bg-gray-700 rounded-xl p-4 mb-4 text-text focus:ring-2 focus:ring-primary outline-none resize-none h-24" autoFocus />
+                            <div className="flex gap-3 justify-end">
+                                <button onClick={() => setShowCustomConvModal(false)} className="px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">Annuler</button>
+                                <button onClick={() => { if (customConvTopic.trim()) { startConversation(customConvTopic, customConvTopic); setShowCustomConvModal(false); setCustomConvTopic(''); } }}
+                                    disabled={!customConvTopic.trim()}
+                                    className="px-6 py-2 rounded-lg bg-primary text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50">
+                                    C'est parti !
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* 2. SCENARIO LIST MODE */}
                 {labMode === 'scenario_list' && (
@@ -1715,8 +2167,8 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
 
             </div>
 
-            {/* CONTROLS (Chat & Scenario Only) */}
-            {labMode !== 'study' && labMode !== 'pronunciation' && (
+            {/* CONTROLS (Chat, Causerie & Scenario Only) */}
+            {labMode !== 'study' && labMode !== 'pronunciation' && labMode !== 'conversation_select' && labMode !== 'conversation_summary' && (
                 <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 safe-area-bottom">
                 <div className="flex items-center gap-3 max-w-3xl mx-auto">
                     {/* Toggle Input Mode (Chat only) */}
@@ -1767,7 +2219,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
 
                             {/* Send (Different action based on mode) */}
                             <button 
-                                onClick={() => labMode === 'scenario_play' ? handleScenarioUserResponse(draftMessage) : handleSendMessage(draftMessage)} 
+                                onClick={() => labMode === 'scenario_play' ? handleScenarioUserResponse(draftMessage) : labMode === 'conversation_active' ? handleSendConvMessage(draftMessage) : handleSendMessage(draftMessage)} 
                                 disabled={!draftMessage || listeningStatus === 'listening'} 
                                 className={`w-12 h-12 rounded-full flex items-center justify-center transition-all transform ${!draftMessage || listeningStatus === 'listening' ? 'opacity-30 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600 shadow-md hover:scale-110'}`}
                                 title={t('common.save')}

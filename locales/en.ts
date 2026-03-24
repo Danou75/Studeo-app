@@ -1043,6 +1043,17 @@ export const en: typeof fr = {
                 "Challenges are a great way to learn in a fun and interactive way."
             ]
         },
+        conversational: {
+            title: "🗣️ Conversational Mode (Lab)",
+            content: "Practice your languages in real-life situations! **Conversational Mode** allows you to chat freely with an AI tutor and receive a full pedagogical assessment after each session.",
+            steps: [
+                "**Step 1**: Go to the **Language Lab** and select a tutor.",
+                "**Step 2**: Choose a conversation theme (restaurant, hotel, meeting...) or start a free discussion.",
+                "**Step 3**: Speak or write. The AI will respond naturally while correcting your errors in real-time.",
+                "**Step 4 - The Assessment**: At the end, the AI analyzes your fluency, grammar, and vocabulary, then suggests personalized lessons.",
+                "**Bonus**: Launch a practice scenario recommended by the AI to work on your weak points."
+            ]
+        },
         backup: {
             title: "☁️ Sync & Cloud",
             content: "Automatically synchronize your data across all your devices via the Studeo Cloud (cloud icon). Manual backups remain available in settings.",

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Button } from './ui/Button';
 import { conjugateVerb } from '../services/conjugationService';
 import { translateText, TranslationResult } from '../services/translationService';
@@ -897,7 +899,11 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                                 <p className="text-sm font-semibold text-text-secondary mb-1">
                                     <i className="fas fa-info-circle mr-1"></i> Contexte
                                 </p>
-                                <p className="text-text">{translationResult.context}</p>
+                                <div className="text-text prose prose-sm md:prose-base max-w-none dark:prose-invert">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {translationResult.context}
+                                    </ReactMarkdown>
+                                </div>
                             </div>
                         )}
 
@@ -910,7 +916,11 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                                     {translationResult.examples.map((example, idx) => (
                                         <li key={idx} className="flex items-start gap-2">
                                             <span className="text-primary font-bold">•</span>
-                                            <span className="text-text">{example}</span>
+                                            <div className="text-text prose prose-sm max-w-none dark:prose-invert prose-p:my-0">
+                                                <ReactMarkdown>
+                                                    {example}
+                                                </ReactMarkdown>
+                                            </div>
                                             <button onClick={() => speak(example)} className="ml-auto hover:text-primary transition-colors">
                                                 <i className="fas fa-volume-up text-xs"></i>
                                             </button>
@@ -925,7 +935,11 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                                 <p className="text-sm font-semibold text-accent mb-1">
                                     <i className="fas fa-lightbulb mr-1"></i> Notes
                                 </p>
-                                <p className="text-text-secondary text-sm">{translationResult.notes}</p>
+                                <div className="text-text-secondary text-sm prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-li:my-0.5">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {translationResult.notes}
+                                    </ReactMarkdown>
+                                </div>
                             </div>
                         )}
                     </div>

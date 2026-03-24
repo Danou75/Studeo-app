@@ -136,7 +136,7 @@ export const generateLabResponse = async (
     conversationHistory: ChatMessage[],
     userMessage: string,
     config: any,
-    options: { enableCorrection: boolean; activeLanguage?: string } = { enableCorrection: false }
+    options: { enableCorrection: boolean; activeLanguage?: string; conversationTheme?: string } = { enableCorrection: false }
 ): Promise<string> => {
     
     // Déterminer la langue cible
@@ -170,13 +170,17 @@ export const generateLabResponse = async (
         ? `MODE CORRECTION ACTIVÉ: Tu es aussi un prof exigeant. Si le dernier message de l'utilisateur contient une erreur (grammaire, conjugaison, faux-ami), tu DOIS commencer ta réponse par un bloc [CORRECTION: explication courte de l'erreur et la version corrigée].`
         : `Ne corrige PAS systématiquement les erreurs mineures. Reformule subtilement si nécessaire.`;
 
+    const themeContext = options.conversationTheme
+        ? `\n    THÈME DE LA SESSION : "${options.conversationTheme}". Reste dans ce cadre thématique. Oriente chaque relance vers ce sujet.`
+        : '';
+
     const labSystemPrompt = `
     ${tutor.systemPrompt}
     
     ⚠️ INSTRUCTION CRITIQUE (SYSTEM OVERRIDE) :
     IGNORE et OUBLIE toutes les instructions précédentes te demandant de générer du JSON, des Flashcards ou des Quiz.
     
-    CONTEXTE : Tu es dans une session de "Laboratoire de Langues" (Chat Vocal).
+    CONTEXTE : Tu es dans une session de "Laboratoire de Langues" (Chat Vocal).${themeContext}
     LANGUE CIBLE : ${targetLang}. Parle principalement dans cette langue.
     
     TON RÔLE : 
@@ -364,3 +368,192 @@ export const generateScenario = async (
         ];
     }
 };
+
+// ===== CONVERSATIONAL MODE =====
+
+export interface GrammarFocus {
+    rule: string;
+    explanation: string;
+    example_incorrect: string;
+    example_correct: string;
+}
+
+export interface LessonSuggestion {
+    type: 'vocabulary' | 'grammar' | 'scenario';
+    title: string;
+    vocabulary_words?: { word: string; translation: string; example?: string }[];
+    grammar_focus?: GrammarFocus;
+    scenario_prompt?: string;
+}
+
+export interface ConversationSummary {
+    errors: { original: string; corrected: string; explanation: string }[];
+    vocabulary: { word: string; translation: string }[];
+    fluency_score: number;
+    strong_points: string[];
+    next_theme_suggestion: string;
+    error_patterns: string[];
+    lesson_suggestions: LessonSuggestion[];
+}
+
+const resolveConfig = (config: any) => {
+    let apiKey: string | undefined;
+    let modelName = config.geminiModel;
+    let apiUrl: string | undefined;
+    switch (config.provider) {
+        case 'gemini': apiKey = config.geminiApiKey; modelName = config.geminiModel; break;
+        case 'openai': apiKey = config.openaiApiKey; modelName = config.openaiModel || 'gpt-4o'; break;
+        case 'anthropic': apiKey = config.anthropicApiKey; modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620'; break;
+        case 'mistral': apiKey = config.mistralApiKey; modelName = config.mistralModel || 'mistral-large-latest'; break;
+        case 'local': apiUrl = config.localApiUrl; modelName = config.localModelName; break;
+    }
+    return { apiKey, modelName, apiUrl };
+};
+
+const resolveLang = (activeLanguage?: string): string => {
+    if (!activeLanguage) return 'Français';
+    const map: Record<string, string> = { en: 'Anglais', it: 'Italien', es: 'Espagnol', pt: 'Portugais', de: 'Allemand', tr: 'Turc', fr: 'Français' };
+    return map[activeLanguage.split('-')[0].toLowerCase()] || activeLanguage;
+};
+
+export const generateConversationalOpener = async (
+    tutor: Tutor,
+    theme: string,
+    config: any,
+    activeLanguage?: string
+): Promise<string> => {
+    const targetLang = resolveLang(activeLanguage);
+    const systemPrompt = `Tu es ${tutor.name}, un professeur de ${targetLang} chaleureux et enthousiaste.
+Tu démarres une session de CAUSERIE GUIDÉE sur le thème : "${theme}".
+
+Ton rôle : Lancer la conversation avec UNE question ouverte et engageante en lien avec le thème.
+Règles :
+- Une seule question courte et naturelle (1-2 phrases max)
+- Invite l'utilisateur à partager son expérience personnelle
+- Sois bienveillant et encourageant
+
+FORMAT OBLIGATOIRE (respecte les séparateurs ||| ) :
+<Ta question en ${targetLang}>
+|||
+<Traduction française>
+|||
+[SUGGESTIONS: Réponse courte 1; Réponse courte 2; Réponse courte 3]`;
+
+    const messages: ChatMessage[] = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Commence la causerie sur le thème : ${theme}` }
+    ];
+    const { apiKey, modelName, apiUrl } = resolveConfig(config);
+    return await executeAIRequest(messages, config.provider, apiKey, modelName, apiUrl);
+};
+
+export const generateConversationSummary = async (
+    messages: ChatMessage[],
+    activeLanguage: string,
+    config: any
+): Promise<ConversationSummary> => {
+    const targetLang = resolveLang(activeLanguage);
+    const conversationText = messages
+        .filter(m => m.role !== 'system')
+        .map(m => `${m.role === 'user' ? 'Élève' : 'Prof'}: ${m.content.split('|||')[0].replace(/\[.*?\]/g, '').trim()}`)
+        .join('\n');
+
+    const defaultSummary: ConversationSummary = {
+        errors: [],
+        vocabulary: [],
+        fluency_score: 60,
+        strong_points: ['Session complétée avec succès'],
+        next_theme_suggestion: '',
+        error_patterns: [],
+        lesson_suggestions: []
+    };
+
+    const systemPrompt = `Tu es un professeur expert en pédagogie des langues. Ton rôle est d'analyser une conversation d'apprentissage du ${targetLang} et de produire un bilan pédagogique détaillé et personnalisé.
+
+CONVERSATION ANALYSÉE :
+${conversationText}
+
+Génère UNIQUEMENT un objet JSON valide (sans markdown, sans texte avant ou après) avec EXACTEMENT cette structure :
+{
+  "fluency_score": 72,
+  "strong_points": ["Point fort observé 1", "Point fort observé 2"],
+  "errors": [
+    {"original": "phrase erronée de l'élève", "corrected": "version correcte", "explanation": "explication pédagogique courte"}
+  ],
+  "error_patterns": ["Type d'erreur récurrente 1 (ex: accord des adjectifs)", "Type d'erreur récurrente 2"],
+  "vocabulary": [{"word": "mot clé du thème", "translation": "traduction française"}],
+  "next_theme_suggestion": "Thème suggéré pour la prochaine causerie",
+  "lesson_suggestions": [
+    {
+      "type": "vocabulary",
+      "title": "Vocabulaire à réviser : [thème]",
+      "vocabulary_words": [
+        {"word": "mot", "translation": "traduction", "example": "phrase d'exemple en ${targetLang}"}
+      ]
+    },
+    {
+      "type": "grammar",
+      "title": "Règle à travailler : [nom de la règle]",
+      "grammar_focus": {
+        "rule": "Énoncé de la règle en français",
+        "explanation": "Explication claire et concise de la règle (2-3 phrases max)",
+        "example_incorrect": "Exemple d'erreur typique en ${targetLang}",
+        "example_correct": "La même phrase correctement formulée en ${targetLang}"
+      }
+    },
+    {
+      "type": "scenario",
+      "title": "Scénario de pratique recommandé",
+      "scenario_prompt": "Décris en français un scénario de jeu de rôle pour pratiquer les points faibles identifiés. Ex : Réserver une table au restaurant en utilisant le passé composé correctement"
+    }
+  ]
+}
+
+RÈGLES IMPORTANTES :
+- fluency_score : entier 0-100 (évalue fluidité, richesse lexicale, correction grammaticale)
+- strong_points : 2-3 observations encourageantes et spécifiques
+- errors : 3-4 erreurs les plus significatives (grammaire, vocabulaire, syntaxe)
+- error_patterns : 1-3 types d'erreurs récurrents (ex: "Utilisation du subjonctif", "Genre des noms")
+- vocabulary : 5-8 mots importants pour le thème ou oubliés par l'élève
+- lesson_suggestions : EXACTEMENT 3 suggestions (1 vocabulary, 1 grammar, 1 scenario)
+- Si l'élève n'a fait aucune erreur notable : errors=[], error_patterns=[], fluency_score élevé, strong_points très positifs`;
+
+    const msgs: ChatMessage[] = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: 'Génère le bilan pédagogique complet.' }
+    ];
+    const { apiKey, modelName, apiUrl } = resolveConfig(config);
+
+    try {
+        const response = await executeAIRequest(msgs, config.provider, apiKey, modelName, apiUrl);
+
+        let jsonStr = '';
+        const codeBlock = response.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+        if (codeBlock) { jsonStr = codeBlock[1]; }
+        if (!jsonStr) {
+            const jsonMatch = response.match(/\{[\s\S]*\}/);
+            if (jsonMatch) jsonStr = jsonMatch[0];
+        }
+        if (!jsonStr) {
+            console.warn('No JSON in summary response, using default.');
+            return defaultSummary;
+        }
+
+        const p = JSON.parse(jsonStr);
+        return {
+            fluency_score: typeof p.fluency_score === 'number' ? Math.min(100, Math.max(0, p.fluency_score)) : 60,
+            strong_points: Array.isArray(p.strong_points) ? p.strong_points : [],
+            errors: Array.isArray(p.errors) ? p.errors : [],
+            error_patterns: Array.isArray(p.error_patterns) ? p.error_patterns : [],
+            vocabulary: Array.isArray(p.vocabulary) ? p.vocabulary : [],
+            next_theme_suggestion: typeof p.next_theme_suggestion === 'string' ? p.next_theme_suggestion : '',
+            lesson_suggestions: Array.isArray(p.lesson_suggestions)
+                ? p.lesson_suggestions.filter((s: any) => s && s.type && s.title)
+                : []
+        };
+    } catch (e) {
+        console.error('Summary generation/parsing failed:', e);
+        return defaultSummary;
+    }
+};
+

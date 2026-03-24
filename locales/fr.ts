@@ -1059,6 +1059,17 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
                 "Les défis sont un excellent moyen d'apprendre de manière ludique et interactive."
             ]
         },
+        conversational: {
+            title: "🗣️ Mode Causerie (Labo)",
+            content: "Pratiquez vos langues en situation réelle ! Le **Mode Causerie** vous permet de discuter librement avec un tuteur IA et de recevoir un bilan pédagogique complet après chaque session.",
+            steps: [
+                "**Étape 1** : Rendez-vous dans le **Labo de Langues** et sélectionnez un tuteur.",
+                "**Étape 2** : Choisissez un thème de conversation (restaurant, hôtel, rencontre...) ou lancez une discussion libre.",
+                "**Étape 3** : Parlez ou écrivez. L'IA vous répondra naturellement tout en corrigeant vos erreurs en temps réel.",
+                "**Étape 4 - Le Bilan** : À la fin, l'IA analyse votre fluidité, votre grammaire et votre vocabulaire, puis vous propose des leçons personnalisées.",
+                "**Bonus** : Lancer un scénario de pratique recommandé par l'IA pour travailler vos points faibles."
+            ]
+        },
         backup: {
             title: "☁️ Synchronisation & Cloud",
             content: "Synchronisez automatiquement vos données sur tous vos appareils via le Cloud Studeo (icône nuage). Les sauvegardes manuelles restent disponibles dans les paramètres.",

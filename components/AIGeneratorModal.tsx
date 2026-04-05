@@ -562,7 +562,7 @@ CONTEXTE UTILISATEUR : ${context}
                     </button>
                 )}
                 {/* Ligne 1 : Navigation */}
-                <div className="relative flex justify-between items-center mb-4">
+                <div className="relative flex flex-wrap justify-between items-center gap-2 mb-4">
                     <div className="flex gap-2">
                         <Button 
                             variant="secondary" 
@@ -570,7 +570,9 @@ CONTEXTE UTILISATEUR : ${context}
                             size="sm" 
                             className={`${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm relative z-10 transition-all`}
                         >
-                            <i className="fas fa-arrow-left mr-2"></i> {t('common.back') || 'Retour'}
+                            <i className="fas fa-arrow-left mr-1 sm:mr-2"></i>
+                            <span className="hidden xs:inline">{t('common.back') || 'Retour'}</span>
+                            <span className="xs:hidden">Retour</span>
                         </Button>
 
                         <Button 
@@ -580,7 +582,8 @@ CONTEXTE UTILISATEUR : ${context}
                             className={`${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm relative z-10 transition-all font-bold`}
                             title={t('common.reset') || "Réinitialiser les champs"}
                         >
-                            <i className="fas fa-undo mr-2"></i> RAZ
+                            <i className="fas fa-undo sm:mr-2"></i>
+                            <span className="hidden sm:inline">RAZ</span>
                         </Button>
                     </div>
 
@@ -589,9 +592,11 @@ CONTEXTE UTILISATEUR : ${context}
                             variant="secondary"
                             onClick={onShowSavedLessons}
                             size="sm"
-                            className={`${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm whitespace-nowrap relative z-10 transition-all`}
+                            className={`${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm relative z-10 transition-all`}
                         >
-                            <i className="fas fa-history mr-2"></i> {t('ai.actions.savedLessons')}
+                            <i className="fas fa-history mr-1 sm:mr-2"></i>
+                            <span className="hidden sm:inline">{t('ai.actions.savedLessons')}</span>
+                            <span className="sm:hidden">Historique</span>
                         </Button>
                     )}
                 </div>
@@ -632,21 +637,25 @@ CONTEXTE UTILISATEUR : ${context}
             </div>
 
             <div className="p-3 md:p-6 flex-1 overflow-y-auto min-h-0 pb-32">
-                <div className={`flex flex-wrap gap-2 md:gap-4 mb-6 ${initialMode === 'quiz' ? 'justify-center' : ''}`}>
+                {/* Grille de sélection du type — 2 colonnes sur mobile */}
+                <div className={`grid grid-cols-2 gap-2 md:gap-4 mb-6 ${
+                    /* Si un seul mode initial, on réduit à 1 colonne */
+                    (initialMode === 'quiz' || initialMode === 'curriculum') ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-2'
+                }`}>
                     {/* Option Quiz */}
                     {(initialMode === 'quiz' || !initialMode) && (
                         <button
                             onClick={() => setGenerationType('quiz')}
-                            className={`${initialMode === 'quiz' ? 'w-1/2' : 'flex-1'} py-3 px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-3 ${
+                            className={`py-2.5 px-3 rounded-xl border-2 transition-all flex items-center gap-2 ${
                                 generationType === 'quiz'
                                     ? 'border-primary bg-primary/10 text-primary font-bold'
                                     : 'border-border bg-background hover:bg-background-secondary text-text-secondary'
                             }`}
                         >
-                            <i className="fas fa-layer-group text-xl"></i>
-                            <div className="text-center">
-                                <div className="text-sm font-semibold">{t('ai.type.quiz')}</div>
-                                <div className="text-xs opacity-70">{t('ai.type.quizDesc')}</div>
+                            <i className="fas fa-layer-group text-lg flex-shrink-0"></i>
+                            <div className="text-left min-w-0">
+                                <div className="text-xs font-semibold leading-tight">{t('ai.type.quiz')}</div>
+                                <div className="text-[10px] opacity-70 leading-tight line-clamp-2">{t('ai.type.quizDesc')}</div>
                             </div>
                         </button>
                     )}
@@ -655,16 +664,16 @@ CONTEXTE UTILISATEUR : ${context}
                     {(initialMode === 'quiz' || !initialMode) && (
                         <button
                             onClick={() => setGenerationType('mixed-quiz')}
-                            className={`flex-1 min-w-[140px] py-2 md:py-3 px-2 md:px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-2 md:gap-3 ${
+                            className={`py-2.5 px-3 rounded-xl border-2 transition-all flex items-center gap-2 ${
                                 generationType === 'mixed-quiz'
                                     ? 'border-primary bg-primary/10 text-primary font-bold'
                                     : 'border-border bg-background hover:bg-background-secondary text-text-secondary'
                             }`}
                         >
-                            <i className="fas fa-random text-xl"></i>
-                            <div className="text-center">
-                                <div className="text-sm font-semibold">{t('ai.type.mixed')}</div>
-                                <div className="text-xs opacity-70">{t('ai.type.mixedDesc')}</div>
+                            <i className="fas fa-random text-lg flex-shrink-0"></i>
+                            <div className="text-left min-w-0">
+                                <div className="text-xs font-semibold leading-tight">{t('ai.type.mixed')}</div>
+                                <div className="text-[10px] opacity-70 leading-tight line-clamp-2">{t('ai.type.mixedDesc')}</div>
                             </div>
                         </button>
                     )}
@@ -673,16 +682,16 @@ CONTEXTE UTILISATEUR : ${context}
                     {initialMode !== 'quiz' && (
                         <button
                             onClick={() => setGenerationType('lesson')}
-                            className={`flex-1 min-w-[140px] py-2 md:py-3 px-2 md:px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-2 md:gap-3 ${
+                            className={`py-2.5 px-3 rounded-xl border-2 transition-all flex items-center gap-2 ${
                                 generationType === 'lesson'
                                     ? 'border-primary bg-primary/10 text-primary font-bold'
                                     : 'border-border bg-background hover:bg-background-secondary text-text-secondary'
                             }`}
                         >
-                            <i className="fas fa-book-open text-xl"></i>
-                            <div className="text-center">
-                                <div className="text-sm font-semibold">{t('ai.type.lesson')}</div>
-                                <div className="text-xs opacity-70">{t('ai.type.lessonDesc')}</div>
+                            <i className="fas fa-book-open text-lg flex-shrink-0"></i>
+                            <div className="text-left min-w-0">
+                                <div className="text-xs font-semibold leading-tight">{t('ai.type.lesson')}</div>
+                                <div className="text-[10px] opacity-70 leading-tight line-clamp-2">{t('ai.type.lessonDesc')}</div>
                             </div>
                         </button>
                     )}
@@ -691,18 +700,18 @@ CONTEXTE UTILISATEUR : ${context}
                     {(initialMode === 'curriculum' || !initialMode) && (
                         <button
                             onClick={() => setGenerationType('curriculum')}
-                            className={`flex-1 min-w-[140px] py-2 md:py-3 px-2 md:px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-2 md:gap-3 ${
+                            className={`py-2.5 px-3 rounded-xl border-2 transition-all flex items-center gap-2 ${
                                 generationType === 'curriculum'
                                     ? 'border-primary bg-primary/10 text-primary font-bold'
                                     : 'border-border bg-background hover:bg-background-secondary text-text-secondary'
                             }`}
                         >
-                            <i className="fas fa-map-signs text-xl"></i>
-                            <div className="text-center">
-                                <div className="text-sm font-semibold">
+                            <i className="fas fa-map-signs text-lg flex-shrink-0"></i>
+                            <div className="text-left min-w-0">
+                                <div className="text-xs font-semibold leading-tight">
                                     {initialMode === 'curriculum' ? t('ai.type.specializedCurriculum') : t('ai.type.curriculum')}
                                 </div>
-                                <div className="text-xs opacity-70">
+                                <div className="text-[10px] opacity-70 leading-tight line-clamp-2">
                                     {initialMode === 'curriculum' ? t('ai.type.specializedCurriculumDesc') : t('ai.type.curriculumDesc')}
                                 </div>
                             </div>

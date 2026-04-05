@@ -157,6 +157,10 @@ Apprenez par la pratique avec des modules spécialisés :
 
 - **Pas à Pas** : Tutoriels interactifs pour le Dessin, la Musique, les Échecs et le Code.
 - **Défis** : Testez vos compétences (reconnaissance de notes, tactiques d'échecs).
+- **Mode Causerie (Langues)** : Discutez librement (à l'oral ou à l'écrit) avec l'IA. 
+  - *Sprint ou Infini* : Réglez le Timer pour simuler une situation réelle dans l'urgence.
+  - *Bilan complet* : À la fin du temps imparti, vous recevez un bilan pédagogique complet de vos erreurs (fluide, grammaire, vocabulaire).
+  - *Mémoire Transversale* : L'IA enregistre vos faiblesses après chaque bilan pour vous les faire retravailler subtilement lors de vos futures sessions.
 
 ---
 

@@ -59,9 +59,46 @@
     class="bg-background-secondary text-text transition-colors duration-200"
   >
     <div id="root">
-      <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;">
-        <p>Chargement de Studeo...</p>
-        <small style="color: #666;">Version de compatibilité 2.0</small>
+      <style>
+        .studeo-loader-overlay {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          background-color: transparent;
+        }
+        .studeo-spinner {
+          width: 44px;
+          height: 44px;
+          border: 3.5px solid rgba(99, 102, 241, 0.2);
+          border-left-color: #6366f1; /* Primary Studeo color */
+          border-radius: 50%;
+          animation: studeo-spin 0.9s linear infinite;
+          margin-bottom: 16px;
+        }
+        @keyframes studeo-spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .studeo-loader-text {
+          color: #64748b;
+          font-size: 14px;
+          font-weight: 500;
+          animation: studeo-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @media (prefers-color-scheme: dark) {
+          .studeo-loader-text { color: #94a3b8; }
+        }
+        @keyframes studeo-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      </style>
+      <div class="studeo-loader-overlay">
+        <div class="studeo-spinner"></div>
+        <div class="studeo-loader-text">Démarrage de Studeo...</div>
       </div>
     </div>
     <script type="module" src="/index.tsx"></script>

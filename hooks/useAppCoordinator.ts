@@ -21,6 +21,7 @@ import { INITIAL_GAMIFICATION_DATA } from '../utils/achievements';
 import { getAIClientConfig } from '../utils/aiConfigHelper';
 import { deduplicateCards } from '../utils/flashcardHelpers';
 import { clearAudioCache } from '../services/geminiService';
+import { ChatMessage } from '../services/conversationService';
 
 
 
@@ -43,7 +44,21 @@ export const useAppCoordinator = () => {
 
     // AI Modal State
     const [aiModalInitialTopic, setAiModalInitialTopic] = useState("");
-    const [aiModalInitialMode, setAiModalInitialMode] = useState<"quiz" | "lesson" | "curriculum" | undefined>(undefined);
+    const [aiModalInitialMode, setAiModalInitialMode] = useState<"quiz" | "lesson" | "curriculum" | "mixed-quiz" | undefined>(undefined);
+    const [aiModalInitialContext, setAiModalInitialContext] = useState<string | undefined>(undefined);
+    
+    // Cache pour la persistence du générateur IA par topic
+    const [aiGenCache, setAiGenCache] = useState<Record<string, any>>({});
+    const clearAiGenCache = () => {
+        setAiGenCache({});
+        setTargetedLessons({}); // On vide aussi les leçons interactives
+    };
+
+    // Leçons interactives persistantes pour le LanguageLab
+    const [targetedLessons, setTargetedLessons] = useState<Record<string, ChatMessage[]>>({});
+
+    // Vocab Lab Cache (transient per-session persistence for generated vocab lists)
+    const [vocabLabCache, setVocabLabCache] = useState<Record<string, any>>({});
 
     // Guest Tutors (Multiple)
     const [guestTutors, setGuestTutors] = useLocalStorage<Tutor[]>('guestTutors', []);
@@ -238,6 +253,20 @@ export const useAppCoordinator = () => {
         setSelectedTutor(null);
         setAiModalInitialTopic("");
         setAiModalInitialMode(undefined);
+        setAiModalInitialContext(undefined);
+        navigation.setScreen("ai-generator");
+    };
+
+    const handleLaunchAIVocabQuiz = (topic: string, mode: 'quiz' | 'lesson' | 'curriculum' | 'mixed-quiz' | undefined = 'quiz', context?: string) => {
+        // Si on a déjà généré des fiches pour ce topic dans cette session, on va direct au setup
+        if (aiGenCache[topic] && aiGenCache[topic].cards) {
+            handleAICardsGenerated(aiGenCache[topic].cards);
+            return;
+        }
+
+        setAiModalInitialTopic(topic);
+        setAiModalInitialMode(mode);
+        setAiModalInitialContext(context || undefined);
         navigation.setScreen("ai-generator");
     };
 
@@ -600,6 +629,14 @@ export const useAppCoordinator = () => {
     };
 
     const handleAICardsGenerated = (newCards: Flashcard[]) => {
+        // Si on a un topic initial (provient du labo de langue), on cache
+        if (aiModalInitialTopic) {
+            setAiGenCache(prev => ({
+                ...prev,
+                [aiModalInitialTopic]: { ...prev[aiModalInitialTopic], cards: newCards }
+            }));
+        }
+
         const newListName = `Généré par IA (${new Date().toLocaleTimeString()})`;
         flashcards.setFlashcardSets((prev: Record<string, Flashcard[]>) => ({ ...prev, [newListName]: newCards }));
         flashcards.setCurrentSetName(newListName);
@@ -765,8 +802,21 @@ export const useAppCoordinator = () => {
         setCurriculumSuggestions: studyContent.setCurriculumSuggestions,
         librarySuggestions: studyContent.librarySuggestions,
         setLibrarySuggestions: studyContent.setLibrarySuggestions,
+        savedConvSessions: studyContent.savedConvSessions,
+        handleSaveConvSession: studyContent.handleSaveConvSession,
+        handleDeleteConvSession: studyContent.handleDeleteConvSession,
+        savedVocabLists: studyContent.savedVocabLists,
+        handleSaveVocabList: studyContent.handleSaveVocabList,
+        handleDeleteVocabList: studyContent.handleDeleteVocabList,
+        handleRenameVocabList: studyContent.handleRenameVocabList,
         
-        aiModalInitialTopic, aiModalInitialMode,
+        aiModalInitialTopic, aiModalInitialMode, aiModalInitialContext,
+        setAiModalInitialContext,
+        aiGenCache,
+        setAiGenCache,
+        clearAiGenCache,
+        targetedLessons,
+        setTargetedLessons,
         
         // Hooks Data
         flashcards,
@@ -801,7 +851,10 @@ export const useAppCoordinator = () => {
         handleRenameProgram: studyContent.handleRenameProgram,
         handleDeleteLesson: studyContent.handleDeleteLesson,
         handleRenameLesson: studyContent.handleRenameLesson,
+        handleRenameConvSession: studyContent.handleRenameConvSession,
         handleMarkModuleComplete: studyContent.markCurrentModuleComplete,
+        vocabLabCache,
+        setVocabLabCache,
         handleStartModule,
         handleStartModuleQuiz,
         handleBackToLesson,
@@ -812,6 +865,7 @@ export const useAppCoordinator = () => {
         onQuizEnd,
         onSaveEditedCardsWrapper,
         handleNavigateToAIGenerator,
+        handleLaunchAIVocabQuiz,
         handleAICardsGenerated,
         showToast,
         

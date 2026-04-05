@@ -1060,14 +1060,14 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
             ]
         },
         conversational: {
-            title: "🗣️ Mode Causerie (Labo)",
-            content: "Pratiquez vos langues en situation réelle ! Le **Mode Causerie** vous permet de discuter librement avec un tuteur IA et de recevoir un bilan pédagogique complet après chaque session.",
+            title: "🗣️ Labo de Langues (Causerie & Vocab)",
+            content: "Pratiquez vos langues en situation réelle et enrichissez votre vocabulaire ! Discutez sous la pression du temps ou analysez des textes pour générer des fiches en un clic.",
             steps: [
-                "**Étape 1** : Rendez-vous dans le **Labo de Langues** et sélectionnez un tuteur.",
-                "**Étape 2** : Choisissez un thème de conversation (restaurant, hôtel, rencontre...) ou lancez une discussion libre.",
-                "**Étape 3** : Parlez ou écrivez. L'IA vous répondra naturellement tout en corrigeant vos erreurs en temps réel.",
-                "**Étape 4 - Le Bilan** : À la fin, l'IA analyse votre fluidité, votre grammaire et votre vocabulaire, puis vous propose des leçons personnalisées.",
-                "**Bonus** : Lancer un scénario de pratique recommandé par l'IA pour travailler vos points faibles."
+                "**Mode Causerie (Timer)** : Choisissez la durée de votre conversation (Libre, Sprint 3 min ou 5 min) pour vous mettre en situation d'urgence réelle.",
+                "**Le Bilan & Mémoire Transversale** : À la fin de la discussion, l'IA analyse vos erreurs. Elle s'en souviendra pour vous relancer subtilement lors de vos prochaines sessions !",
+                "**Labo Vocabulaire** : Explorez des thèmes prédéfinis ou créez votre propre thème sur mesure pour obtenir instantanément des listes de vocabulaire, des expressions utiles ou des exercices interactifs.",
+                "**Génération instantanée** : Dans l'onglet Vocab, double-cliquez sur n'importe quel thème prédéfini pour lancer instantanément la génération des fiches correspondantes sans avoir à valider.",
+                "**Fiches Intelligentes** : Chaque fiche générée inclut automatiquement l'article grammatical du mot (le/la, der/die/das), la traduction précise et une phrase d'exemple pour le contexte."
             ]
         },
         backup: {

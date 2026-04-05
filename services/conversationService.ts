@@ -136,7 +136,7 @@ export const generateLabResponse = async (
     conversationHistory: ChatMessage[],
     userMessage: string,
     config: any,
-    options: { enableCorrection: boolean; activeLanguage?: string; conversationTheme?: string } = { enableCorrection: false }
+    options: { enableCorrection: boolean; activeLanguage?: string; conversationTheme?: string; userWeaknesses?: string[] } = { enableCorrection: false }
 ): Promise<string> => {
     
     // Déterminer la langue cible
@@ -174,13 +174,17 @@ export const generateLabResponse = async (
         ? `\n    THÈME DE LA SESSION : "${options.conversationTheme}". Reste dans ce cadre thématique. Oriente chaque relance vers ce sujet.`
         : '';
 
+    const memoryContext = options.userWeaknesses && options.userWeaknesses.length > 0
+        ? `\n    MÉMOIRE PÉDAGOGIQUE : Précédemment, l'élève a eu des difficultés avec : ${options.userWeaknesses.join(', ')}. Essaie subtilement d'utiliser ces règles ou ce vocabulaire pour vérifier ses progrès, sans le mentionner explicitement.`
+        : '';
+
     const labSystemPrompt = `
     ${tutor.systemPrompt}
     
     ⚠️ INSTRUCTION CRITIQUE (SYSTEM OVERRIDE) :
     IGNORE et OUBLIE toutes les instructions précédentes te demandant de générer du JSON, des Flashcards ou des Quiz.
     
-    CONTEXTE : Tu es dans une session de "Laboratoire de Langues" (Chat Vocal).${themeContext}
+    CONTEXTE : Tu es dans une session de "Laboratoire de Langues" (Chat Vocal).${themeContext}${memoryContext}
     LANGUE CIBLE : ${targetLang}. Parle principalement dans cette langue.
     
     TON RÔLE : 
@@ -396,7 +400,7 @@ export interface ConversationSummary {
     lesson_suggestions: LessonSuggestion[];
 }
 
-const resolveConfig = (config: any) => {
+export const resolveConfig = (config: any) => {
     let apiKey: string | undefined;
     let modelName = config.geminiModel;
     let apiUrl: string | undefined;
@@ -420,11 +424,17 @@ export const generateConversationalOpener = async (
     tutor: Tutor,
     theme: string,
     config: any,
-    activeLanguage?: string
+    activeLanguage?: string,
+    userWeaknesses?: string[]
 ): Promise<string> => {
     const targetLang = resolveLang(activeLanguage);
+    
+    const memoryContext = userWeaknesses && userWeaknesses.length > 0
+        ? `\nMÉMOIRE PÉDAGOGIQUE : L'élève a eu des faiblesses précédentes sur : ${userWeaknesses.join(', ')}. Si pertinent, oriente un peu ta question pour tester l'un de ces points.`
+        : '';
+
     const systemPrompt = `Tu es ${tutor.name}, un professeur de ${targetLang} chaleureux et enthousiaste.
-Tu démarres une session de CAUSERIE GUIDÉE sur le thème : "${theme}".
+Tu démarres une session de CAUSERIE GUIDÉE sur le thème : "${theme}".${memoryContext}
 
 Ton rôle : Lancer la conversation avec UNE question ouverte et engageante en lien avec le thème.
 Règles :
@@ -557,3 +567,120 @@ RÈGLES IMPORTANTES :
     }
 };
 
+export const generateRemedialLesson = async (
+    tutor: Pick<Tutor, 'name'>,
+    theme: string,
+    errors: {original: string, corrected: string}[],
+    vocabulary: {word: string, translation: string}[],
+    weaknesses: string[],
+    activeLanguage: string,
+    config: any
+): Promise<string> => {
+    const targetLang = resolveLang(activeLanguage);
+    const hasData = errors.length > 0 || vocabulary.length > 0 || weaknesses.length > 0;
+    
+    const fallbackContext = hasData 
+    ? `Erreurs relevées durant la session sur le thème "${theme}" :
+${errors.map(e => `- DIT: "${e.original}" -> CORRECTION: "${e.corrected}"`).join('\n')}
+
+Mots de vocabulaire de la session :
+${vocabulary.map(v => `- ${v.word} (${v.translation})`).join('\n')}
+
+Règles de grammaire à cibler (points faibles ou erreurs) :
+${weaknesses.map(w => `- ${w}`).join('\n')}`
+    : `L'élève vient de faire une session de causerie libre. Propose une leçon d'approfondissement adaptée.`;
+
+    const systemPrompt = `Tu es ${tutor.name}, un professeur expert de ${targetLang}.
+L'élève vient de terminer une conversation avec toi sur le thème : "${theme}".
+Génère une LEÇON DE CONSOLIDATION COMPLÈTE en Markdown basée sur le contexte.
+RÈGLE STRICTE: NE JAMAIS ENCADRER ta réponse globale dans un bloc de code \`\`\`markdown. Retourne le texte Markdown directement en texte brut.
+- Utilise des titres de niveau 2 (##) et 3 (###) pour structurer.
+- Important : Ajoute toujours un saut de ligne double AVANT chaque titre pour un rendu optimal.
+- Utilise le format Markdown standard sans balises HTML.
+
+CONTEXTE :
+${fallbackContext}
+
+FORMAT OBLIGATOIRE EN MARKDOWN :
+
+# 🎓 Leçon: [Titre accrocheur sur le thème]
+
+## 📖 1. Point Grammaire & Correction
+Explique avec bienveillance la ou les règles de grammaire importantes pour corriger les erreurs de l'élève. Donne des exemples concrets en ${targetLang} et leur traduction en Français.
+
+## 🧠 2. Mini-Quiz Rapide
+Crée 3 questions à choix multiples (QCM) sur le vocabulaire ou la grammaire de la session.
+(Formatte les réponses de façon claire à la fin du quiz, en utilisant des blocs de citation \`>\` pour les séparer du reste).
+
+## 🔀 3. Thème & Version
+Un mini-exercice lié au thème :
+- **Thème** (Français -> ${targetLang}) : 2 ou 3 phrases à traduire.
+- **Version** (${targetLang} -> Français) : 2 ou 3 phrases à traduire.
+(Formatte les corrigés en bas de l'exercice avec des blocs de citation \`>\`).
+
+## 🎯 4. Et maintenant ?
+Propose clairement 2 ou 3 choix interactifs à la fin de ton message. Par exemple :
+- "Si tu veux, on peut faire un test de vocabulaire supplémentaire."
+- "Dis-moi si tu veux plus d'exemples sur cette règle de grammaire."
+- "Ou pose-moi la question de ton choix !"
+
+IMPORTANT : 
+- Retourne le contenu explicatif au format Markdown valide (N'UTILISE AUCUNE BALISE HTML).
+- Les explications doivent être en français, les exemples en ${targetLang}.
+- À LA TOUTE FIN DE TA RÉPONSE, tu DOIS INCLURE UN BLOC JSON contenant les exercices de ta leçon (le Mini-Quiz et le Thème/Version) pour qu'ils soient rendus de manière interactive.
+
+FORMAT EXIGÉ POUR LE BLOC JSON FINAL :
+\`\`\`json
+{
+  "exercises": [
+    { "type": "quiz", "question": "Question QCM ?", "options": ["A", "B", "C", "D"], "answer": "La bonne réponse exacte" },
+    { "type": "translation", "sentence": "Phrase à traduire vers ${targetLang}", "targetLanguage": "${targetLang}", "answer": "Traduction correcte" }
+  ]
+}
+\`\`\`
+Assure-toi de remplacer ce modèle par les vrais exercices de la section 2 et 3 ! Ne mets pas de texte après le bloc JSON.`;
+
+    const messages: ChatMessage[] = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Génère ma leçon de consolidation suite à notre causerie.` }
+    ];
+
+    const { apiKey, modelName, apiUrl } = resolveConfig(config);
+    return await executeAIRequest(messages, config.provider, apiKey, modelName, apiUrl);
+};
+
+export const generateRemedialChatReply = async (
+    tutor: Pick<Tutor, 'name'>,
+    activeLanguage: string,
+    history: ChatMessage[],
+    config: any
+): Promise<string> => {
+    const targetLang = resolveLang(activeLanguage);
+    const systemPrompt = `Tu es ${tutor.name}, professeur de ${targetLang}.
+Tu es en mode "Consolidation" : l'élève a reçu sa leçon personnalisée et souhaite approfondir.
+Réponds à ses questions, propose-lui des exercices supplémentaires, des quiz, ou corrige ses réponses aux exercices de la leçon précédente.
+Maintiens ton personnage de professeur chaleureux et précis. 
+IMPORTANT : N'utilise AUCUNE balise HTML, utilise uniquement du Markdown pur (#, *, -, > etc.).
+- Ajoute des sauts de ligne entre les paragraphes et avant les titres.
+
+TRÈS IMPORTANT:
+Si l'élève te demande explicitement des exercices supplémentaires (QCM, traduction, trous), TU DOIS AJOUTER UN BLOC JSON À LA TOUTE FIN de ta réponse contenant ces nouveaux exercices, avec ce format strict :
+\`\`\`json
+{
+  "exercises": [
+    { "type": "quiz", "question": "Question QCM ?", "options": ["A", "B", "C", "D"], "answer": "La bonne réponse exacte" },
+    { "type": "translation", "sentence": "Phrase à traduire vers ${targetLang}", "targetLanguage": "${targetLang}", "answer": "Traduction correcte" },
+    { "type": "fill-in", "sentence": "Phrase ____ à compléter", "answer": "mot" }
+  ]
+}
+\`\`\`
+Ne mets de JSON que s'il y a des "exercices" dans ta réponse. Sinon, réponds juste en texte normal.`;
+    
+    const messages: ChatMessage[] = [
+        { role: 'system', content: systemPrompt },
+        ...history
+    ];
+
+    const { apiKey, modelName, apiUrl } = resolveConfig(config);
+    return await executeAIRequest(messages, config.provider, apiKey, modelName, apiUrl);
+};

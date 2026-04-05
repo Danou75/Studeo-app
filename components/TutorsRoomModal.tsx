@@ -431,9 +431,9 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                                 </button>
                                                 <button
                                                     onClick={() => onGenerateCurriculum(tutor)}
-                                                    className="flex-1 py-3 bg-background-tertiary border border-border text-text rounded-lg font-bold hover:bg-background-secondary transition-colors shadow-md flex flex-col items-center justify-center gap-1 min-w-[80px] text-sm leading-tight"
+                                                    className="flex-[1.2] py-3 bg-gradient-to-r from-gray-500 to-slate-600 text-white rounded-lg font-bold hover:from-gray-600 hover:to-slate-700 transition-all shadow-sm flex flex-col items-center justify-center gap-1 min-w-[75px] text-xs md:text-sm leading-tight break-words"
                                                 >
-                                                    <i className="fas fa-map"></i> <span>{t('tutors.actions.programShort')}</span>
+                                                    <i className="fas fa-map"></i> <span className="text-center">{t('tutors.actions.programShort')}</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -515,7 +515,7 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                                                 e.stopPropagation();
                                                                 onGenerateCurriculum(tutor);
                                                             }}
-                                                            className="flex-1 px-2 py-2 bg-background-tertiary border border-border text-text rounded font-medium text-[10px] md:text-sm leading-tight hover:bg-background-secondary transition-colors min-w-[60px] flex flex-col items-center justify-center text-center"
+                                                            className="flex-[1.2] px-1 md:px-2 py-2 bg-gradient-to-r from-gray-500 to-slate-600 text-white rounded font-medium text-[9px] md:text-xs leading-tight hover:from-gray-600 hover:to-slate-700 transition-all shadow-sm min-w-[75px] md:min-w-[90px] flex flex-col items-center justify-center text-center break-words"
                                                         >
                                                             <span className="mb-0.5">🗺️</span> {t('tutors.actions.programShort')}
                                                         </button>
@@ -561,7 +561,7 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
                                                                 e.stopPropagation();
                                                                 onGenerateCurriculum(tutor);
                                                             }}
-                                                            className="flex-1 px-2 py-2 bg-background-tertiary border border-border text-text rounded font-medium text-[10px] md:text-sm leading-tight hover:bg-background-secondary transition-colors min-w-[60px] flex flex-col items-center justify-center text-center"
+                                                            className="flex-[1.2] px-1 md:px-2 py-2 bg-gradient-to-r from-gray-500 to-slate-600 text-white rounded font-medium text-[9px] md:text-xs leading-tight hover:from-gray-600 hover:to-slate-700 transition-all shadow-sm min-w-[75px] md:min-w-[90px] flex flex-col items-center justify-center text-center break-words"
                                                         >
                                                             <span className="mb-0.5">🗺️</span> {t('tutors.actions.programShort')}
                                                         </button>

@@ -22,6 +22,7 @@ type Props = {
   onBackToSetup?: () => void;
   isProgramCompleted?: boolean;
   onResetProgramCompletion?: () => void;
+  onBackToLanguageLab?: () => void;
 };
 
 export const CompletionScreen: React.FC<Props> = ({
@@ -41,6 +42,7 @@ export const CompletionScreen: React.FC<Props> = ({
   onBackToSetup,
   isProgramCompleted,
   onResetProgramCompletion,
+  onBackToLanguageLab,
 }) => {
   const { t } = useTranslation();
   const [showFullHistory, setShowFullHistory] = useState(false);
@@ -125,7 +127,7 @@ export const CompletionScreen: React.FC<Props> = ({
 
       {/* Bannière de Fin de Programme */}
       {isProgramCompleted && (
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-8 rounded-2xl shadow-xl text-center mb-6 animate-pulse border-4 border-yellow-400 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-primary to-primary text-white p-8 rounded-2xl shadow-xl text-center mb-6 animate-pulse border-4 border-yellow-400 relative overflow-hidden">
             <div className="absolute inset-0 bg-white/10 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 2px, transparent 2.5px)', backgroundSize: '20px 20px' }}></div>
             <h1 className="text-4xl md:text-5xl font-black mb-4 flex flex-col md:flex-row items-center justify-center gap-4 relative z-10">
                 <span className="animate-bounce">👑</span> 
@@ -332,10 +334,19 @@ export const CompletionScreen: React.FC<Props> = ({
         
         {onGenerateBonusExercises && lastResult.totalCount > 0 && (lastResult.correctCount / lastResult.totalCount >= 0.7) && (
             <button 
-                className="px-4 py-2 rounded bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white transition flex items-center shadow-lg transform hover:scale-105" 
+                className="px-4 py-2 rounded bg-gradient-to-r from-primary to-primary hover:from-primary/90 hover:to-primary/90 text-white transition flex items-center shadow-lg transform hover:scale-105" 
                 onClick={onGenerateBonusExercises}
             >
                 <i className="fas fa-star mr-2 text-yellow-300"></i> {t('completion.bonusExercises')}
+            </button>
+        )}
+
+        {onBackToLanguageLab && (
+            <button 
+                className="px-4 py-2 rounded bg-amber-500 hover:bg-amber-600 text-white transition flex items-center shadow-sm" 
+                onClick={onBackToLanguageLab}
+            >
+                <i className="fas fa-comments mr-2"></i> Retour au score de fluidité
             </button>
         )}
 

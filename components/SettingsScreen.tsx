@@ -7,6 +7,7 @@ import { writeTextFile, readTextFile } from '@tauri-apps/api/fs';
 import { useConfirmation } from '../contexts/ConfirmationContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabaseClient';
+import { QuickThemePicker } from './ui/QuickThemePicker';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -433,9 +434,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <Button variant="secondary" onClick={onBack} size="sm" className="mb-2 md:mb-0 text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800">
             <i className="fas fa-arrow-left mr-2"></i> {t('common.back') === 'common.back' ? 'Retour' : t('common.back')}
           </Button>
-          <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
+          <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent flex-1">
             {t('settings.title')}
           </h1>
+          <QuickThemePicker />
         </div>
       </div>
 
@@ -707,7 +709,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             
             {config.provider === 'mistral' && (
               <div className="space-y-4 animate-fade-in p-4 bg-background rounded-lg border border-border/50">
-                <h3 className="font-semibold flex items-center gap-2"><i className="fas fa-wind text-indigo-500"></i> {t('settings.ai.title')} Mistral</h3>
+                <h3 className="font-semibold flex items-center gap-2"><i className="fas fa-wind text-primary"></i> {t('settings.ai.title')} Mistral</h3>
                 <div>
                   <label className="block text-sm font-medium mb-2 text-text-secondary">{t('settings.ai.apiKey', { name: 'Mistral' })}</label>
                   <div className="flex gap-2">
@@ -858,10 +860,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <button
                     onClick={onSyncPull}
                     disabled={!onSyncPull}
-                    className="p-4 rounded-lg border-2 border-border hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all group flex flex-col items-center justify-center text-center"
+                    className="p-4 rounded-lg border-2 border-border hover:border-primary/50 hover:bg-primary/5 transition-all group flex flex-col items-center justify-center text-center"
                 >
                     <div className="flex items-center gap-3">
-                        <i className="fas fa-cloud-download-alt text-xl text-indigo-500 group-hover:scale-110 transition-transform"></i>
+                        <i className="fas fa-cloud-download-alt text-xl text-primary group-hover:scale-110 transition-transform"></i>
                         <div className="font-bold">{t('settings.sync.pull')}</div>
                     </div>
                     <div className="text-xs text-text-muted mt-2">{t('settings.sync.pullDesc')}</div>

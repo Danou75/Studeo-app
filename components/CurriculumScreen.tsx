@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StudyProgram, StudyModule } from '../types';
+import { StudyProgram, StudyModule, ConversationSession, SavedVocabList } from '../types';
 import { Button } from './ui/Button';
 import { ThemeStyle, ThemeMode, getThemeGradient } from '../constants/themes';
 import { TUTORS } from '../constants';
@@ -41,7 +41,14 @@ interface CurriculumScreenProps {
     onSuggestedProgram: (topic: string, category: string) => void;
     customSuggestions?: any[];
     setCustomSuggestions?: (suggestions: any[] | ((prev: any[]) => any[])) => void;
-
+    savedConvSessions?: ConversationSession[];
+    onDeleteConvSession?: (id: string) => void;
+    onRenameConvSession?: (id: string, newTitle: string) => void;
+    onResumeConvSession?: (session: ConversationSession) => void;
+    savedVocabLists?: SavedVocabList[];
+    onDeleteVocabList?: (id: string) => void;
+    onRenameVocabList?: (id: string, newTheme: string) => void;
+    onOpenVocabInLab?: (vocab: SavedVocabList) => void;
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
     onNavigateToSettings?: () => void;
@@ -68,6 +75,14 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     onSuggestedProgram,
     customSuggestions: propsCustomSuggestions = [],
     setCustomSuggestions: propsSetCustomSuggestions,
+    savedConvSessions = [],
+    onDeleteConvSession,
+    onRenameConvSession,
+    onResumeConvSession,
+    savedVocabLists = [],
+    onDeleteVocabList,
+    onRenameVocabList,
+    onOpenVocabInLab,
     themeMode, 
     themeStyle 
 }) => {
@@ -80,14 +95,15 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({
     const [loadingModuleId, setLoadingModuleId] = useState<string | null>(null);
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
     const [renameItemId, setRenameItemId] = useState<string | null>(null);
-    const [renameType, setRenameType] = useState<'program' | 'lesson'>('program');
+    const [renameType, setRenameType] = useState<'program' | 'lesson' | 'conversation' | 'vocab'>('program');
     const [newTitle, setNewTitle] = useState('');
     const [isRenewingCatalog, setIsRenewingCatalog] = useState(false);
     const [showRenewModal, setShowRenewModal] = useState(false);
     const [renewPreferences, setRenewPreferences] = useState('');
     const [renewStrategy, setRenewStrategy] = useState<'replace' | 'append'>('replace');
     const [viewMode, setViewMode] = useLocalStorage<'grid' | 'list'>('curriculum_view_mode', 'grid');
-    const [activeTab, setActiveTab] = useLocalStorage<'programs' | 'lessons'>('curriculum_active_tab', 'programs');
+    const [activeTab, setActiveTab] = useLocalStorage<'programs' | 'lessons' | 'conversations' | 'vocabulary'>('curriculum_active_tab', 'programs');
+    const [selectedVocab, setSelectedVocab] = useState<SavedVocabList | null>(null);
 
     
     const { config } = useAIConfig();
@@ -638,20 +654,34 @@ Format JSON STRICT (tableau d'objets) :
         <div className="p-4 md:p-6 flex-1 overflow-y-auto min-h-0 pb-32">
             
             {/* TABS SELECTOR */}
-            <div className="flex gap-4 mb-8 border-b border-border">
+            <div className="flex gap-4 mb-8 border-b border-border overflow-x-auto">
                 <button 
                     onClick={() => setActiveTab('programs')}
-                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeTab === 'programs' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
+                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'programs' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
                 >
                     <i className="fas fa-map-marked-alt mr-2"></i> Parcours ({programs.length})
                     {activeTab === 'programs' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
                 </button>
                 <button 
                     onClick={() => setActiveTab('lessons')}
-                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative ${activeTab === 'lessons' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
+                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'lessons' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
                 >
                     <i className="fas fa-book-open mr-2"></i> Leçons Solo ({lessons.filter(l => l.source !== 'curriculum').length})
                     {activeTab === 'lessons' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
+                </button>
+                <button 
+                    onClick={() => setActiveTab('conversations')}
+                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'conversations' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
+                >
+                    <i className="fas fa-comments mr-2"></i> Causeries ({savedConvSessions.length})
+                    {activeTab === 'conversations' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
+                </button>
+                <button 
+                    onClick={() => setActiveTab('vocabulary')}
+                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'vocabulary' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
+                >
+                    <i className="fas fa-language mr-2"></i> Vocabulaire ({savedVocabLists.length})
+                    {activeTab === 'vocabulary' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
                 </button>
             </div>
 
@@ -775,7 +805,7 @@ Format JSON STRICT (tableau d'objets) :
                     })}
                 </div>
             )
-        ) : (
+        ) : activeTab === 'lessons' ? (
             lessons.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 border-2 border-dashed border-border rounded-xl p-12">
                     <div className="bg-background-secondary p-6 rounded-full mb-4">
@@ -862,9 +892,342 @@ Format JSON STRICT (tableau d'objets) :
                     })}
                 </div>
             )
+        ) : activeTab === 'conversations' ? (
+            savedConvSessions.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 border-2 border-dashed border-border rounded-xl p-12">
+                    <div className="bg-background-secondary p-6 rounded-full mb-4">
+                        <i className="fas fa-comments text-6xl text-text-muted"></i>
+                    </div>
+                    <h2 className="text-xl font-bold mb-2">Aucune causerie sauvegardée</h2>
+                    <p className="max-w-md mx-auto mb-6">
+                        Terminez une causerie dans le Lab de Langues et cliquez sur « Sauvegarder cette causerie » pour la retrouver ici !
+                    </p>
+                </div>
+            ) : (
+                <div className={viewMode === 'list' ? "flex flex-col gap-4" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
+                    {savedConvSessions.map(session => {
+                        const sessionTutor = TUTORS.find(t => t.id === session.tutorId);
+                        const date = new Date(session.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                        const hasLesson = session.remedialMessages && session.remedialMessages.length > 0;
+                        return (
+                            <div
+                                key={session.id}
+                                className={`bg-background border border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group flex relative ${
+                                    viewMode === 'grid' 
+                                        ? 'flex-col min-h-[160px] justify-between' 
+                                        : 'flex-row items-start gap-4'
+                                }`}
+                            >
+                                <div className={viewMode === 'grid' 
+                                    ? "absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                                    : "flex gap-2 order-last flex-col sm:flex-row ml-auto shrink-0"
+                                }>
+                                    {hasLesson && onResumeConvSession && (
+                                        <button
+                                            onClick={() => onResumeConvSession(session)}
+                                            className={`flex items-center justify-center gap-2 rounded-xl transition-colors border ${
+                                                viewMode === 'grid'
+                                                    ? 'w-8 h-8 bg-primary/20 dark:bg-primary/30 text-primary/90 dark:text-primary/40 border-primary/30 dark:border-primary/90'
+                                                    : 'px-3 py-2 bg-primary/20 dark:bg-primary/30 text-primary/90 dark:text-primary/40 text-xs font-bold border-primary/30 dark:border-primary/90 hover:bg-primary/30'
+                                            }`}
+                                            title="Reprendre la leçon"
+                                        >
+                                            <i className="fas fa-play"></i>
+                                            {viewMode === 'list' && <span className="hidden sm:inline">Reprendre</span>}
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setRenameItemId(session.id);
+                                            setRenameType('conversation');
+                                            setNewTitle(session.theme);
+                                            setIsRenameModalOpen(true);
+                                        }}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-primary transition-colors border border-border"
+                                        title="Renommer"
+                                    >
+                                        <i className="fas fa-edit text-xs"></i>
+                                    </button>
+                                    {onDeleteConvSession && (
+                                        <button
+                                            onClick={() => {
+                                                showConfirmation({
+                                                    title: 'Supprimer la causerie',
+                                                    message: `Supprimer définitivement la causerie "${session.theme}" ?`,
+                                                    confirmText: 'Supprimer',
+                                                    variant: 'danger',
+                                                    onConfirm: () => onDeleteConvSession(session.id)
+                                                });
+                                            }}
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-red-500 hover:bg-red-50 transition-colors border border-border"
+                                            title="Supprimer"
+                                        >
+                                            <i className="fas fa-trash-alt text-xs"></i>
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className={viewMode === 'grid' ? "flex items-start gap-4 mb-4" : "flex items-start gap-4 flex-1"}>
+                                    <div className="w-14 h-14 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-3xl shrink-0">
+                                        {sessionTutor?.emoji || '💬'}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                            <h3 className={`font-bold text-text group-hover:text-primary transition-colors ${viewMode === 'grid' ? 'text-lg' : 'text-base'}`}>
+                                                {session.theme}
+                                            </h3>
+                                            {hasLesson && (
+                                                <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-lg bg-primary/20 dark:bg-primary/30 text-primary dark:text-primary/40 border border-primary/30 dark:border-primary">
+                                                    <i className="fas fa-magic mr-1"></i>Leçon
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-text-muted mb-2">
+                                            {sessionTutor?.name || session.tutorName} · {date} · {session.messages.length} messages
+                                        </p>
+                                        {viewMode === 'list' && session.summary && (
+                                            <p className="text-xs text-text-secondary line-clamp-2 italic">
+                                                {session.summary.overall_feedback}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {viewMode === 'grid' && session.summary && (
+                                    <p className="text-xs text-text-secondary line-clamp-2 italic border-t border-border pt-3 mt-auto">
+                                        {session.summary.overall_feedback}
+                                    </p>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )
+        ) : activeTab === 'vocabulary' ? (
+            savedVocabLists.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 border-2 border-dashed border-border rounded-xl p-12">
+                    <div className="bg-background-secondary p-6 rounded-full mb-4">
+                        <i className="fas fa-language text-6xl text-text-muted"></i>
+                    </div>
+                    <h2 className="text-xl font-bold mb-2">Aucun vocabulaire sauvegardé</h2>
+                    <p className="max-w-md mx-auto mb-6">
+                        Générez des listes de vocabulaire dans le <strong>Lab de Langues → Vocab</strong> et cliquez sur <strong>« Sauv. »</strong> pour les retrouver ici !
+                    </p>
+                </div>
+            ) : (
+                <div className={viewMode === 'list' ? "flex flex-col gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
+                    {savedVocabLists.map(vocab => {
+                        const diffColor = vocab.difficulty === 'débutant' ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : vocab.difficulty === 'intermédiaire' ? 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20' : 'text-red-600 bg-red-50 dark:bg-red-900/20';
+                        const savedDate = new Date(vocab.savedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                        return (
+                            <div
+                                key={vocab.id}
+                                className={`bg-background border border-border rounded-2xl transition-all cursor-pointer group flex overflow-hidden relative ${
+                                    viewMode === 'grid' 
+                                        ? 'flex-col shadow-lg hover:shadow-xl hover:border-primary' 
+                                        : 'flex-row items-center p-4 gap-4 hover:bg-background-secondary'
+                                }`}
+                                onClick={() => setSelectedVocab(vocab)}
+                            >
+                                {/* Action buttons */}
+                                <div className={viewMode === 'grid' 
+                                    ? "absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                                    : "flex gap-2 order-last"
+                                }>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setRenameItemId(vocab.id);
+                                            setRenameType('vocab');
+                                            setNewTitle(vocab.theme);
+                                            setIsRenameModalOpen(true);
+                                        }}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-primary shadow-sm border border-border transition-colors"
+                                        title="Renommer"
+                                    >
+                                        <i className="fas fa-edit text-xs"></i>
+                                    </button>
+                                    {onDeleteVocabList && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                showConfirmation({
+                                                    title: 'Supprimer le vocabulaire',
+                                                    message: `Supprimer définitivement "${vocab.theme}" ?`,
+                                                    confirmText: 'Supprimer',
+                                                    variant: 'danger',
+                                                    onConfirm: () => onDeleteVocabList(vocab.id)
+                                                });
+                                            }}
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-red-500 hover:bg-red-50 transition-colors border border-border"
+                                            title="Supprimer"
+                                        >
+                                            <i className="fas fa-trash-alt text-xs"></i>
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Icon */}
+                                <div className={`flex items-center justify-center shrink-0 ${
+                                    viewMode === 'grid' ? 'p-6 pb-0' : 'w-14 h-14 bg-primary/10 dark:bg-primary/20 rounded-xl'
+                                }`}>
+                                    <div className={`${viewMode === 'grid' ? 'text-4xl bg-primary/10 dark:bg-primary/20 w-16 h-16' : 'text-3xl'} flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform`}>
+                                        🗣️
+                                    </div>
+                                </div>
+
+                                {/* Info */}
+                                <div className={`flex-1 min-w-0 ${viewMode === 'grid' ? 'p-6' : 'px-2'}`}>
+                                    <h3 className={`font-bold group-hover:text-primary transition-colors ${viewMode === 'grid' ? 'text-base mb-1' : 'text-base'}`}>
+                                        {vocab.theme}
+                                    </h3>
+                                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                        <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-lg ${diffColor}`}>
+                                            {vocab.difficulty}
+                                        </span>
+                                        <span className="text-[10px] text-text-muted">
+                                            {vocab.wordCount} mots · {vocab.targetLanguage.toUpperCase()}
+                                        </span>
+                                        {viewMode === 'list' && (
+                                            <span className="text-[10px] text-text-muted">
+                                                · {vocab.exercises.length} exercices · {savedDate}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {viewMode === 'grid' && (
+                                    <div className="flex">
+                                        <div className="flex-1 bg-background-secondary p-3 text-center text-[10px] font-bold text-text-muted uppercase tracking-wider group-hover:bg-primary group-hover:text-white transition-colors">
+                                            Aperçu
+                                        </div>
+                                        {onOpenVocabInLab && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onOpenVocabInLab(vocab); }}
+                                                className="bg-primary hover:bg-primary/90 text-white p-3 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 flex-shrink-0"
+                                                title="Ouvrir dans le Lab de Langues"
+                                            >
+                                                <i className="fas fa-flask text-[11px]"></i> Lab
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )
+        ) : null}
+
+        {/* Vocab Detail Modal */}
+        {selectedVocab && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setSelectedVocab(null)}>
+                <div className="bg-background rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-border" onClick={e => e.stopPropagation()}>
+                    {/* Modal Header */}
+                    <div className="p-5 border-b border-border flex items-start justify-between gap-4 bg-gradient-to-r from-primary to-primary text-white">
+                        <div>
+                            <h3 className="text-xl font-black">{selectedVocab.theme}</h3>
+                            <p className="text-sm opacity-80 mt-0.5">
+                                {selectedVocab.targetLanguage.toUpperCase()} · {selectedVocab.difficulty} · {selectedVocab.wordCount} mots · {selectedVocab.exercises.length} exercices
+                            </p>
+                        </div>
+                        <button onClick={() => setSelectedVocab(null)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-colors shrink-0">
+                            <i className="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div className="overflow-y-auto flex-1 p-5 space-y-6">
+                        {/* Words */}
+                        {selectedVocab.words.length > 0 && (
+                            <div>
+                                <h4 className="text-sm font-black uppercase tracking-widest text-text-muted mb-3 flex items-center gap-2">
+                                    <i className="fas fa-spell-check text-primary"></i> Mots ({selectedVocab.words.length})
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {selectedVocab.words.map((w, i) => (
+                                        <div key={i} className="bg-background-secondary rounded-xl p-3 border border-border">
+                                            <div className="flex justify-between items-baseline">
+                                                <span className="font-bold text-text">{w.word}</span>
+                                                <span className="text-xs text-text-muted ml-2">{w.translation}</span>
+                                            </div>
+                                            {w.example && <p className="text-xs text-text-secondary mt-1 italic">{w.example}</p>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Expressions */}
+                        {selectedVocab.expressions.length > 0 && (
+                            <div>
+                                <h4 className="text-sm font-black uppercase tracking-widest text-text-muted mb-3 flex items-center gap-2">
+                                    <i className="fas fa-comment-dots text-primary"></i> Expressions ({selectedVocab.expressions.length})
+                                </h4>
+                                <div className="flex flex-col gap-2">
+                                    {selectedVocab.expressions.map((ex, i) => (
+                                        <div key={i} className="bg-background-secondary rounded-xl p-3 border border-border">
+                                            <div className="flex justify-between items-baseline flex-wrap gap-1">
+                                                <span className="font-bold text-text">{ex.expression}</span>
+                                                <span className="text-xs text-text-muted">{ex.translation}</span>
+                                            </div>
+                                            {ex.example && <p className="text-xs text-text-secondary mt-1 italic">{ex.example}</p>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Exercises Summary */}
+                        {selectedVocab.exercises.length > 0 && (
+                            <div>
+                                <h4 className="text-sm font-black uppercase tracking-widest text-text-muted mb-3 flex items-center gap-2">
+                                    <i className="fas fa-dumbbell text-pink-500"></i> Exercices ({selectedVocab.exercises.length})
+                                </h4>
+                                <div className="flex flex-col gap-2">
+                                    {selectedVocab.exercises.slice(0, 5).map((ex, i) => (
+                                        <div key={i} className="bg-background-secondary rounded-xl p-3 border border-border">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg bg-pink-100 dark:bg-pink-900/20 text-pink-600">{ex.type}</span>
+                                            </div>
+                                            <p className="text-sm text-text">{ex.question || ex.sentence || 'Exercice'}</p>
+                                            {ex.options && ex.options.length > 0 && (
+                                                <div className="flex flex-wrap gap-1 mt-1.5">
+                                                    {ex.options.map((opt, j) => (
+                                                        <span key={j} className={`text-xs px-2 py-0.5 rounded-lg border ${opt === ex.answer ? 'bg-green-100 dark:bg-green-900/20 text-green-700 border-green-300' : 'bg-background border-border text-text-muted'}`}>{opt}</span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {selectedVocab.exercises.length > 5 && (
+                                        <p className="text-xs text-text-muted text-center">+ {selectedVocab.exercises.length - 5} autres exercices…</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Modal Footer */}
+                    {onOpenVocabInLab && (
+                        <div className="p-4 border-t border-border bg-background-secondary flex items-center justify-between gap-3">
+                            <p className="text-xs text-text-muted">
+                                Retrouvez ce vocabulaire en mode interactif avec exercices, chat IA et flashcards.
+                            </p>
+                            <button
+                                onClick={() => { onOpenVocabInLab(selectedVocab!); setSelectedVocab(null); }}
+                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-xl transition-colors flex-shrink-0 shadow-md"
+                            >
+                                <i className="fas fa-flask"></i>
+                                Ouvrir dans le Lab
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
         )}
 
-            {/* Section Découvrir & Développer */}
+        {activeTab !== 'conversations' && activeTab !== 'vocabulary' && (
             <div className="mt-16 mb-10">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-background-secondary/50 p-4 md:p-6 rounded-[2rem] border border-border/50">
                     <div>
@@ -935,6 +1298,7 @@ Format JSON STRICT (tableau d'objets) :
                     </div>
                 )}
             </div>
+        )}
         </div>
 
         {/* Modal de renommage */}
@@ -954,8 +1318,12 @@ Format JSON STRICT (tableau d'objets) :
                                 if (e.key === 'Enter' && newTitle.trim()) {
                                     if (renameType === 'program') {
                                         onRenameProgram(renameItemId!, newTitle);
-                                    } else {
+                                    } else if (renameType === 'lesson') {
                                         onRenameLesson(renameItemId!, newTitle);
+                                    } else if (renameType === 'conversation') {
+                                        onRenameConvSession?.(renameItemId!, newTitle);
+                                    } else if (renameType === 'vocab') {
+                                        onRenameVocabList?.(renameItemId!, newTitle);
                                     }
                                     setIsRenameModalOpen(false);
                                 } else if (e.key === 'Escape') {
@@ -963,7 +1331,7 @@ Format JSON STRICT (tableau d'objets) :
                                 }
                             }}
                             className="w-full px-4 py-3 bg-background-secondary border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
-                            placeholder={renameType === 'program' ? "Nouveau nom du parcours..." : "Nouveau titre de la leçon..."}
+                            placeholder={renameType === 'program' ? "Nouveau nom du parcours..." : renameType === 'conversation' ? "Nouveau thème de la causerie..." : "Nouveau titre de la leçon..."}
                         />
                     </div>
                     <div className="p-6 bg-background-secondary flex justify-end gap-3">
@@ -978,8 +1346,12 @@ Format JSON STRICT (tableau d'objets) :
                             onClick={() => {
                                 if (renameType === 'program') {
                                     onRenameProgram(renameItemId!, newTitle);
-                                } else {
+                                } else if (renameType === 'lesson') {
                                     onRenameLesson(renameItemId!, newTitle);
+                                } else if (renameType === 'conversation') {
+                                    onRenameConvSession?.(renameItemId!, newTitle);
+                                } else if (renameType === 'vocab') {
+                                    onRenameVocabList?.(renameItemId!, newTitle);
                                 }
                                 setIsRenameModalOpen(false);
                             }}

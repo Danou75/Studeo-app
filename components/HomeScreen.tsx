@@ -50,7 +50,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     themeMode,
     themeStyle,
     onThemeModeChange,
-    onThemeStyleChange,
+    onThemeStyleChange: _onThemeStyleChange,
     onShowHelp,
     onOpenAuth,
     onSyncPush,
@@ -73,16 +73,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
     const Section = ({ title, icon, children }: { title: string, icon: string, children: React.ReactNode }) => (
         <div 
-            className={`flex flex-col gap-3 md:gap-5 flex-1 p-4 md:p-6 rounded-3xl border shadow-sm transition-all duration-300 ${themeStyle === 'apple' ? 'bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl' : 'bg-white dark:bg-gray-800'}`}
+            className={`flex flex-col gap-2 sm:gap-3 md:gap-5 flex-1 p-3 sm:p-4 md:p-6 rounded-2xl md:rounded-3xl border shadow-sm transition-all duration-300 ${themeStyle === 'apple' ? 'bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl' : 'bg-white dark:bg-gray-800'}`}
             style={{ 
                 borderColor: `${themeColors.primary}30`,
                 boxShadow: `0 4px 20px -8px ${themeColors.primary}20`
             }}
         >
-            <h3 className={`text-sm font-black flex items-center gap-2 uppercase tracking-widest`} style={{ color: themeColors.primary }}>
-                <span className="text-xl filter drop-shadow-sm">{icon}</span> {title}
+            <h3 className={`text-[10px] sm:text-xs font-black flex items-center gap-1.5 uppercase tracking-widest`} style={{ color: themeColors.primary }}>
+                <span className="text-base sm:text-xl filter drop-shadow-sm">{icon}</span> {title}
             </h3>
-            <div className="grid gap-4 grid-cols-1 flex-1 content-start">
+            <div className="grid gap-2 sm:gap-3 md:gap-4 grid-cols-1 flex-1 content-start">
                 {children}
             </div>
         </div>
@@ -105,30 +105,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     }) => (
         <button
             onClick={onClick}
-            className={`group relative overflow-hidden rounded-2xl p-2.5 md:p-3 text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border border-transparent hover:border-border/50 w-full shadow-sm flex flex-col justify-center flex-1 min-h-[80px] md:min-h-[110px] ${themeStyle === 'apple' ? 'bg-white/40 dark:bg-gray-800/40 backdrop-blur-md' : 'bg-gray-50/50 dark:bg-gray-700/50'}`}
+            className={`group relative overflow-hidden rounded-2xl p-2.5 md:p-3 text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border border-transparent hover:border-border/50 w-full shadow-sm flex flex-col justify-center flex-1 min-h-[64px] md:min-h-[96px] active:scale-[0.98] ${themeStyle === 'apple' ? 'bg-white/40 dark:bg-gray-800/40 backdrop-blur-md' : 'bg-gray-50/50 dark:bg-gray-700/50'}`}
         >
-            <div className="relative z-10 flex items-center gap-3">
-                <div className={`w-11 h-11 md:w-14 md:h-14 rounded-2xl flex items-center justify-center text-2xl md:text-3xl shadow-inner ${colorClass} group-hover:scale-110 transition-transform duration-300`}>
+            <div className="relative z-10 flex items-center gap-2.5 md:gap-3">
+                <div className={`w-9 h-9 sm:w-11 sm:h-11 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center text-xl sm:text-2xl md:text-3xl shadow-inner flex-shrink-0 ${colorClass} group-hover:scale-110 transition-transform duration-300`}>
                     {icon}
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center mb-1">
-                        <h4 className="font-extrabold text-lg text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors">{title}</h4>
+                    <div className="flex justify-between items-center mb-0.5">
+                        <h4 className="font-extrabold text-sm sm:text-base md:text-lg text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors leading-tight">{title}</h4>
                         {badge !== undefined && (
                             <span 
-                                className={`ml-2 px-2.5 py-1 rounded-full text-xs font-black shadow-sm text-white animate-pulse`}
+                                className={`ml-1.5 px-2 py-0.5 rounded-full text-xs font-black shadow-sm text-white animate-pulse flex-shrink-0`}
                                 style={{ backgroundColor: themeColors.primary }}
                             >
                                 {badge}
                             </span>
                         )}
                     </div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 leading-relaxed">{desc}</p>
+                    <p className="text-[11px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 leading-snug line-clamp-2">{desc}</p>
                 </div>
                 
-                <div className="group-hover:translate-x-1 transition-all" style={{ color: themeColors.primary }}>
-                    <i className="fas fa-chevron-right"></i>
+                <div className="group-hover:translate-x-1 transition-all flex-shrink-0 opacity-40 group-hover:opacity-100" style={{ color: themeColors.primary }}>
+                    <i className="fas fa-chevron-right text-xs"></i>
                 </div>
             </div>
         </button>
@@ -136,17 +136,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
     return (
         <div 
-            className="flex-1 min-h-0 overflow-y-auto pt-safe p-4 pb-20 w-full mx-auto transition-colors duration-500"
+            className="flex-1 min-h-0 overflow-y-auto pt-safe p-3 sm:p-4 pb-20 w-full mx-auto transition-colors duration-500"
             style={{ 
                 background: `linear-gradient(135deg, ${themeColors.background} 0%, ${themeColors.backgroundSecondary} 100%)`
             }}
         >
             {/* Header / Top Bar */}
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8 pt-2">
+            <div className="flex flex-row items-center justify-between gap-2 mb-4 sm:mb-6 md:mb-8 pt-1">
                 {/* Logo & Slogan */}
-                <div className="text-center lg:text-left flex-1 min-w-0">
+                <div className="text-left flex-1 min-w-0">
                     <h1 
-                        className="text-4xl sm:text-5xl md:text-6xl font-black mb-1 lg:mb-0 tracking-tighter drop-shadow-sm filter bg-clip-text text-transparent truncate"
+                        className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter drop-shadow-sm filter bg-clip-text text-transparent leading-none"
                         style={{ 
                             backgroundImage: brandGradient,
                             backgroundSize: '200% auto',
@@ -154,7 +154,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     >
                         Studeo
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400 text-[10px] md:text-xs lg:text-sm font-medium tracking-wide line-clamp-1">
+                    <p className="text-gray-500 dark:text-gray-400 text-[9px] sm:text-[10px] md:text-xs font-medium tracking-wide line-clamp-1 mt-0.5">
                         {themeStyle === 'french' && "L'outil pour tout apprendre"}
                         {themeStyle === 'english' && "The tool to learn everything"}
                         {themeStyle === 'spanish' && "La herramienta para aprender todo"}
@@ -165,109 +165,97 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     </p>
                 </div>
 
-                {/* Zone des Contrôles - Toujours visible et accessible */}
-                <div className="flex flex-col items-center lg:items-end gap-3 z-30">
-                    {/* Sélecteurs Style & Langue */}
-                    <div className="flex flex-wrap justify-center items-center gap-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-md relative z-40">
-                        <div className="flex items-center gap-1 px-1 border-r border-gray-200 dark:border-gray-700">
-                             <span className="text-sm">🎨</span>
-                             <select 
-                                value={themeStyle}
-                                onChange={(e) => onThemeStyleChange(e.target.value as ThemeStyle)}
-                                className="bg-transparent text-[11px] md:text-sm font-black outline-none cursor-pointer py-1 text-gray-700 dark:text-gray-200 min-w-[90px]"
-                             >
-                                <option value="default">Défaut</option>
-                                <option value="french">France</option>
-                                <option value="english">English</option>
-                                <option value="spanish">España</option>
-                                <option value="italian">Italia</option>
-                                <option value="german">Deutsch</option>
-                                <option value="polish">Polski</option>
-                                <option value="russian">Pусский</option>
-                                <option value="apple">Apple</option>
-                            </select>
-                        </div>
-                        
-                         <div className="flex bg-gray-100/80 dark:bg-gray-700/80 rounded-xl p-0.5">
-                             <button 
-                                onClick={() => setLanguage('fr')} 
-                                className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${language === 'fr' ? 'bg-white dark:bg-gray-600 shadow-sm text-primary' : 'text-gray-400'}`}
-                             >FR</button>
-                             <button 
-                                onClick={() => setLanguage('en')} 
-                                className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${language === 'en' ? 'bg-white dark:bg-gray-600 shadow-sm text-primary' : 'text-gray-400'}`}
-                             >EN</button>
-                        </div>
+                {/* Zone des Contrôles — compact sur mobile */}
+                <div className="flex items-center gap-1.5 flex-shrink-0 z-30">
+                    {/* Streak */}
+                    <div 
+                        className="flex items-center gap-1 px-2 py-1.5 text-white shadow-md rounded-xl text-[10px] font-black"
+                        style={{ backgroundColor: themeColors.primary }}
+                    >
+                        <i className="fas fa-fire text-xs"></i>
+                        <span>{streak}</span>
                     </div>
 
-                    {/* Boutons d'Action Rapide */}
-                    <div className="flex flex-wrap justify-center items-center gap-2">
-                        <div 
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-white shadow-md rounded-xl text-[10px] font-black"
-                            style={{ backgroundColor: themeColors.primary }}
-                        >
-                            <i className="fas fa-fire"></i> {streak}
-                        </div>
-                        
-                        {user && onSyncPush && (
-                            <button 
-                                onClick={onSyncPush}
-                                className={`p-2 rounded-xl shadow-sm transition-all border flex items-center gap-2 px-3 ${
-                                    cloudStatus === 'syncing' ? 'bg-blue-500 animate-pulse text-white border-blue-600 shadow-blue-500/50' : 
-                                    cloudStatus === 'synced' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-500/30' :
-                                    cloudStatus === 'error' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-500/30' :
-                                    'bg-blue-500/10 text-blue-600 rounded-xl shadow-sm hover:text-blue-700 transition-colors border border-blue-500/20'
-                                }`}
-                                title="Sauvegarder vers le Cloud"
-                            >
-                                <i className={`fas ${
-                                    cloudStatus === 'syncing' ? 'fa-sync-alt fa-spin' : 
-                                    cloudStatus === 'synced' ? 'fa-cloud-check text-green-500' :
-                                    cloudStatus === 'error' ? 'fa-exclamation-triangle text-red-500' :
-                                    'fa-cloud-upload-alt'
-                                }`}></i>
-                                {cloudStatus === 'syncing' && <span className="text-[9px] font-black uppercase hidden lg:inline">Synchro...</span>}
-                                {cloudStatus === 'synced' && <span className="text-[9px] font-black uppercase hidden lg:inline">À Jour</span>}
-                            </button>
-                        )}
-                        
+                    {/* Langue UI */}
+                    <div className="flex bg-white/80 dark:bg-gray-800/80 rounded-xl p-0.5 shadow-sm border border-gray-200/50 dark:border-gray-700/50">
                         <button 
-                            onClick={onOpenAuth} 
-                            className={`p-2 rounded-xl shadow-sm transition-all flex items-center gap-2 px-3 ${user ? 'bg-success/10 text-success border border-success/20' : 'bg-white/80 dark:bg-gray-800/80 text-gray-400 hover:text-primary border border-transparent'}`}
-                        >
-                            <i className={`fas ${user ? 'fa-user-circle' : 'fa-cloud-upload-alt'}`}></i>
-                            {user && <span className="text-[9px] font-bold uppercase hidden sm:inline">{t('header.account')}</span>}
-                        </button>
-
+                           onClick={() => setLanguage('fr')} 
+                           className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${language === 'fr' ? 'bg-primary text-white shadow-sm' : 'text-gray-400'}`}
+                        >FR</button>
                         <button 
-                            onClick={() => onThemeModeChange(themeMode === 'dark' ? 'light' : 'dark')} 
-                            className="p-2 bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm text-gray-400 hover:text-primary transition-colors"
-                        >
-                            <i className={`fas fa-${themeMode === 'dark' ? 'lightbulb' : 'moon'}`}></i>
-                        </button>
-
-                        <button 
-                            onClick={onShowHelp} 
-                            className="p-2 bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm text-gray-400 hover:text-primary transition-colors"
-                        >
-                            <i className="fas fa-question-circle"></i>
-                        </button>
-
-                        <button 
-                            onClick={onNavigateToSettings} 
-                            className="p-2 bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm text-gray-400 hover:text-primary transition-colors"
-                        >
-                            <i className="fas fa-cog"></i>
-                        </button>
+                           onClick={() => setLanguage('en')} 
+                           className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${language === 'en' ? 'bg-primary text-white shadow-sm' : 'text-gray-400'}`}
+                        >EN</button>
                     </div>
+
+                    {/* Sync cloud */}
+                    {user && onSyncPush && (
+                        <button 
+                            onClick={onSyncPush}
+                            className={`p-2 rounded-xl shadow-sm transition-all border ${
+                                cloudStatus === 'syncing' ? 'bg-blue-500 animate-pulse text-white border-blue-600' : 
+                                cloudStatus === 'synced' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 border-green-500/30' :
+                                cloudStatus === 'error' ? 'bg-red-100 dark:bg-red-900/30 text-red-500 border-red-500/30' :
+                                'bg-blue-500/10 text-blue-600 border-blue-500/20'
+                            }`}
+                            title="Sauvegarder vers le Cloud"
+                        >
+                            <i className={`fas text-xs ${
+                                cloudStatus === 'syncing' ? 'fa-sync-alt fa-spin' : 
+                                cloudStatus === 'synced' ? 'fa-check' :
+                                cloudStatus === 'error' ? 'fa-exclamation-triangle' :
+                                'fa-cloud-upload-alt'
+                            }`}></i>
+                        </button>
+                    )}
+
+                    {/* Compte */}
+                    <button 
+                        onClick={onOpenAuth} 
+                        className={`p-2 rounded-xl shadow-sm transition-all border ${
+                            user 
+                                ? 'bg-success/10 text-success border-success/20' 
+                                : 'bg-white/80 dark:bg-gray-800/80 text-gray-400 border-transparent'
+                        }`}
+                        title={user ? t('header.account') : 'Connexion'}
+                    >
+                        <i className={`fas text-xs ${user ? 'fa-user-check' : 'fa-cloud-upload-alt'}`}></i>
+                    </button>
+
+                    {/* Thème clair/sombre */}
+                    <button 
+                        onClick={() => onThemeModeChange(themeMode === 'dark' ? 'light' : 'dark')} 
+                        className="p-2 bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm text-gray-400 hover:text-primary transition-colors border border-transparent"
+                        title={themeMode === 'dark' ? 'Mode clair' : 'Mode sombre'}
+                    >
+                        <i className={`fas text-xs fa-${themeMode === 'dark' ? 'sun' : 'moon'}`}></i>
+                    </button>
+
+                    {/* Aide */}
+                    <button 
+                        onClick={onShowHelp} 
+                        className="p-2 bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm text-gray-400 hover:text-primary transition-colors border border-transparent hidden sm:flex"
+                        title="Aide"
+                    >
+                        <i className="fas fa-question-circle text-xs"></i>
+                    </button>
+
+                    {/* Paramètres */}
+                    <button 
+                        onClick={onNavigateToSettings} 
+                        className="p-2 bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm text-gray-400 hover:text-primary transition-colors border border-transparent"
+                        title="Paramètres"
+                    >
+                        <i className="fas fa-cog text-xs"></i>
+                    </button>
                 </div>
             </div>
 
             {/* GRILLE */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
                 
                 {/* COLONNE GAUCHE (Labo IA + Bibliothèque) */}
-                <div className="flex flex-col gap-6 md:gap-8">
+                <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8">
                     <Section title={t('home.sections.aiLab')} icon="⚡️">
                         <FeatureCard icon="👨‍🏫" title={t('home.features.tutorsRoom.title')} desc={t('home.features.tutorsRoom.description')} onClick={onNavigateToTutorsRoom} colorClass="bg-primary/10 text-primary"/>
                         <FeatureCard icon="💬" title={t('home.features.chat.title')} desc={t('home.features.chat.description')} onClick={onNavigateToChat} colorClass="bg-accent/10 text-accent"/>
@@ -291,7 +279,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
  
                 {/* COLONNE DROITE (Zone Entraînement + Analyse) */}
-                <div className="flex flex-col gap-6 md:gap-8">
+                <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8">
                      <Section title={t('home.sections.training')} icon="🎯">
                         <FeatureCard icon="📝" title={t('home.features.quiz.title')} desc={t('home.features.quiz.description')} onClick={onNavigateToQuiz} colorClass="bg-success/10 text-success"/>
                         <FeatureCard icon="🔤" title={t('home.features.conjugator.title')} desc={t('home.features.conjugator.description')} onClick={onNavigateToConjugator} colorClass="bg-info/10 text-info"/>

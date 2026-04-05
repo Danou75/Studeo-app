@@ -60,34 +60,28 @@ const useNativeSpeechRecognition = (language: string = 'fr-FR') => {
     // Créer une NOUVELLE instance pour s'assurer que la langue est bien prise en compte
     console.log('🔄 Creating new speech recognition instance for language:', language);
     recognitionRef.current = new SpeechRecognitionConstructor();
-    recognitionRef.current.continuous = false;
+    recognitionRef.current.continuous = true;
     recognitionRef.current.interimResults = true;
     recognitionRef.current.lang = language;
     recognitionRef.current.maxAlternatives = 1;
 
     recognitionRef.current.onstart = () => {
-      console.log('🎤 Speech recognition started for language:', language);
+      console.log('🎤 Speech recognition started (CONTINUOUS MODE) for language:', language);
       isListeningRef.current = true;
       setStatus('listening');
       setError(null);
     };
 
     recognitionRef.current.onresult = (event: any) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
-
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        } else {
-          interimTranscript += event.results[i][0].transcript;
-        }
+      let fullTranscript = '';
+      
+      // On boucle sur l'intégralité des résultats fournis par l'API pour reconstruire la phrase complète
+      for (let i = 0; i < event.results.length; ++i) {
+        fullTranscript += event.results[i][0].transcript;
       }
       
-      // On affiche l'intermédiaire si le final n'est pas encore là
-      const newTranscript = finalTranscript || interimTranscript;
-      console.log('📝 Transcript:', newTranscript, '(lang:', language, ')');
-      setTranscript(newTranscript);
+      console.log('📝 Full Transcript:', fullTranscript, '(lang:', language, ')');
+      setTranscript(fullTranscript);
     };
 
     recognitionRef.current.onerror = async (event: any) => {

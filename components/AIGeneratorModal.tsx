@@ -24,12 +24,14 @@ interface AIGeneratorModalProps {
     onCurriculumGenerated?: (program: StudyProgram) => void;
     availableLanguages: string[];
     initialTopic?: string;
-    initialMode?: 'quiz' | 'lesson' | 'curriculum' | undefined;
+    initialMode?: 'quiz' | 'lesson' | 'curriculum' | 'mixed-quiz' | undefined;
+    initialContext?: string;
     themeMode: ThemeMode;
     themeStyle: ThemeStyle;
     onShowSavedLessons?: () => void;
     onNavigateToSettings?: () => void;
     guestTutors?: any[];
+    initialTutor?: any;
 }
 
 export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
@@ -43,11 +45,13 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
     availableLanguages,
     initialTopic = '',
     initialMode,
+    initialContext = '',
     themeMode,
     themeStyle,
     onShowSavedLessons,
     onNavigateToSettings,
-    guestTutors = []
+    guestTutors = [],
+    initialTutor
 }) => {
     const [generationType, setGenerationType] = useState<'quiz' | 'lesson' | 'curriculum' | 'mixed-quiz'>('quiz');
     const [topic, setTopic] = useState('');
@@ -58,6 +62,14 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
     const { t } = useTranslation();
 
     const { config, setSelectedTutor } = useAIConfig();
+
+    // Synchronisation du tuteur si fourni initialement (ex: retour d'une causerie spécifique)
+    React.useEffect(() => {
+        if (initialTutor && (!config.selectedTutor || config.selectedTutor.id !== initialTutor.id)) {
+            setSelectedTutor(initialTutor);
+        }
+    }, [initialTutor, config.selectedTutor?.id, setSelectedTutor]);
+
     const isLanguageTutor = !config.selectedTutor || config.selectedTutor.category === 'languages';
 
     React.useEffect(() => {
@@ -85,8 +97,9 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
         if (isOpen) {
             if (initialTopic) setTopic(initialTopic);
             if (initialMode) setGenerationType(initialMode);
+            if (initialContext) setContext(initialContext);
         }
-    }, [isOpen, initialTopic, initialMode]);
+    }, [isOpen, initialTopic, initialMode, initialContext]);
     
     const [targetLang, setTargetLang] = useState('en');
     const [count, setCount] = useState(10);
@@ -117,14 +130,20 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
         if (saved) {
             try {
                 const data = JSON.parse(saved);
-                // On ne charge le brouillon que si aucune valeur initiale n'est fournie via les props
-                if (data.topic && !initialTopic) setTopic(data.topic);
-                if (data.count) setCount(data.count);
-                if (data.difficulty) setDifficulty(data.difficulty);
-                if (data.context) setContext(data.context);
-                if (data.sourceLang) setSourceLang(data.sourceLang);
-                if (data.targetLang) setTargetLang(data.targetLang);
-                if (data.generationType && !initialMode) setGenerationType(data.generationType);
+                // On charge le brouillon si : 
+                // 1. Aucune valeur initiale n'est fournie via les props
+                // 2. OU si le brouillon était basé sur le même initialTopic (reprise de session Labo)
+                const isResumeSession = initialTopic && data.initialTopicSource === initialTopic;
+                
+                if (isResumeSession || !initialTopic) {
+                    if (data.topic) setTopic(data.topic);
+                    if (data.context) setContext(data.context);
+                    if (data.generationType) setGenerationType(data.generationType);
+                    if (data.count) setCount(data.count);
+                    if (data.difficulty) setDifficulty(data.difficulty);
+                    if (data.sourceLang) setSourceLang(data.sourceLang);
+                    if (data.targetLang) setTargetLang(data.targetLang);
+                }
             } catch (e) {
                 console.error("Failed to load AI Generator draft", e);
             }
@@ -135,9 +154,12 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
 
     React.useEffect(() => {
         if (!isFormDirty) return;
-        const draft = { topic, count, difficulty, context, sourceLang, targetLang, generationType };
+        const draft = { 
+            topic, count, difficulty, context, sourceLang, targetLang, generationType,
+            initialTopicSource: initialTopic 
+        };
         localStorage.setItem('ai_generator_draft', JSON.stringify(draft));
-    }, [topic, count, difficulty, context, sourceLang, targetLang, generationType, isFormDirty]);
+    }, [topic, count, difficulty, context, sourceLang, targetLang, generationType, isFormDirty, initialTopic]);
     
     // ... (rest of useEffects) ...
 
@@ -509,6 +531,18 @@ CONTEXTE UTILISATEUR : ${context}
         }
     };
 
+    const handleResetForm = () => {
+        setTopic('');
+        setContext('');
+        setCount(10);
+        setDifficulty('intermediate');
+        setSetName('');
+        setInputType('text');
+        setSelectedFilePath(null);
+        setTranscriptText('');
+        showToast(t('common.reset') || 'Champs réinitialisés', 'info');
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -529,16 +563,28 @@ CONTEXTE UTILISATEUR : ${context}
                 )}
                 {/* Ligne 1 : Navigation */}
                 <div className="relative flex justify-between items-center mb-4">
+                    <div className="flex gap-2">
                         <Button 
                             variant="secondary" 
                             onClick={onClose} 
                             size="sm" 
                             className={`${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm relative z-10 transition-all`}
                         >
-                        <i className="fas fa-home mr-2"></i> Accueil
-                    </Button>
+                            <i className="fas fa-arrow-left mr-2"></i> {t('common.back') || 'Retour'}
+                        </Button>
 
-                     {onShowSavedLessons && (
+                        <Button 
+                            variant="secondary"
+                            onClick={handleResetForm}
+                            size="sm"
+                            className={`${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm relative z-10 transition-all font-bold`}
+                            title={t('common.reset') || "Réinitialiser les champs"}
+                        >
+                            <i className="fas fa-undo mr-2"></i> RAZ
+                        </Button>
+                    </div>
+
+                    {onShowSavedLessons && (
                         <Button 
                             variant="secondary"
                             onClick={onShowSavedLessons}
@@ -611,7 +657,7 @@ CONTEXTE UTILISATEUR : ${context}
                             onClick={() => setGenerationType('mixed-quiz')}
                             className={`flex-1 min-w-[140px] py-2 md:py-3 px-2 md:px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-2 md:gap-3 ${
                                 generationType === 'mixed-quiz'
-                                    ? 'border-indigo-600 bg-indigo-600/10 text-indigo-600 font-bold'
+                                    ? 'border-primary bg-primary/10 text-primary font-bold'
                                     : 'border-border bg-background hover:bg-background-secondary text-text-secondary'
                             }`}
                         >

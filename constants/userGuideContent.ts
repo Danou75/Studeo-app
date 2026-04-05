@@ -7,15 +7,15 @@ Bienvenue dans l'univers de **Studeo**, votre plateforme d'apprentissage intelli
 
 ## 🧭 Navigation Rapide
 
-1. [Configuration & Tutoriel Clé API Gratuit](#1-configuration--tutoriel-clé-api-gratuit)
-2. [La Salle des Profs - Votre Équipe Pédagogique](#2-la-salle-des-profs---votre-équipe-pédagogique)
-3. [Génération de Contenu par IA (Niveaux & Modes)](#3-génération-de-contenu-par-ia-niveaux--modes)
-4. [Gestion des Listes & Cartes](#4-gestion-des-listes--cartes)
-5. [Modes de Quiz & Apprentissage](#5-modes-de-quiz--apprentissage)
-6. [Algorithme de Révision (SRS)](#6-algorithme-de-révision-srs)
-7. [Laboratoire Interactif & Défis](#7-laboratoire-interactif--défis)
-8. [Le Conjugueur & Répétiteur Vocal](#8-le-conjugueur--répétiteur-vocal)
-9. [Sauvegarde & Synchronisation Cloud](#9-sauvegarde--synchronisation-cloud)
+1. [Configuration & Tutoriel Clé API Gratuit](#1-configuration-tutoriel-cle-api-gratuit)
+2. [La Salle des Profs - Votre Équipe Pédagogique](#2-la-salle-des-profs-votre-equipe-pedagogique)
+3. [Génération de Contenu par IA (Niveaux & Modes)](#3-generation-de-contenu-par-ia-niveaux-modes)
+4. [Gestion des Listes & Cartes](#4-gestion-des-listes-cartes)
+5. [Modes de Quiz & Apprentissage](#5-modes-de-quiz-apprentissage)
+6. [Algorithme de Révision (SRS)](#6-algorithme-de-revision-srs)
+7. [Laboratoire Interactif & Défis](#7-laboratoire-interactif-defis)
+8. [Le Conjugueur & Répétiteur Vocal](#8-le-conjugueur-repetiteur-vocal)
+9. [Sauvegarde & Synchronisation Cloud](#9-sauvegarde-synchronisation-cloud)
 
 ---
 
@@ -151,6 +151,11 @@ Apprenez par la pratique avec des modules spécialisés :
 
 - **Pas à Pas** : Tutoriels interactifs pour le Dessin, la Musique, les Échecs et le Code.
 - **Défis** : Testez vos compétences (reconnaissance de notes, tactiques d'échecs).
+- **Labo de Langues (Causerie & Vocabulaire)** : 
+  - *Mode Causerie* : Discutez librement (oral/écrit) sous la pression du timer (Sprint 3 min, 5 min, ou Infini). En fin de session, l'IA dresse un récapitulatif de vos erreurs.
+  - *Mémoire Transversale* : L'IA se souvient de vos faiblesses détectées lors des sessions précédentes pour vous relancer subtilement dessus !
+  - *Labo Vocabulaire* : Explorez des thèmes prédéfinis ou créez votre propre thème sur mesure pour obtenir instantanément des listes de vocabulaire, des expressions utiles ou des exercices interactifs.
+  - *Génération Instantanée* : Double-cliquez sur n'importe quel thème prédéfini dans l'onglet Vocabulaire pour générer automatiquement les fiches sans clic additionnel. L'IA inclut systématiquement l'article grammatical précis (les genres), la traduction et des exemples.
 
 ---
 

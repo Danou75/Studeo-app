@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Lesson, StudyProgram, Screen } from '../types';
+import { Lesson, StudyProgram, Screen, ConversationSession, SavedVocabList } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useLocalStorage } from './useLocalStorage';
 
@@ -11,6 +11,8 @@ export const useStudyContent = () => {
     const [studyPrograms, setStudyPrograms] = useLocalStorage<StudyProgram[]>('studyPrograms', []);
     const [curriculumSuggestions, setCurriculumSuggestions] = useLocalStorage<any[]>('curriculum_suggestions_catalog', []);
     const [librarySuggestions, setLibrarySuggestions] = useLocalStorage<any[]>('library_custom_catalog', []);
+    const [savedConvSessions, setSavedConvSessions] = useLocalStorage<ConversationSession[]>('savedConvSessions', []);
+    const [savedVocabLists, setSavedVocabLists] = useLocalStorage<SavedVocabList[]>('savedVocabLists', []);
 
 
     const handleLessonGenerated = (lesson: Lesson, setScreen: (s: Screen) => void) => {
@@ -168,6 +170,41 @@ export const useStudyContent = () => {
         });
     };
 
+    const handleSaveConvSession = (session: ConversationSession) => {
+        setSavedConvSessions(prev => {
+            // Éviter les doublons (même id)
+            const filtered = prev.filter((s: ConversationSession) => s.id !== session.id);
+            return [session, ...filtered].slice(0, 50);
+        });
+    };
+
+    const handleDeleteConvSession = (id: string) => {
+        setSavedConvSessions(prev => prev.filter((s: ConversationSession) => s.id !== id));
+    };
+
+    const handleRenameConvSession = (id: string, newTheme: string) => {
+        setSavedConvSessions(prev => prev.map((s: ConversationSession) => 
+            s.id === id ? { ...s, theme: newTheme } : s
+        ));
+    };
+
+    const handleSaveVocabList = (vocab: SavedVocabList) => {
+        setSavedVocabLists(prev => {
+            const filtered = prev.filter((v: SavedVocabList) => v.id !== vocab.id);
+            return [vocab, ...filtered].slice(0, 100);
+        });
+    };
+
+    const handleDeleteVocabList = (id: string) => {
+        setSavedVocabLists(prev => prev.filter((v: SavedVocabList) => v.id !== id));
+    };
+
+    const handleRenameVocabList = (id: string, newTheme: string) => {
+        setSavedVocabLists(prev => prev.map((v: SavedVocabList) =>
+            v.id === id ? { ...v, theme: newTheme } : v
+        ));
+    };
+
     return {
         currentLesson,
         setCurrentLesson,
@@ -179,6 +216,14 @@ export const useStudyContent = () => {
         setCurriculumSuggestions,
         librarySuggestions,
         setLibrarySuggestions,
+        savedConvSessions,
+        handleSaveConvSession,
+        handleDeleteConvSession,
+        handleRenameConvSession,
+        savedVocabLists,
+        handleSaveVocabList,
+        handleDeleteVocabList,
+        handleRenameVocabList,
         handleLessonGenerated,
         handleCurriculumGenerated,
         handleSaveLesson,

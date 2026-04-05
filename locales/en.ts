@@ -1044,14 +1044,14 @@ export const en: typeof fr = {
             ]
         },
         conversational: {
-            title: "🗣️ Conversational Mode (Lab)",
-            content: "Practice your languages in real-life situations! **Conversational Mode** allows you to chat freely with an AI tutor and receive a full pedagogical assessment after each session.",
+            title: "🗣️ Language Lab (Chat & Vocab)",
+            content: "Practice your languages in real-life situations and expand your vocabulary! Chat under time pressure or analyze texts to generate flashcards in one click.",
             steps: [
-                "**Step 1**: Go to the **Language Lab** and select a tutor.",
-                "**Step 2**: Choose a conversation theme (restaurant, hotel, meeting...) or start a free discussion.",
-                "**Step 3**: Speak or write. The AI will respond naturally while correcting your errors in real-time.",
-                "**Step 4 - The Assessment**: At the end, the AI analyzes your fluency, grammar, and vocabulary, then suggests personalized lessons.",
-                "**Bonus**: Launch a practice scenario recommended by the AI to work on your weak points."
+                "**Chat Mode (Timer)**: Choose the duration of your conversation (Infinite, 3 min Sprint, or 5 min) to simulate real-world urgency.",
+                "**Assessment & Cross-Session Memory**: At the end of the chat, the AI analyzes your errors. It will remember them to subtly test you in your next sessions!",
+                "**Vocabulary Lab**: Explore predefined themes or create your own custom theme to instantly get vocabulary lists, useful expressions, or interactive exercises.",
+                "**Instant Generation**: In the Vocab tab, double-click on any predefined theme to instantly generate the flashcards without an extra confirmation click.",
+                "**Smart Flashcards**: Each generated card automatically includes the word's grammatical article (le/la, der/die/das), accurate translation, and an example sentence for context."
             ]
         },
         backup: {

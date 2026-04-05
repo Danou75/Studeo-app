@@ -13,7 +13,7 @@ import { useTTS } from '../hooks/useTTS';
 import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { AILoader } from './ui/AILoader';
-import { useConjugationCache, CacheEntry } from '../hooks/useConjugationCache';
+import { useConjugationCache, CacheEntry, ConjugationCacheEntry } from '../hooks/useConjugationCache';
 
 import { save } from '@tauri-apps/api/dialog';
 import { writeTextFile } from '@tauri-apps/api/fs';
@@ -23,6 +23,7 @@ interface ConjugatorScreenProps {
   defaultLang?: string;
   onAddCards?: (cards: Flashcard[]) => void;
   onCreateSet?: (name: string, cards: Flashcard[]) => void;
+  onStartQuiz?: (cards: Flashcard[], questionLang: string, answerLang: string) => void;
   themeMode: ThemeMode;
   themeStyle: ThemeStyle;
   onNavigateToSettings?: () => void;
@@ -33,6 +34,7 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
   defaultLang = 'it', 
   onAddCards, 
   onCreateSet,
+  onStartQuiz,
   themeMode,
   themeStyle,
   onNavigateToSettings
@@ -49,8 +51,20 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
   const [mode, setMode] = useState<'conjugate' | 'translate' | 'library'>('conjugate');
   const [translationResult, setTranslationResult] = useState<TranslationResult | null>(null);
   
-  // Selection state
+  // Selection state (conjugation forms)
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
+
+  // Library selection state (for quiz launch)
+  const [selectedLibraryKeys, setSelectedLibraryKeys] = useState<Set<string>>(new Set());
+
+  // Conjugation quiz modal state
+  const [showConjugQuizModal, setShowConjugQuizModal] = useState(false);
+  const [conjQuizData, setConjQuizData] = useState<{
+    conjEntries: ConjugationCacheEntry[];
+    translationCards: Flashcard[];
+    availableTenses: { tense: string; tenseName: string }[];
+    selectedTenses: Set<string>;
+  } | null>(null);
 
   // Repetitor mode
   const [repetitorTable, setRepetitorTable] = useState<ConjugationTable | null>(null);
@@ -526,6 +540,132 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
 
   const selectedCount = Object.values(selectedItems).filter(Boolean).length;
 
+  // Toggle a single library entry selection
+  const toggleLibraryItem = (key: string) => {
+    setSelectedLibraryKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  // French pronoun mapping (from target-language pronouns)
+  const FRENCH_PRONOUN_MAP: Record<string, string> = {
+    // Italian
+    'io': 'je', 'tu': 'tu', 'lui/lei/lei': 'il/elle', 'noi': 'nous', 'voi': 'vous', 'loro': 'ils/elles',
+    // Spanish
+    'yo': 'je', 'tú': 'tu', 'él/ella/ud.': 'il/elle', 'nosotros': 'nous', 'vosotros': 'vous', 'ellos/ellas/uds.': 'ils/elles',
+    // English
+    'i': 'je', 'you': 'tu', 'he/she/it': 'il/elle', 'we': 'nous', 'they': 'ils/elles',
+    // German
+    'ich': 'je', 'du': 'tu', 'er/sie/es': 'il/elle', 'wir': 'nous', 'ihr': 'vous', 'sie': 'ils/elles',
+    // Portuguese
+    'eu': 'je', 'tu / você': 'tu', 'ele/ela/você': 'il/elle', 'nós': 'nous', 'vós / vocês': 'vous', 'eles/elas/vocês': 'ils/elles',
+  };
+
+  const getFrenchPronoun = (pronoun: string) =>
+    FRENCH_PRONOUN_MAP[pronoun.toLowerCase()] || pronoun;
+
+  // Canonical grammatical order for pronouns across languages
+  const getCanonicalPronounOrder = (pronoun: string): number => {
+    const p = pronoun.toLowerCase().trim();
+    // 1st person singular
+    if (p === 'io' || p === 'yo' || p === 'ich' || p === 'eu' || p === 'i' || p === 'je') return 0;
+    // 2nd person singular
+    if (p === 'tu' || p === 't\u00fa' || p === 'du' || p === 'you' || p.startsWith('tu /')) return 1;
+    // 3rd person singular (lui/lei, él/ella, er/sie, he/she, ele/ela, il/elle)
+    if (p.includes('lui') || p.includes('lei') || p.includes('\u00e9l') || p.startsWith('er/') || p.startsWith('he/') || p.startsWith('il/') || p.startsWith('ele/')) return 2;
+    // 1st person plural
+    if (p === 'noi' || p === 'nosotros' || p === 'nous' || p === 'wir' || p === 'we' || p === 'n\u00f3s') return 3;
+    // 2nd person plural
+    if (p === 'voi' || p === 'vosotros' || p === 'vous' || p === 'ihr' || p.startsWith('you (pl') || p.startsWith('v\u00f3s')) return 4;
+    // 3rd person plural
+    if (p === 'loro' || p.startsWith('ellos') || p === 'sie' || p === 'they' || p.startsWith('ils') || p.startsWith('eles')) return 5;
+    return 99;
+  };
+
+  // Sort form entries in canonical grammatical order (io, tu, lui/lei, noi, voi, loro)
+  const sortedFormEntries = (forms: Record<string, string>): [string, string][] =>
+    Object.entries(forms).sort(([a], [b]) => getCanonicalPronounOrder(a) - getCanonicalPronounOrder(b));
+
+  // Build cards from selected conjugation entries and tenses
+  const buildConjugationCards = (conjEntries: ConjugationCacheEntry[], selectedTenses: Set<string>): Flashcard[] => {
+    const cards: Flashcard[] = [];
+    for (const entry of conjEntries) {
+      const frVerb = entry.result.translation || entry.verb;
+      for (const table of entry.result.tables) {
+        if (!selectedTenses.has(table.tense)) continue;
+        for (const [pronoun, form] of sortedFormEntries(table.forms)) {
+          if (!form || form === '-') continue;
+          const frPronoun = getFrenchPronoun(pronoun);
+          cards.push({
+            id: uuidv4(), type: 'classic' as const,
+            terms: {
+              recto: `${frPronoun} - ${frVerb} (${table.tenseName})`,
+              verso: form  // pronom exclu → la réponse est uniquement la forme conjuguée
+            }
+          });
+        }
+      }
+    }
+    return cards;
+  };
+
+  // Launch quiz from selected library entries
+  const handleLaunchLibraryQuiz = (filteredEntries: any[]) => {
+    const toQuiz = filteredEntries.filter(e => selectedLibraryKeys.has(e.key));
+    if (toQuiz.length === 0) { showToast('Sélectionnez au moins une entrée', 'warning'); return; }
+    if (!onStartQuiz) { showToast('Fonction non disponible', 'error'); return; }
+
+    const conjEntries = toQuiz.filter(e => e.type === 'conjugation') as ConjugationCacheEntry[];
+    const transEntries = toQuiz.filter(e => e.type === 'translation');
+
+    // Translation cards (recto/verso as before)
+    const translationCards: Flashcard[] = transEntries.map(entry => ({
+      id: uuidv4(), type: 'classic' as const,
+      terms: {
+        recto: entry.result.original,
+        verso: entry.result.translated
+      }
+    }));
+
+    if (conjEntries.length === 0) {
+      // Only translations → launch directly
+      showToast(`${translationCards.length} fiches prêtes ! Lancement...`, 'success');
+      setTimeout(() => onStartQuiz(translationCards, 'recto', 'verso'), 300);
+      return;
+    }
+
+    // Collect all unique tenses across selected conjugation entries
+    const tenseMap = new Map<string, string>(); // tense -> tenseName
+    for (const entry of conjEntries) {
+      for (const table of entry.result.tables) {
+        if (!tenseMap.has(table.tense)) tenseMap.set(table.tense, table.tenseName);
+      }
+    }
+    const availableTenses = Array.from(tenseMap.entries()).map(([tense, tenseName]) => ({ tense, tenseName }));
+
+    // Show tense selection modal
+    setConjQuizData({
+      conjEntries,
+      translationCards,
+      availableTenses,
+      selectedTenses: new Set(availableTenses.map(t => t.tense)), // all selected by default
+    });
+    setShowConjugQuizModal(true);
+  };
+
+  const handleLaunchConjugQuiz = () => {
+    if (!conjQuizData || !onStartQuiz) return;
+    const { conjEntries, translationCards, selectedTenses } = conjQuizData;
+    const conjCards = buildConjugationCards(conjEntries, selectedTenses);
+    const allCards = [...conjCards, ...translationCards];
+    if (allCards.length === 0) { showToast('Aucune fiche générée — vérifiez les temps sélectionnés', 'warning'); return; }
+    setShowConjugQuizModal(false);
+    showToast(`${allCards.length} fiches prêtes ! Lancement...`, 'success');
+    setTimeout(() => onStartQuiz(allCards, 'recto', 'verso'), 300);
+  };
+
   if (repetitorTable && result) {
     const langCode = LANGUAGES.find(l => l.name === result.language)?.code || language;
     
@@ -540,6 +680,71 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
   }
 
   return (
+    <>
+      {/* ── Conjugation Quiz Tense Selector Modal ── */}
+      {showConjugQuizModal && conjQuizData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-black text-gray-800 dark:text-gray-100">🎯 Quiz de Conjugaison</h2>
+              <button onClick={() => setShowConjugQuizModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition text-xl">✕</button>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {conjQuizData.conjEntries.length} verbe{conjQuizData.conjEntries.length > 1 ? 's' : ''} sélectionné{conjQuizData.conjEntries.length > 1 ? 's' : ''} :{' '}
+              <span className="font-bold text-primary">{conjQuizData.conjEntries.map(e => e.verb).join(', ')}</span>
+            </p>
+            <div className="border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 tracking-wider">Temps à inclure</span>
+                <button onClick={() => setConjQuizData(prev => {
+                  if (!prev) return prev;
+                  const allSelected = prev.selectedTenses.size === prev.availableTenses.length;
+                  return { ...prev, selectedTenses: allSelected ? new Set() : new Set(prev.availableTenses.map(t => t.tense)) };
+                })} className="text-xs font-bold text-primary hover:underline">
+                  {conjQuizData.selectedTenses.size === conjQuizData.availableTenses.length ? 'Tout désélectionner' : 'Tout sélectionner'}
+                </button>
+              </div>
+              <div className="divide-y divide-gray-100 dark:divide-gray-800 max-h-60 overflow-y-auto">
+                {conjQuizData.availableTenses.map(({ tense, tenseName }) => {
+                  const isSelected = conjQuizData.selectedTenses.has(tense);
+                  const formCount = conjQuizData.conjEntries.reduce((sum, entry) => {
+                    const table = entry.result.tables.find(t => t.tense === tense);
+                    return sum + (table ? Object.values(table.forms).filter(f => f && f !== '-').length : 0);
+                  }, 0);
+                  return (
+                    <label key={tense} className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${isSelected ? 'bg-primary/5 dark:bg-primary/10' : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
+                      <input type="checkbox" checked={isSelected} onChange={() => setConjQuizData(prev => {
+                        if (!prev) return prev;
+                        const next = new Set(prev.selectedTenses);
+                        if (next.has(tense)) next.delete(tense); else next.add(tense);
+                        return { ...prev, selectedTenses: next };
+                      })} className="w-4 h-4 accent-primary rounded" />
+                      <span className={`flex-1 font-semibold text-sm ${isSelected ? 'text-primary' : 'text-gray-700 dark:text-gray-300'}`}>{tenseName}</span>
+                      <span className="text-xs text-gray-400">{formCount} forme{formCount > 1 ? 's' : ''}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            {(() => {
+              const count = buildConjugationCards(conjQuizData.conjEntries, conjQuizData.selectedTenses).length + conjQuizData.translationCards.length;
+              return (
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/5 dark:bg-primary/10 rounded-xl border border-primary/20">
+                  <i className="fas fa-layer-group text-primary text-sm"></i>
+                  <span className="text-sm font-bold text-primary">{count} fiche{count > 1 ? 's' : ''} générée{count > 1 ? 's' : ''}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto">fr → {conjQuizData.conjEntries[0]?.langName || 'cible'}</span>
+                </div>
+              );
+            })()}
+            <div className="flex gap-3">
+              <button onClick={() => setShowConjugQuizModal(false)} className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition text-sm">Annuler</button>
+              <button onClick={handleLaunchConjugQuiz} disabled={conjQuizData.selectedTenses.size === 0} className="flex-1 px-4 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed transition text-sm flex items-center justify-center gap-2">
+                <i className="fas fa-play"></i> Lancer le quiz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     <div className="flex-1 min-h-0 flex flex-col w-full text-text animate-fade-in overflow-hidden relative">
       {/* Header */}
       <div 
@@ -1032,7 +1237,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                             </button>
                         </div>
                         <div className="p-4 space-y-2">
-                            {Object.entries(table.forms).map(([pronoun, form]) => {
+                            {sortedFormEntries(table.forms).map(([pronoun, form]) => {
                                 const isSelected = selectedItems[`${table.tenseName}-${pronoun}`];
                                 return (
                                     <div 
@@ -1239,7 +1444,39 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
               );
             }
 
+            const allSelected = filtered.length > 0 && filtered.every(e => selectedLibraryKeys.has(e.key));
+
             return (
+              <>
+                {/* Selection action bar */}
+                <div className="flex flex-wrap items-center gap-3 bg-background-secondary border border-border/50 rounded-xl px-4 py-2.5">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={() => {
+                        if (allSelected) setSelectedLibraryKeys(new Set());
+                        else setSelectedLibraryKeys(new Set(filtered.map(e => e.key)));
+                      }}
+                      className="w-4 h-4 accent-primary cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-text-muted">
+                      {selectedLibraryKeys.size > 0
+                        ? `${selectedLibraryKeys.size} sélectionné${selectedLibraryKeys.size > 1 ? 's' : ''}`
+                        : 'Tout sélectionner'}
+                    </span>
+                  </label>
+                  {selectedLibraryKeys.size > 0 && onStartQuiz && onCreateSet && (
+                    <button
+                      onClick={() => handleLaunchLibraryQuiz(filtered)}
+                      className="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-wide shadow-md hover:bg-primary/90 active:scale-95 transition-all"
+                    >
+                      <i className="fas fa-play-circle"></i>
+                      Lancer Quiz ({selectedLibraryKeys.size})
+                    </button>
+                  )}
+                </div>
+
               <div className={libraryViewMode === 'grid' 
                 ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" 
                 : "flex flex-col gap-2"
@@ -1248,6 +1485,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                   const isConj = entry.type === 'conjugation';
                   const label = isConj ? (entry as any).verb : (entry as any).text;
                   const langFlag = LANGUAGES.find(l => l.code === entry.langCode)?.flag ?? '';
+                  const isLibSelected = selectedLibraryKeys.has(entry.key);
                   const langName = entry.langName;
                   const dateStr = new Date(entry.savedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
                   
@@ -1269,8 +1507,13 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                     return (
                         <div
                           key={entry.key}
-                          className="group bg-background-secondary rounded-xl border border-border/30 hover:border-primary/40 hover:shadow-sm transition-all duration-200 overflow-hidden flex items-center p-3 gap-3"
+                          onClick={() => toggleLibraryItem(entry.key)}
+                          className={`group bg-background-secondary rounded-xl border hover:shadow-sm transition-all duration-200 overflow-hidden flex items-center p-3 gap-3 cursor-pointer ${isLibSelected ? 'border-primary bg-primary/5' : 'border-border/30 hover:border-primary/40'}`}
                         >
+                           {/* Checkbox */}
+                           <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${isLibSelected ? 'bg-primary border-primary' : 'border-border group-hover:border-primary/50'}`}>
+                             {isLibSelected && <i className="fas fa-check text-white text-[10px]"></i>}
+                           </div>
                            <div className={`w-1 self-stretch rounded-full ${isConj ? 'bg-primary' : 'bg-accent'}`}></div>
                            <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
@@ -1282,15 +1525,11 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                                         <i className={isConj ? "fas fa-book-open" : "fas fa-language"}></i>
                                         {isConj ? 'Conjugaison' : 'Traduction'}
                                     </span>
-                                    <span className="text-[10px] text-text-muted hidden sm:inline">
-                                        {langName}
-                                    </span>
-                                    <span className="text-[10px] text-text-muted">
-                                        {dateStr}
-                                    </span>
+                                    <span className="text-[10px] text-text-muted hidden sm:inline">{langName}</span>
+                                    <span className="text-[10px] text-text-muted">{dateStr}</span>
                                 </div>
                            </div>
-                           <div className="flex items-center gap-2 shrink-0">
+                           <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
                                 <span className="text-[10px] text-text-muted hidden md:block group-hover:block transition-all">
                                     <i className="fas fa-eye mr-1"></i>{entry.accessCount}
                                 </span>
@@ -1320,12 +1559,17 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                   return (
                     <div
                       key={entry.key}
-                      className="group bg-background-secondary rounded-xl border border-border/30 hover:border-primary/40 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                      onClick={() => toggleLibraryItem(entry.key)}
+                      className={`group rounded-xl border transition-all duration-200 overflow-hidden cursor-pointer ${isLibSelected ? 'bg-primary/5 border-primary shadow-md' : 'bg-background-secondary border-border/30 hover:border-primary/40 hover:shadow-lg'}`}
                     >
                       <div className={`h-1 ${isConj ? 'bg-gradient-to-r from-primary to-primary/50' : 'bg-gradient-to-r from-accent to-accent/50'}`}></div>
                       <div className="p-4">
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="min-w-0">
+                          {/* Checkbox */}
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${isLibSelected ? 'bg-primary border-primary' : 'border-border group-hover:border-primary/50'}`}>
+                            {isLibSelected && <i className="fas fa-check text-white text-[10px]"></i>}
+                          </div>
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
                               <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider border" style={{ color: isConj ? 'var(--color-primary)' : 'var(--color-accent)', borderColor: isConj ? 'var(--color-primary)' : 'var(--color-accent)', background: isConj ? 'var(--color-primary-light, #fdf)' : 'var(--color-accent-light, #eff)' }}>
                                 {isConj ? '📖 Conjugaison' : '🌐 Traduction'}
@@ -1335,7 +1579,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                             <h3 className="font-black text-lg text-text capitalize leading-tight truncate">{label}</h3>
                             <p className="text-xs text-text-muted mt-0.5">{langName} · {dateStr}</p>
                           </div>
-                          <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => cache.deleteEntry(entry.key)}
                               className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/10 text-red-400 transition-colors"
@@ -1348,7 +1592,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
 
                         <p className="text-xs text-text-muted italic truncate mb-3">{preview}</p>
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between" onClick={e => e.stopPropagation()}>
                           <span className="text-[10px] text-text-muted">
                             <i className="fas fa-eye mr-1"></i>{entry.accessCount} accès
                           </span>
@@ -1365,6 +1609,7 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
                   );
                 })}
               </div>
+              </>
             );
           })()}
         </div>
@@ -1378,5 +1623,6 @@ ${escapeRTF(pronoun)} \\cell \\b ${escapeRTF(form)} \\b0 \\cell \\row\n`;
       </div>
     </div>
   </div>
+  </>
 );
 };

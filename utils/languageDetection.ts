@@ -2,7 +2,15 @@ import { Tutor } from '../types';
 
 export const getLanguageCode = (tutor: Tutor | null | undefined): string => {
     if (!tutor) return 'fr-FR';
-    if (tutor.language) return tutor.language;
+    if (tutor.language) {
+        const langMap: Record<string, string> = {
+            fr: 'fr-FR', en: 'en-US', es: 'es-ES', it: 'it-IT',
+            de: 'de-DE', pt: 'pt-PT', ru: 'ru-RU', tr: 'tr-TR', pl: 'pl-PL',
+            zh: 'zh-CN', ja: 'ja-JP', ar: 'ar-SA', ko: 'ko-KR', nl: 'nl-NL',
+            el: 'el-GR', hi: 'hi-IN'
+        };
+        return langMap[tutor.language.toLowerCase()] || tutor.language;
+    }
 
     const text = (tutor.name + ' ' + (tutor.description || '') + ' ' + (tutor.systemPrompt || '') + ' ' + (tutor.subject || '')).toLowerCase();
     

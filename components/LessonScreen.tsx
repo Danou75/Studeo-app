@@ -650,7 +650,7 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
         {/* SECTION EXERCICES */}
         {/* SECTION QUIZ (Flashcards) */}
         {onStartQuiz && (
-            <div className="mt-8 mb-8 no-print p-8 bg-gradient-to-br from-primary/5 to-purple-500/10 border border-primary/20 rounded-2xl text-center shadow-lg relative overflow-hidden group hover:border-primary/40 transition-colors">
+            <div className="mt-8 mb-8 no-print p-8 bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-2xl text-center shadow-lg relative overflow-hidden group hover:border-primary/40 transition-colors">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <i className="fas fa-dumbbell text-9xl"></i>
                 </div>

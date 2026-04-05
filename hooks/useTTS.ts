@@ -82,7 +82,23 @@ export const useTTS = (langCode: string = 'fr-FR') => {
         window.speechSynthesis.cancel();
         
         // Clean text (remove our separators if any remaining)
-        const cleanText = text.split('|||')[0].trim();
+        let cleanText = text.split('|||')[0].trim();
+        
+        // Remove markdown formatting characters (*, _, #, `, ~) so TTS doesn't read them out loud
+        cleanText = cleanText.replace(/[*_#`~]/g, '');
+
+        // Remove emojis and other non-verbal symbols 
+        // (Extended_Pictographic catches almost all emojis, \u200D is Zero Width Joiner, \uFE0F is variation selector)
+        try {
+            const emojiRegex = new RegExp('[\\p{Extended_Pictographic}\\u200D\\uFE0F]', 'gu');
+            cleanText = cleanText.replace(emojiRegex, '');
+        } catch (e) {
+            // Fallback for older browsers not supporting \p{}
+            cleanText = cleanText.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu, '');
+        }
+        
+        // Final trim
+        cleanText = cleanText.trim();
         
         const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.lang = langCode;

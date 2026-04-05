@@ -134,6 +134,12 @@ Transform any YouTube video into educational content: comprehensive courses, rev
 - ♟️ **Chess**: Tactical problems
 - 🎨 **Drawing**: Reproduction evaluated by AI
 
+### 🗣️ Language Lab (Chat & Vocab)
+- **Conversational Mode**: Chat freely (voice/text) under timer pressure (Infinite, 3 min Sprint, or 5 min). Upon completion, the AI generates a comprehensive error assessment.
+- **Cross-Session Memory**: The AI remembers your recurring errors from previous sessions and subtly retests you in future dialogues!
+- **Vocabulary Lab**: Explore predefined themes or create your own custom theme to instantly get vocabulary lists, useful expressions, or interactive exercises.
+- **Instant Generation**: Double-click on any predefined theme in the Vocabulary lab to automatically generate the flashcards without an extra confirmation click. The AI systematically includes the grammatical article (genders), precise translation, and examples.
+
 ---
 
 ## Backup & Cloud Sync

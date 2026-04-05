@@ -17,12 +17,18 @@ html, body, #root {
   bottom: 0;
 }
 
-/* Utilitaires pour Safe Areas iOS */
+/* Utilitaires pour Safe Areas iOS + Android */
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
 }
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
 }
 .mt-safe {
   margin-top: env(safe-area-inset-top, 0px);
@@ -31,10 +37,42 @@ html, body, #root {
   margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Allow scrolling on body only if really needed, but keep it clean for Tauri */
+/* Scrolling fluide sur mobile */
 body {
   touch-action: pan-x pan-y;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none; /* empêche le pull-to-refresh Android */
+}
+
+/* Conteneurs scrollables — optimisés pour le momentum iOS et Android */
+.overflow-y-auto,
+.overflow-y-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Empêcher le zoom automatique sur les inputs (iOS) */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important; /* ≥ 16px = pas de zoom sur iOS/Android */
+  }
+}
+
+/* Taille minimale des cibles tactiles (WCAG AA + Apple HIG) */
+@media (max-width: 768px) {
+  button,
+  [role="button"],
+  a,
+  label[for],
+  input[type="checkbox"] + label {
+    min-height: 44px;
+  }
 }
 
 :root {
@@ -50,7 +88,41 @@ body {
   --color-text: #f9fafb;
 }
 
-/* Animations premium pour Studeo */
+/* ── Amélioration lecture sur petits écrans ── */
+@media (max-width: 639px) {
+  /* Typographie légèrement agrandie pour lisibilité */
+  .text-xs { font-size: 0.75rem; }  /* inchangé */
+  .text-sm { font-size: 0.875rem; } /* inchangé */
+
+  /* Cartes et sections avec padding adapté */
+  .card-mobile {
+    padding: 0.75rem !important;
+    border-radius: 1rem !important;
+  }
+
+  /* Grilles qui passent à 1 colonne sur mobile */
+  .grid-mobile-1 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Boutons pleine largeur sur mobile */
+  .btn-mobile-full {
+    width: 100% !important;
+  }
+
+  /* Caches le texte optionnel sur mobile */
+  .hide-mobile {
+    display: none !important;
+  }
+
+  /* Padding horizontal réduit pour maximiser l'espace */
+  .px-mobile {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+}
+
+/* ── Animations premium pour Studeo ── */
 @keyframes slide-up {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -66,15 +138,27 @@ body {
   to { opacity: 1; }
 }
 
+@keyframes fade-in-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 @keyframes bounce-slow {
   0%, 100% { transform: translateY(-5%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
   50% { transform: translateY(0); animation-timing-function: cubic-bezier(0,0,0.2,1); }
+}
+
+@keyframes scale-in {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 .animate-slide-up { animation: slide-up 0.4s ease-out; }
 .animate-slide-in-left { animation: slide-in-left 0.3s ease-out; }
 .animate-slide-in-up { animation: slide-up 0.3s ease-out both; }
 .animate-fade-in { animation: fade-in 0.5s ease-out; }
+.animate-fade-in-up { animation: fade-in-up 0.35s ease-out both; }
+.animate-scale-in { animation: scale-in 0.2s ease-out both; }
 .bounce-slow { animation: bounce-slow 2s infinite; }
 
 /* Custom Scrollbar */
@@ -98,3 +182,45 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ── HomeScreen mobile: Header compact ── */
+@media (max-width: 639px) {
+  /* Titre Studeo plus petit sur mobile */
+  .studeo-title-mobile {
+    font-size: 2.25rem !important; /* 36px */
+    line-height: 1.1 !important;
+  }
+
+  /* Section cards réduites sans gap excessif */
+  .home-section-grid {
+    gap: 0.5rem !important;
+  }
+
+  /* Feature cards plus compactes */
+  .feature-card-mobile {
+    min-height: 64px !important;
+    padding: 0.625rem !important;
+  }
+
+  /* Icônes légèrement réduites */
+  .feature-icon-mobile {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    font-size: 1.25rem !important;
+  }
+}
+
+/* ── QuizScreen / Lab : inputs et zones de texte ── */
+@media (max-width: 639px) {
+  /* Zone de chat - hauteur adaptée */
+  .chat-input-mobile {
+    min-height: 44px !important;
+    max-height: 30vh !important;
+  }
+
+  /* Bulles de message max-width adaptatif */
+  .msg-bubble-mobile {
+    max-width: 90% !important;
+  }
+}
+

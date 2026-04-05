@@ -433,7 +433,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                     className={`transition-all duration-500 pt-safe p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                     style={{ background: getThemeGradient(themeStyle, themeMode) }}
                 >
-                    <div className="relative z-10">
+                    <div className="relative z-10 flex justify-between items-center">
+                        <div>
                         <Button 
                             variant="secondary" 
                             onClick={onBack} 
@@ -448,6 +449,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                         <p className="opacity-80 mt-1 text-xs md:text-base text-inherit">
                             {initialTutorName ? `Posez vos questions sur ${initialTutorSubject}` : 'Configurez votre tuteur personnel pour commencer'}
                         </p>
+                        </div>
                     </div>
                 </div>
 

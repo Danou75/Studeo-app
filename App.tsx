@@ -45,9 +45,11 @@ import { ToastProvider } from "./contexts/ToastContext";
 import { useAppCoordinator } from "./hooks/useAppCoordinator";
 import { INITIAL_GAMIFICATION_DATA } from './utils/achievements';
 import { DEFAULT_FLASHCARDS, DEFAULT_FLASHCARD_SET_NAME } from './constants';
-import { Screen } from "./types";
+import { Screen, ConversationSession } from "./types";
+import { TUTORS } from "./constants";
 import { ConfirmationProvider } from "./contexts/ConfirmationContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { migrateLocalStorage } from "./utils/migration";
 import { ChatService } from "./services/chatService";
 import { getDeviceName } from "./utils/deviceInfo";
@@ -63,7 +65,7 @@ const AppContent: React.FC = () => {
       isEditModalOpen, setIsEditModalOpen,
       voiceEngine, setVoiceEngine, autoPlayAudio, setAutoPlayAudio,
       availableLanguages,
-      aiModalInitialTopic, aiModalInitialMode,
+      aiModalInitialTopic, aiModalInitialMode, aiModalInitialContext,
       currentLesson,
       srsPreviewCards, srsPreviewConfig,
       guestTutors, addGuestTutor, updateGuestTutor, removeGuestTutor
@@ -72,6 +74,37 @@ const AppContent: React.FC = () => {
   const [isSetsManagerOpen, setIsSetsManagerOpen] = React.useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = React.useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+  const [sessionToResume, setSessionToResume] = React.useState<ConversationSession | undefined>(undefined);
+  const [vocabToRestore, setVocabToRestore] = React.useState<import('./types').SavedVocabList | undefined>(undefined);
+
+  const handleResumeConvSession = (session: ConversationSession) => {
+      setSessionToResume(session);
+      setScreen('language-lab');
+  };
+
+  const handleOpenVocabInLab = (vocab: import('./types').SavedVocabList) => {
+      setVocabToRestore(vocab);
+      setScreen('language-lab');
+  };
+
+  const resolvedTutorForLab = React.useMemo(() => {
+    if (sessionToResume) {
+      const t = TUTORS.find(tut => tut.id === sessionToResume.tutorId) || 
+                guestTutors.find(tut => tut.id === sessionToResume.tutorId);
+      if (t) return t;
+
+      // Fallback si le tuteur a été supprimé ou n'est plus en liste
+      return {
+        id: sessionToResume.tutorId,
+        name: sessionToResume.tutorName || 'Tuteur',
+        emoji: '👨‍🏫',
+        category: 'guest',
+        systemPrompt: '',
+        description: 'Session enregistrée'
+      } as any;
+    }
+    return config.selectedTutor || guestTutors[0];
+  }, [sessionToResume, config.selectedTutor, guestTutors]);
   
   const { user } = useAuth();
   const langCache = useConjugationCache();
@@ -85,7 +118,7 @@ const AppContent: React.FC = () => {
 
   
   // Navigation Stack History
-  const [, setScreenHistory] = React.useState<Screen[]>([]);
+  const [screenHistory, setScreenHistory] = React.useState<Screen[]>([]);
 
   const handleNavigate = (target: Screen, from: Screen = screen) => {
     setScreenHistory(prev => [...prev, from]);
@@ -596,7 +629,16 @@ const AppContent: React.FC = () => {
               persistentErrors={quizSession.getPersistentErrorCards(flashcards.allFlashcards)}
               history={quizSession.history}
               onStartRevision={() => setScreen("revision")}
-              onRestart={() => setScreen("home")}
+              onRestart={() => {
+                if (screenHistory.includes('conjugator')) {
+                  setScreenHistory(h => h.filter(s => s !== 'conjugator'));
+                  setScreen('conjugator');
+                } else if (screenHistory.includes('language-lab')) {
+                  setScreen('language-lab');
+                } else {
+                  setScreen('home');
+                }
+              }}
               onRestartSameQuiz={() =>
                 quizSession.quizConfig && coordinator.onStartQuiz(quizSession.quizCards, quizSession.quizConfig)
               }
@@ -606,6 +648,7 @@ const AppContent: React.FC = () => {
               onResetPersistentError={quizSession.resetPersistentError}
               newAchievements={gamification.newAchievements}
               onBackToLesson={currentLesson ? coordinator.handleBackToLesson : undefined}
+              onBackToLanguageLab={screenHistory.includes('language-lab') ? () => setScreen('language-lab') : undefined}
               onGenerateBonusExercises={currentLesson ? coordinator.handleGenerateBonusExercises : undefined}
               isProgramCompleted={coordinator.isProgramCompleted}
               onResetProgramCompletion={() => coordinator.setIsProgramCompleted(false)}
@@ -693,7 +736,17 @@ const AppContent: React.FC = () => {
           <ConjugatorScreen
             onBack={handleBack}
             onAddCards={(cards) => { flashcards.addCards(cards); handleNavigate('setup', 'conjugator'); }}
-            onCreateSet={(name, cards) => { flashcards.createSet(name, cards); handleNavigate('setup', 'conjugator'); }}
+            onCreateSet={(name, cards) => { flashcards.createSet(name, cards); }}
+            onStartQuiz={(cards, questionLang, answerLang) => {
+              setScreenHistory(prev => [...prev, "conjugator" as Screen]);
+              coordinator.onStartQuiz(cards, {
+                questionLang,
+                answerLang,
+                mode: 'mcq',
+                gameMode: 'normal',
+                voiceGender: 'female',
+              });
+            }}
             themeMode={theme.themeMode}
             themeStyle={theme.themeStyle}
             onNavigateToSettings={() => handleNavigate("settings", "conjugator")}
@@ -735,11 +788,13 @@ const AppContent: React.FC = () => {
             availableLanguages={availableLanguages}
             initialTopic={aiModalInitialTopic}
             initialMode={aiModalInitialMode}
+            initialContext={aiModalInitialContext}
             themeMode={theme.themeMode}
             themeStyle={theme.themeStyle}
             onShowSavedLessons={() => handleNavigate("saved-lessons", "ai-generator")}
             onNavigateToSettings={() => handleNavigate("settings", "ai-generator")}
             guestTutors={coordinator.guestTutors}
+            initialTutor={resolvedTutorForLab}
           />
         );
 
@@ -840,14 +895,38 @@ const AppContent: React.FC = () => {
       case "language-lab":
         return (
             <LanguageLabScreen
-                tutor={config.selectedTutor || guestTutors[0]}
-                onBack={handleBack}
+                tutor={resolvedTutorForLab}
+                onBack={() => {
+                    setSessionToResume(undefined);
+                    setVocabToRestore(undefined);
+                    handleBack();
+                }}
                 themeMode={theme.themeMode}
                 themeStyle={theme.themeStyle}
                 onAddCards={flashcards.addCards}
                 onCreateSet={flashcards.createSet}
                 flashcardSets={flashcards.flashcardSets}
                 onNavigateToSettings={() => handleNavigate("settings", "language-lab")}
+                onSaveConvSession={coordinator.handleSaveConvSession}
+                initialSession={sessionToResume}
+                onLaunchAIGenerator={(topic: string, mode?: 'quiz' | 'lesson' | 'curriculum' | 'mixed-quiz', context?: string) => {
+                    setScreenHistory(prev => [...prev, "language-lab" as Screen]);
+                    coordinator.handleLaunchAIVocabQuiz(topic, mode, context);
+                }}
+                onClearAiGenCache={coordinator.clearAiGenCache}
+                targetedLessonsProps={coordinator.targetedLessons}
+                onSetTargetedLessonsProps={coordinator.setTargetedLessons}
+                onUpdateSession={setSessionToResume}
+                onSaveVocabList={coordinator.handleSaveVocabList}
+                initialVocabList={vocabToRestore}
+                vocabLabCache={coordinator.vocabLabCache}
+                onSetVocabLabCache={coordinator.setVocabLabCache}
+                onNavigateToCurriculum={() => handleNavigate("curriculum", "language-lab")}
+                onStartFlashcardQuiz={(setName) => {
+                    flashcards.setCurrentSetName(setName);
+                    setScreenHistory(prev => [...prev, "language-lab" as Screen]);
+                    setScreen("setup");
+                }}
             />
         );
 
@@ -914,6 +993,14 @@ const AppContent: React.FC = () => {
             themeStyle={theme.themeStyle}
             customSuggestions={coordinator.curriculumSuggestions}
             setCustomSuggestions={coordinator.setCurriculumSuggestions}
+            savedConvSessions={coordinator.savedConvSessions}
+            onDeleteConvSession={coordinator.handleDeleteConvSession}
+            onRenameConvSession={coordinator.handleRenameConvSession}
+            onResumeConvSession={handleResumeConvSession}
+            savedVocabLists={coordinator.savedVocabLists}
+            onDeleteVocabList={coordinator.handleDeleteVocabList}
+            onRenameVocabList={coordinator.handleRenameVocabList}
+            onOpenVocabInLab={handleOpenVocabInLab}
           />
         );
 
@@ -1004,6 +1091,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
+    <ThemeProvider value={{ themeMode: theme.themeMode, themeStyle: theme.themeStyle, setThemeMode: theme.setThemeMode, setThemeStyle: theme.setThemeStyle }}>
     <div 
       className={`h-full w-full overflow-hidden flex flex-col font-sans transition-colors duration-500 ${theme.themeStyle === 'apple' ? 'bg-[#E8E8ED] dark:bg-black' : 'bg-gray-100 dark:bg-gray-900'}`}
       style={{ height: '100dvh' }}
@@ -1068,6 +1156,7 @@ const AppContent: React.FC = () => {
       <PWAInstallPrompt />
 
     </div>
+    </ThemeProvider>
   );
 };
 

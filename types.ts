@@ -400,3 +400,74 @@ export type StudyProgram = {
 // ============================================
 
 export type UpdateStatus = 'up-to-date' | 'available' | 'error' | null;
+
+// ============================================
+// CONVERSATION SESSION TYPES (Causerie Lab)
+// ============================================
+
+export interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ConversationSummaryData {
+  overall_feedback: string;
+  strong_points: string[];
+  errors: { original: string; corrected: string; explanation: string }[];
+  vocabulary: { word: string; translation: string }[];
+  grammar_rules: string[];
+  revision_plan: string[];
+}
+
+export interface ConversationSession {
+  id: string;
+  tutorId: string;
+  tutorName: string;
+  language: string;
+  theme: string;
+  createdAt: string;
+  lastActiveAt: string;
+  messages: ConversationMessage[];
+  summary?: ConversationSummaryData;
+  remedialMessages?: ConversationMessage[];
+}
+
+export interface SavedVocabWord {
+  word: string;
+  translation: string;
+  example?: string;
+  phonetic?: string;
+}
+
+export interface SavedVocabExpression {
+  expression: string;
+  translation: string;
+  example?: string;
+}
+
+export interface SavedVocabExercise {
+  type: 'quiz' | 'fill-in' | 'translation' | 'matching';
+  question?: string;
+  options?: string[];
+  answer: string;
+  sentence?: string;
+  pairs?: { left: string; right: string }[];
+  targetLanguage?: string;
+}
+
+export interface SavedVocabList {
+  id: string;
+  theme: string;
+  targetLanguage: string;
+  difficulty: 'débutant' | 'intermédiaire' | 'avancé';
+  words: SavedVocabWord[];
+  expressions: SavedVocabExpression[];
+  exercises: SavedVocabExercise[];
+  relatedThemes?: {
+    versions: string[];
+    connectedThemes: string[];
+  };
+  savedAt: string;
+  wordCount: number;
+  chatHistory?: { role: 'system' | 'user' | 'assistant'; content: string }[];
+}

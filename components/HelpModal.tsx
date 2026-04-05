@@ -20,6 +20,7 @@ type HelpSection =
   | 'lab'
   | 'backup'
   | 'pwa'
+  | 'conversational'
   | 'userGuide';
 
 export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
@@ -79,6 +80,12 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
       content: t('helpCenter.lab.content'),
     },
     {
+      id: 'conversational' as HelpSection,
+      title: t('helpCenter.conversational.title'),
+      icon: "fa-comments",
+      content: t('helpCenter.conversational.content'),
+    },
+    {
       id: 'backup' as HelpSection,
       title: t('helpCenter.backup.title'),
       icon: "fa-database",
@@ -120,9 +127,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 <i className={`fas ${section.icon} text-primary group-hover:scale-110 transition-transform`}></i>
                 <h3 className="font-bold text-sm text-text">{section.title}</h3>
               </div>
-              <p className="text-xs text-text-muted leading-relaxed">
-                {section.content}
-              </p>
+              <p 
+                className="text-xs text-text-muted leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: section.content.replace(/\*\*(.*?)\*\*/g, '<strong class="text-text font-semibold">$1</strong>') }}
+              />
             </div>
           ))}
         </div>
@@ -194,7 +202,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </div>
             <div className="min-w-0">
               <h2 className="text-lg md:text-2xl font-bold text-text truncate">{section.title}</h2>
-              <p className="text-xs md:text-sm text-text-muted mt-0.5 line-clamp-1 md:line-clamp-none">{section.content}</p>
+              <p 
+                className="text-xs md:text-sm text-text-muted mt-0.5 line-clamp-1 md:line-clamp-none"
+                dangerouslySetInnerHTML={{ __html: section.content.replace(/\*\*(.*?)\*\*/g, '<strong class="text-text font-semibold">$1</strong>') }}
+              />
             </div>
           </div>
         </div>

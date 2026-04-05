@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Tutor, Flashcard, FlashcardClassic } from '../types';
+import { Tutor, Flashcard, FlashcardClassic, ConversationSession } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTTS } from '../hooks/useTTS';
-import { generateLabResponse, generateScenario, generateConversationalOpener, generateConversationSummary, ChatMessage, ScenarioStep, ConversationSummary, LessonSuggestion, executeAIRequest } from '../services/conversationService';
+import { generateLabResponse, generateScenario, generateConversationalOpener, generateConversationSummary, ChatMessage, ScenarioStep, ConversationSummary, LessonSuggestion, executeAIRequest, generateRemedialLesson, generateRemedialChatReply, resolveConfig } from '../services/conversationService';
 import { useAIConfig } from '../contexts/AIConfigContext';
 import { generateFlashcardsWithAI } from '../services/aiCardGenerator';
 import { AIGenerationConfig } from '../types';
@@ -12,6 +12,111 @@ import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { getLanguageCode } from '../utils/languageDetection';
 import { PRONUNCIATION_COACH_PROMPT } from '../constants/tutorPrompts';
+import { VocabularyLabTab, ExerciseCard, VocabExercise } from './VocabularyLabTab';
+
+
+// ---------------------------------------------------------------------------
+// MdRenderer : rendu Markdown fiable sans dépendance à react-markdown
+// ---------------------------------------------------------------------------
+const mdToHtml = (text: string): string => {
+    // 1. Uniformiser les sauts de ligne
+    let cleanText = text.replace(/\r\n/g, '\n').trim();
+    
+    // 2. Supprimer agressivement le surplus si l'IA a fait l'erreur d'encadrer sa réponse
+    // Exemple : "Voici la leçon :\n```markdown\n(leçon)\n```"
+    // On extrait le contenu du plus grand bloc s'il fait plus de 60% du texte global
+    const globalCodeBlockRegex = /(?:^|\n)```[a-zA-Z]*\n([\s\S]+?)\n```(?:$|\n)/;
+    const match = cleanText.match(globalCodeBlockRegex);
+    if (match && match[1].length > cleanText.length * 0.6) {
+        cleanText = cleanText.replace(globalCodeBlockRegex, '\n$1\n').trim();
+    }
+
+    // 3. Cas extrême : si ça commence quand même par un truc genre ```markdown (sans bloc complet trouvé par le regex)
+    cleanText = cleanText.replace(/^```[a-zA-Z]*\n?/, '').replace(/\n?```$/, '').trim();
+
+    let html = cleanText
+        // Échapper le HTML (sécurité basique)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        // Blocs de code (avant inline) - ajout de whitespace-pre-wrap pour éviter de tronquer
+        .replace(/```[\w]*\n?([\s\S]*?)```/gm, '<pre class="bg-gray-100 dark:bg-gray-900 rounded-xl p-3 my-2 overflow-x-auto text-xs font-mono whitespace-pre-wrap word-break break-words"><code>$1</code></pre>')
+        // Code inline
+        .replace(/`([^`\n]+)`/g, '<code class="bg-primary/20 dark:bg-primary/30 text-primary dark:text-primary rounded px-1 py-0.5 text-xs font-mono">$1</code>')
+        // Titres (ordre important : du plus profond au moins profond)
+        .replace(/^##### (.+)$/gm, '<h5 class="text-xs font-bold mt-3 mb-1" style="color:var(--color-text)">$1</h5>')
+        .replace(/^#### (.+)$/gm, '<h4 class="text-sm font-bold mt-4 mb-1.5" style="color:var(--color-text)">$1</h4>')
+        .replace(/^### (.+)$/gm, '<h3 class="text-base font-extrabold mt-4 mb-2" style="color:var(--color-text)">$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2 class="text-lg font-black mt-5 mb-2 text-primary dark:text-primary">$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1 class="text-xl font-black mt-4 mb-3 pb-2 border-b text-primary dark:text-primary border-primary/30 dark:border-primary">$1</h1>')
+        // HR
+        .replace(/^---$/gm, '<hr class="border-gray-200 dark:border-gray-700 my-4"/>')
+        // Blockquote
+        .replace(/^&gt; (.+)$/gm, '<div class="border-l-4 border-primary pl-4 py-1 my-1 rounded-r-lg italic text-sm bg-primary/10" style="color:var(--color-text-secondary)">$1</div>')
+        // Gras + italique combinés
+        .replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>')
+        // Gras
+        .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold" style="color:var(--color-text)">$1</strong>')
+        // Italique (permissif)
+        .replace(/\*([^*]+)\*/g, '<em class="italic" style="color:var(--color-text-secondary)">$1</em>')
+        // Tableaux GFM (simplifié)
+        .replace(/^\|(.+)\|$/gm, (row) => {
+            const cells = row.split('|').filter((_, i, a) => i > 0 && i < a.length - 1);
+            return '<tr>' + cells.map(c => `<td class="border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs">${c.trim()}</td>`).join('') + '</tr>';
+        })
+        .replace(/(<tr>.*<\/tr>\n?)+/gs, (t) => `<div class="overflow-x-auto my-2"><table class="min-w-full border-collapse text-xs">${t}</table></div>`)
+        // Listes non-ordonnées
+        .replace(/^[-*] (.+)$/gm, '<li class="text-sm leading-relaxed ml-4 list-disc" style="color:var(--color-text)">$1</li>')
+        // Listes ordonnées
+        .replace(/^\d+\. (.+)$/gm, '<li class="text-sm leading-relaxed ml-4 list-decimal" style="color:var(--color-text)">$1</li>')
+        // Grouper les <li> consécutifs
+        .replace(/(<li[^>]*>.*<\/li>\n?)+/gs, (list) => `<ul class="pl-2 mb-3 space-y-0.5">${list}</ul>`)
+        // Paragraphes : double saut de ligne → <p>
+        .replace(/\n\n(?!<[hpulodtb])/g, '</p><p class="text-sm leading-relaxed mb-3" style="color:var(--color-text)">')
+        // Sauts de ligne simples restants
+        .replace(/\n(?!<)/g, '<br/>');
+    return `<p class="text-sm leading-relaxed mb-3" style="color:var(--color-text)">${html}</p>`;
+};
+
+const MdRenderer: React.FC<{content: string}> = React.memo(({ content }) => (
+    <div
+        className="remedial-md-content"
+        dangerouslySetInnerHTML={{ __html: mdToHtml(content) }}
+    />
+));
+
+const InteractiveMessageRenderer: React.FC<{content: string}> = React.memo(({ content }) => {
+    let markdownContent = content;
+    let exercises: VocabExercise[] = [];
+    
+    try {
+        const jsonBlockRegex = /```json\n([\s\S]*?)\n```/;
+        const match = content.match(jsonBlockRegex);
+        if (match) {
+            const parsed = JSON.parse(match[1]);
+            if (parsed && Array.isArray(parsed.exercises)) {
+                exercises = parsed.exercises;
+            }
+            markdownContent = content.replace(jsonBlockRegex, '').trim();
+        }
+    } catch (e) {
+        console.warn('Failed to parse embedded JSON in message', e);
+    }
+    
+    return (
+        <div className="flex flex-col gap-4 w-full">
+            {markdownContent && <MdRenderer content={markdownContent} />}
+            {exercises.length > 0 && (
+                <div className="flex flex-col gap-3 mt-4 w-full">
+                    {exercises.map((ex, i) => (
+                        <div key={i} className="mb-2">
+                            <ExerciseCard exercise={ex} index={i} />
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+});
+
 
 interface PronunciationChallenge {
     text: string;
@@ -62,6 +167,19 @@ interface LanguageLabScreenProps {
     onCreateSet: (name: string, cards: Flashcard[]) => void;
     flashcardSets: Record<string, Flashcard[]>;
     onNavigateToSettings?: () => void;
+    onSaveConvSession?: (session: ConversationSession) => void;
+    initialSession?: ConversationSession;
+    onLaunchAIGenerator?: (topic: string, mode?: 'quiz' | 'lesson' | 'curriculum' | 'mixed-quiz', context?: string) => void;
+    onClearAiGenCache?: () => void;
+    targetedLessonsProps?: Record<string, ChatMessage[]>;
+    onSetTargetedLessonsProps?: React.Dispatch<React.SetStateAction<Record<string, ChatMessage[]>>>;
+    onUpdateSession?: (session: ConversationSession | undefined) => void;
+    onSaveVocabList?: (vocab: import('../types').SavedVocabList) => void;
+    initialVocabList?: import('../types').SavedVocabList;
+    vocabLabCache?: Record<string, any>;
+    onSetVocabLabCache?: React.Dispatch<React.SetStateAction<Record<string, any>>>;
+    onNavigateToCurriculum?: () => void;
+    onStartFlashcardQuiz?: (setName: string) => void;
 }
 
 
@@ -110,10 +228,17 @@ const LabMessageBubble: React.FC<{
         <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} animate-fade-in-up max-w-[85%]`}>
             {/* CORRECTION BLOCK */}
             {correction && (
-                <div className="bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200 text-sm px-3 py-2 rounded-xl rounded-bl-none mb-1 border-l-4 border-orange-400 shadow-sm max-w-full">
-                    <div className="flex items-start gap-2">
-                         <i className="fas fa-graduation-cap mt-1"></i>
-                         <div><span className="font-bold text-xs uppercase opacity-75">{t('lab.correction')} :</span> {correction}</div>
+                <div className="bg-orange-50 dark:bg-orange-950/40 text-orange-900 dark:text-orange-100 text-sm px-4 py-3 rounded-2xl rounded-bl-none mb-2 border-l-4 border-orange-400 shadow-sm max-w-full">
+                    <div className="flex items-start gap-3">
+                         <div className="mt-0.5 bg-orange-400 text-white w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i className="fas fa-graduation-cap text-[10px]"></i>
+                         </div>
+                         <div className="flex-1">
+                            <div className="font-black text-[10px] uppercase tracking-wider text-orange-600 dark:text-orange-400 mb-1 leading-none opacity-80">{t('lab.correction')}</div>
+                            <div className="leading-relaxed">
+                                <MdRenderer content={correction as string} />
+                            </div>
+                         </div>
                     </div>
                 </div>
             )}
@@ -122,10 +247,12 @@ const LabMessageBubble: React.FC<{
                 className={`relative px-4 py-3 shadow-sm transition-all group ${
                     isUser 
                         ? 'bg-primary text-white rounded-2xl rounded-br-none' 
-                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 border text-text dark:text-gray-100 rounded-2xl rounded-bl-none'
+                        : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 border text-text dark:text-gray-100 rounded-2xl rounded-bl-none'
                 }`}
             >
-                <div>{mainText}</div>
+                <div className={isUser ? 'text-white' : ''}>
+                    {isUser ? mainText : <MdRenderer content={mainText} />}
+                </div>
 
                 {/* Controls */}
                 {!isUser && (
@@ -210,7 +337,20 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     onAddCards,
     // onCreateSet removed as unused,
     flashcardSets,
-    onNavigateToSettings
+    onNavigateToSettings,
+    onSaveConvSession,
+    initialSession,
+    onLaunchAIGenerator,
+    onClearAiGenCache,
+    targetedLessonsProps,
+    onSetTargetedLessonsProps,
+    onUpdateSession,
+    onSaveVocabList,
+    initialVocabList,
+    vocabLabCache,
+    onSetVocabLabCache,
+    onNavigateToCurriculum,
+    onStartFlashcardQuiz
 }) => {
     const { config } = useAIConfig();
     const { showToast } = useToast();
@@ -225,7 +365,59 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
         setTargetLang(lang);
         setActiveLang(lang);
     }, [tutor]);
-    
+
+    // --- RESTORE SESSION (from CurriculumScreen "Reprendre") ---
+    useEffect(() => {
+        if (!initialSession) return;
+
+        // Restore conversation messages (ChatMessage compatible)
+        const restoredMsgs = initialSession.messages.map(m => ({
+            role: m.role as 'user' | 'assistant' | 'system',
+            content: m.content,
+        }));
+        setConvMessages(restoredMsgs);
+
+        // Restore theme label
+        setConvThemeLabel(initialSession.theme);
+        setConvTheme(initialSession.theme);
+
+        // Restore summary
+        if (initialSession.summary) {
+            setConvSummary(initialSession.summary as any);
+        }
+
+        // Restore remedial lesson messages
+        if (initialSession.remedialMessages && initialSession.remedialMessages.length > 0) {
+            const restoredRemedial = initialSession.remedialMessages.map(m => ({
+                role: m.role as 'user' | 'assistant' | 'system',
+                content: m.content,
+            }));
+            setRemedialMessages(restoredRemedial);
+        }
+
+        // Navigate to summary view
+        setLabMode('conversation_summary');
+        showToast(`Causerie "${initialSession.theme}" restaurée !`, 'success');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialSession?.id]);
+
+    // Restore a saved vocab list — switch to vocabulary mode immediately
+    useEffect(() => {
+        if (initialVocabList) {
+            setLabMode('vocabulary');
+        }
+    }, [initialVocabList?.id]);
+
+    // Restore vocabulary mode when returning from a quiz (cache contains active theme)
+    // This mirrors the causerie session restore and fixes the same remount bug.
+    useEffect(() => {
+        // Only restore vocab mode if no causerie session is being restored
+        if (!initialSession && !initialVocabList && vocabLabCache && vocabLabCache['__active_theme__']) {
+            setLabMode('vocabulary');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // --- PIN / FLASHCARD LOGIC ---
     const handlePinMessage = (msg: ChatMessage) => {
         if (msg.role !== 'assistant') return;
@@ -272,7 +464,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     };
     
     // --- MODES: 'chat', 'scenario_list', 'scenario_play', 'study', 'pronunciation' ---
-    const [labMode, setLabMode] = useState<'chat' | 'scenario_list' | 'scenario_play' | 'study' | 'pronunciation' | 'conversation_select' | 'conversation_active' | 'conversation_summary'>('chat');
+    const [labMode, setLabMode] = useState<'chat' | 'scenario_list' | 'scenario_play' | 'study' | 'pronunciation' | 'conversation_select' | 'conversation_active' | 'conversation_summary' | 'vocabulary'>('chat');
 
     // --- STUDY MODE STATE ---
     const [studyAudioSrc, setStudyAudioSrc] = useState<string | null>(null);
@@ -519,7 +711,6 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     
     // Draft Editing State
     const [draftMessage, setDraftMessage] = useState('');
-    const [isEditingDraft, setIsEditingDraft] = useState(false);
 
     // Voice Selection State
     // Voice Selection State (Managed by useTTS)
@@ -549,6 +740,59 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     const [customConvTopic, setCustomConvTopic] = useState('');
     const convMessagesEndRef = useRef<HTMLDivElement>(null);
     const [convRateLimitSeconds, setConvRateLimitSeconds] = useState(0);
+
+    // --- NEW: TIMER & MEMORY SETTINGS ---
+    const [convTimerMinutes, setConvTimerMinutes] = useState<number>(0); 
+    const [convTimeLeft, setConvTimeLeft] = useState<number>(0);
+    const [isConvTimerRunning, setIsConvTimerRunning] = useState(false);
+    const [userWeaknesses, setUserWeaknesses] = useState<string[]>([]);
+    const [isGeneratingLesson, setIsGeneratingLesson] = useState(false);
+    
+    // Consolidation Chat States
+    const [showRemedialModal, setShowRemedialModal] = useState(false);
+    const [remedialMessages, setRemedialMessages] = useState<ChatMessage[]>([]);
+    
+    // Suivi des leçons ciblées (vocabulaire, patterns, etc.) pour persistance dans la session
+    const targetedLessons = targetedLessonsProps || {};
+    const setTargetedLessons: React.Dispatch<React.SetStateAction<Record<string, ChatMessage[]>>> = (val) => {
+        if (onSetTargetedLessonsProps) onSetTargetedLessonsProps(val);
+    };
+    const [activeTargetedKey, setActiveTargetedKey] = useState<string | null>(null);
+    const [remedialKey, setRemedialKey] = useState(0);
+    const [showFullTranscript, setShowFullTranscript] = useState(false); // force remount of markdown on new lesson
+    const [remedialDraft, setRemedialDraft] = useState('');
+    const [isSendingRemedial, setIsSendingRemedial] = useState(false);
+
+    // Load Weaknesses on mount / lang change
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(`studeo_weaknesses_${activeLang}`);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) setUserWeaknesses(parsed);
+            } else {
+                setUserWeaknesses([]);
+            }
+        } catch (e) { console.error('Error loading weaknesses', e); }
+    }, [activeLang]);
+
+    // Timer interval
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isConvTimerRunning && convTimeLeft > 0 && labMode === 'conversation_active') {
+            interval = setInterval(() => {
+                setConvTimeLeft(prev => {
+                    if (prev <= 1) {
+                        setIsConvTimerRunning(false);
+                        handleEndConversation(); 
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [isConvTimerRunning, convTimeLeft, labMode]);
     
     const handleExport = async (format: 'md' | 'rtf') => {
         let content = "";
@@ -817,7 +1061,6 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
             stopListening();
         } else {
             // On lance l'écoute et on vide le draft précédent
-            setIsEditingDraft(false);
             setDraftMessage('');
             resetTranscript(); // Force clean
             startListening();
@@ -918,10 +1161,26 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
         setConvThemeLabel(themeLabel);
         setConvMessages([]);
         setConvSummary(null);
+        setRemedialMessages([]);       // ← reset la leçon précédente
+        setTargetedLessons({});        // ← reset les leçons ciblées
+        setActiveTargetedKey(null);    // ← reset la clé active
+        if (onClearAiGenCache) onClearAiGenCache(); // ← reset le cache du générateur IA
+        if (onUpdateSession) onUpdateSession(undefined); // ← reset la session mémorisée
+        setShowRemedialModal(false);   // ← ferme la modale si ouverte
         setLabMode('conversation_active');
+        
+        // Timer Logic
+        if (convTimerMinutes > 0) {
+            setConvTimeLeft(convTimerMinutes * 60);
+            setIsConvTimerRunning(true);
+        } else {
+            setIsConvTimerRunning(false);
+            setConvTimeLeft(0);
+        }
+
         setIsGeneratingOpener(true);
         try {
-            const opener = await generateConversationalOpener(tutor, theme, config, activeLang);
+            const opener = await generateConversationalOpener(tutor, theme, config, activeLang, userWeaknesses);
             const aiMsg: ChatMessage = { role: 'assistant', content: opener };
             setConvMessages([aiMsg]);
             speak(opener.split('|||')[0].replace(/\[.*?\]/g, '').trim());
@@ -955,7 +1214,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
         try {
             const responseText = await generateLabResponse(
                 tutor, convMessages, text, config,
-                { enableCorrection: true, activeLanguage: activeLang, conversationTheme: convTheme }
+                { enableCorrection: true, activeLanguage: activeLang, conversationTheme: convTheme, userWeaknesses }
             );
             const aiMsg: ChatMessage = { role: 'assistant', content: responseText };
             setConvMessages(prev => [...prev, aiMsg]);
@@ -976,12 +1235,193 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
         try {
             const summary = await generateConversationSummary(convMessages, activeLang, config);
             setConvSummary(summary);
+            
+            // Save weaknesses
+            if (summary.error_patterns && summary.error_patterns.length > 0) {
+                const newWeaknesses = summary.error_patterns.slice(0, 3);
+                setUserWeaknesses(newWeaknesses);
+                try {
+                    localStorage.setItem(`studeo_weaknesses_${activeLang}`, JSON.stringify(newWeaknesses));
+                } catch (e) {}
+            }
+
+            // CORRECTION BUG: on utilise la variable locale `summary` (pas l'état `convSummary`)
+            // car React setState est asynchrone — convSummary serait encore null ici dans le finally.
+            if (onUpdateSession) {
+                onUpdateSession({
+                    id: uuidv4(),
+                    tutorId: tutor?.id || 'unknown',
+                    tutorName: tutor?.name || 'Tuteur',
+                    language: activeLang,
+                    theme: convThemeLabel || convTheme || 'Causerie',
+                    messages: convMessages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+                    summary: summary as any,
+                    remedialMessages: remedialMessages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+                    createdAt: new Date().toISOString(),
+                    lastActiveAt: new Date().toISOString()
+                });
+            }
         } catch (e) {
             console.error('Error generating summary', e);
-            // Service should never throw now, but just in case
-            setConvSummary({ errors: [], vocabulary: [], fluency_score: 0, strong_points: [], next_theme_suggestion: '', error_patterns: [], lesson_suggestions: [] });
+            const emptySummary = { errors: [], vocabulary: [], fluency_score: 0, strong_points: [], next_theme_suggestion: '', error_patterns: [], lesson_suggestions: [] };
+            setConvSummary(emptySummary);
+            // Save even on error so navigation doesn't lose session
+            if (onUpdateSession) {
+                onUpdateSession({
+                    id: uuidv4(),
+                    tutorId: tutor?.id || 'unknown',
+                    tutorName: tutor?.name || 'Tuteur',
+                    language: activeLang,
+                    theme: convThemeLabel || convTheme || 'Causerie',
+                    messages: convMessages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+                    summary: emptySummary as any,
+                    remedialMessages: remedialMessages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+                    createdAt: new Date().toISOString(),
+                    lastActiveAt: new Date().toISOString()
+                });
+            }
         } finally {
             setIsGeneratingSummary(false);
+        }
+    };
+
+    const handleGenerateLesson = async () => {
+        if (!tutor || !convSummary) return;
+        const key = 'dynamic_main';
+        
+        if (targetedLessons[key]) {
+            setActiveTargetedKey(key);
+            setRemedialMessages(targetedLessons[key]);
+            setShowRemedialModal(true);
+            return;
+        }
+
+        setIsGeneratingLesson(true);
+        setActiveTargetedKey(key);
+        setRemedialMessages([]);
+        try {
+            const lessonText = await generateRemedialLesson(
+                tutor,
+                convThemeLabel,
+                convSummary.errors,
+                convSummary.vocabulary,
+                userWeaknesses,
+                activeLang,
+                config
+            );
+            const newMsgs = [{ role: 'assistant' as const, content: lessonText }];
+            setRemedialMessages(newMsgs);
+            setTargetedLessons(prev => ({ ...prev, [key]: newMsgs }));
+            setRemedialKey(k => k + 1); 
+            setTimeout(() => {
+                setShowRemedialModal(true);
+                setTimeout(() => {
+                    const container = document.getElementById('remedial-box-end');
+                    if (container) container.scrollIntoView({ behavior: 'smooth' });
+                }, 300);
+            }, 0);
+        } catch (e) {
+            console.error('Failed to generate lesson:', e);
+            showToast('Erreur lors de la génération de la leçon.', 'error');
+        } finally {
+            setIsGeneratingLesson(false);
+        }
+    };
+
+    const handleStartTargetedLesson = async (prompt: string, key: string) => {
+        if (!tutor) return;
+        
+        // Si la leçon existe déjà pour cette clé, on la restaure simplement
+        if (targetedLessons[key]) {
+            setActiveTargetedKey(key);
+            setRemedialMessages(targetedLessons[key]);
+            setShowRemedialModal(true);
+            return;
+        }
+
+        setIsGeneratingLesson(true);
+        setActiveTargetedKey(key);
+        setRemedialMessages([]);
+        setShowRemedialModal(true);
+        
+        try {
+            const sysPrompt = `Tu es ${tutor.name}, un professeur de langue interactif. L'élève te demande un exercice ou une leçon très spécifique (quiz, vocabulaire, règle...).
+Réponds directement avec la leçon ou l'exercice demandé, formaté en Markdown clair. Rends cela interactif, n'en dis pas trop d'un coup.
+
+TRÈS IMPORTANT:
+Si la demande de l'élève nécessite ou implique des exercices (comme un quiz, des phrases à trous, des traductions...), TU DOIS OBLIGATOIREMENT AJOUTER à la fin de ta réponse un bloc JSON contenant ces exercices, avec ce format strict :
+\`\`\`json
+{
+  "exercises": [
+    { "type": "quiz", "question": "Question QCM ?", "options": ["A", "B", "C", "D"], "answer": "La bonne réponse exacte" },
+    { "type": "translation", "sentence": "Phrase à traduire vers ${activeLang}", "targetLanguage": "${activeLang}", "answer": "Traduction correcte" },
+    { "type": "fill-in", "sentence": "Phrase ____ à compléter", "answer": "mot" }
+  ]
+}
+\`\`\`
+Ne mets de JSON que s'il y a des "exercices" dans ta réponse. Sinon, réponds juste en texte normal en Markdown.
+NE METS PAS l'intégralité de ta réponse dans un bloc de code.`;
+            
+            const { apiKey, modelName, apiUrl } = resolveConfig(config);
+            const responseText = await executeAIRequest([
+                { role: 'system', content: sysPrompt },
+                { role: 'user', content: prompt }
+            ], config.provider, apiKey, modelName, apiUrl);
+            
+            const newMsgs = [
+                { role: 'assistant' as const, content: responseText }
+            ];
+            
+            setRemedialMessages(newMsgs);
+            setTargetedLessons(prev => ({ ...prev, [key]: newMsgs }));
+            setRemedialKey(k => k + 1);
+            
+            setTimeout(() => {
+                const container = document.getElementById('remedial-box-end');
+                if (container) container.scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        } catch (e) {
+            console.error('Failed to generate targeted lesson:', e);
+            showToast('Erreur lors de la génération ciblée.', 'error');
+            setShowRemedialModal(false);
+            setActiveTargetedKey(null);
+        } finally {
+            setIsGeneratingLesson(false);
+        }
+    };
+
+    const handleSendRemedialMessage = async () => {
+        if (!remedialDraft.trim() || !tutor) return;
+        
+        const newHistory: ChatMessage[] = [...remedialMessages, { role: 'user', content: remedialDraft.trim() }];
+        setRemedialMessages(newHistory);
+        if (activeTargetedKey) {
+            setTargetedLessons(prev => ({ ...prev, [activeTargetedKey]: newHistory }));
+        }
+        setRemedialDraft('');
+        setIsSendingRemedial(true);
+        setTimeout(() => {
+            const container = document.getElementById('remedial-box-end');
+            if (container) container.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+
+        try {
+            const reply = await generateRemedialChatReply(tutor, activeLang, newHistory, config);
+            const fullHistory: ChatMessage[] = [...newHistory, { role: 'assistant' as const, content: reply }];
+            setRemedialMessages(fullHistory);
+            if (activeTargetedKey) {
+                setTargetedLessons(prev => ({ ...prev, [activeTargetedKey]: fullHistory }));
+            }
+            setRemedialKey(k => k + 1);
+        } catch (e) {
+            console.error('Error sending remedial chat', e);
+            showToast('Erreur de connexion', 'error');
+        } finally {
+            setIsSendingRemedial(false);
+            setTimeout(() => {
+                const container = document.getElementById('remedial-box-end');
+                if (container) container.scrollIntoView({ behavior: 'smooth' });
+            }, 300);
         }
     };
 
@@ -1017,15 +1457,34 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                 )}
                 {/* Top Row: Back + Title + Settings */}
                 <div className="flex items-center justify-between">
-                    <button 
-                        onClick={() => {
-                            window.speechSynthesis.cancel();
-                            onBack();
-                        }}
-                        className={`transition-all rounded-lg px-3 py-1.5 backdrop-blur-sm flex items-center gap-2 text-sm ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80`}
-                    >
-                        <i className="fas fa-home text-inherit"></i> Accueil
-                    </button>
+                    <div className="flex gap-2 items-center">
+                        <button 
+                            onClick={() => {
+                                window.speechSynthesis.cancel();
+                                onBack();
+                            }}
+                            className={`transition-all rounded-lg px-3 py-1.5 backdrop-blur-sm flex items-center gap-2 text-sm ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80`}
+                        >
+                            <i className="fas fa-home text-inherit"></i> Accueil
+                        </button>
+
+                        {['conversation_select', 'conversation_active', 'conversation_summary', 'vocabulary'].includes(labMode) && onNavigateToCurriculum && (
+                            <button
+                                onClick={() => {
+                                    window.speechSynthesis.cancel();
+                                    window.localStorage.setItem(
+                                        'curriculum_active_tab', 
+                                        JSON.stringify(labMode === 'vocabulary' ? 'vocabulary' : 'conversations')
+                                    );
+                                    onNavigateToCurriculum();
+                                }}
+                                className={`transition-all rounded-lg w-8 h-8 backdrop-blur-sm flex items-center justify-center text-sm ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary/70 hover:bg-black/10' : 'bg-white/10 text-white/80 hover:bg-white/20'} hover:opacity-100 flex-shrink-0`}
+                                title={labMode === 'vocabulary' ? "Listes de vocabulaire enregistrées" : "Causeries enregistrées"}
+                            >
+                                <i className="fas fa-history text-inherit"></i>
+                            </button>
+                        )}
+                    </div>
                     
                     <div className="text-center text-inherit">
                         <h1 className="text-lg font-bold flex items-center gap-2 justify-center text-inherit">
@@ -1147,6 +1606,12 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode === 'pronunciation' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
                         >
                             <i className="fas fa-microphone-alt mr-1"></i> Coach
+                        </button>
+                        <button 
+                            onClick={() => setLabMode('vocabulary')} 
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode === 'vocabulary' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
+                        >
+                            📚 Vocab
                         </button>
                     </div>
                 </div>
@@ -1282,7 +1747,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                             </button>
                             <button 
                                 onClick={() => { handleExport('rtf'); setLabMode('scenario_list'); setShowScenarioEndPrompt(false); }}
-                                className="w-full py-3.5 rounded-xl bg-indigo-50 text-indigo-600 font-bold hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2"
+                                className="w-full py-3.5 rounded-xl bg-primary/10 text-primary font-bold hover:hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
                             >
                                 <i className="fas fa-file-word"></i> Rich Text (.rtf)
                             </button>
@@ -1303,6 +1768,22 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
 
             {/* === CONTENT AREA === */}
             <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
+
+                {/* 0. VOCABULARY LAB MODE */}
+                {labMode === 'vocabulary' && (
+                    <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+                        <VocabularyLabTab
+                            config={config}
+                            activeLang={activeLang}
+                            onAddCards={onAddCards}
+                            onSaveVocabList={onSaveVocabList}
+                            initialVocab={initialVocabList}
+                            vocabLabCache={vocabLabCache}
+                            onSetVocabLabCache={onSetVocabLabCache}
+                            onLaunchQuiz={onStartFlashcardQuiz}
+                        />
+                    </div>
+                )}
                 
                 {/* 1. CHAT MODE */}
                 {labMode === 'chat' && (
@@ -1327,40 +1808,33 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                         {/* Draft / Transcript Ghost Message */}
                         {draftMessage && (
                             <div className="flex w-full justify-end animate-fade-in-up">
-                                <div className={`max-w-[85%] rounded-2xl rounded-br-none px-4 py-3 shadow-sm transition-all relative group ${
-                                    listeningStatus === 'listening' 
-                                        ? 'bg-primary/5 border border-primary/30 text-primary' 
-                                        : 'bg-primary text-white' // Style user normal pour le brouillon statique
-                                }}`}>
-                                    {listeningStatus === 'listening' ? (
-                                        <div className="flex items-center gap-2">
-                                            <span className="animate-pulse w-2 h-2 rounded-full bg-red-500"></span>
-                                            <span>{draftMessage}</span>
-                                        </div>
-                                    ) : isEditingDraft ? (
-                                        <textarea
-                                            value={draftMessage}
-                                            onChange={(e) => setDraftMessage(e.target.value)}
-                                            // On blur, on repasse en mode lecture (optionnel, mais sympa)
-                                            onBlur={() => setIsEditingDraft(false)}
-                                            className="w-full bg-white/20 text-white border-none rounded resize-none focus:ring-0 p-1 font-sans text-base leading-relaxed placeholder-white/50"
-                                            rows={Math.max(1, Math.ceil(draftMessage.length / 50))} 
-                                            autoFocus
-                                            placeholder="..."
-                                            style={{ minWidth: '200px' }}
-                                        />
-                                    ) : (
-                                        <div className="flex items-center justify-between gap-3 min-w-[100px]">
-                                            <span className="whitespace-pre-wrap leading-relaxed">{draftMessage}</span>
-                                            <button 
-                                                onClick={() => setIsEditingDraft(true)}
-                                                className="opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-white/20 rounded text-white/80 hover:text-white"
-                                                title={t('lab.chat.edit')}
-                                            >
-                                                <i className="fas fa-pen text-xs"></i>
-                                            </button>
-                                        </div>
-                                    )}
+                                <div className={`max-w-[85%] rounded-2xl rounded-br-none px-4 py-3 shadow-sm ${listeningStatus === 'listening' ? 'bg-primary/5 border border-primary/30 text-primary' : 'bg-primary text-white flex flex-col min-w-[12rem] sm:min-w-[16rem]'}`}>
+                                    {listeningStatus === 'listening'
+                                        ? <div className="flex items-center gap-2"><span className="animate-pulse w-2 h-2 rounded-full bg-red-500"></span><span>{draftMessage}</span></div>
+                                        : (
+                                            <>
+                                                <textarea 
+                                                    value={draftMessage}
+                                                    onChange={(e) => setDraftMessage(e.target.value)}
+                                                    className="bg-transparent text-white w-full outline-none resize-none m-0 p-0 overflow-hidden leading-relaxed"
+                                                    style={{ minHeight: '24px' }}
+                                                    ref={(el) => {
+                                                        if (el) {
+                                                            el.style.height = 'auto';
+                                                            el.style.height = `${el.scrollHeight}px`;
+                                                        }
+                                                    }}
+                                                    onInput={(e) => {
+                                                        const target = e.target as HTMLTextAreaElement;
+                                                        target.style.height = 'auto';
+                                                        target.style.height = `${target.scrollHeight}px`;
+                                                    }}
+                                                />
+                                                <div className="text-[10px] text-white/70 mt-1 pt-1 flex items-center justify-end border-t border-white/20 select-none">
+                                                    <i className="fas fa-pencil-alt mr-1.5"></i> Éditable avant envoi
+                                                </div>
+                                            </>
+                                        )}
                                 </div>
                             </div>
                         )}
@@ -1389,6 +1863,30 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                 <div className="text-5xl mb-3">🗣️</div>
                                 <h2 className="text-xl font-bold text-text">Causerie guidée</h2>
                                 <p className="text-sm text-text-muted mt-1">L'IA lance la conversation. Réponds librement et sois corrigé en temps réel.</p>
+                            </div>
+                            
+                            {/* Memory Badge */}
+                            {userWeaknesses.length > 0 && (
+                                <div className="mb-4 flex flex-col items-center animate-fade-in-up">
+                                    <div className="bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary rounded-xl px-4 py-2 inline-flex items-center gap-2">
+                                        <i className="fas fa-brain text-primary"></i>
+                                        <p className="text-xs text-primary dark:text-primary">
+                                            L'IA se souvient de tes faiblesses précédentes et va t'aider à t'améliorer.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Timer Selection */}
+                            <div className="mb-6 flex flex-col items-center animate-fade-in-up">
+                                <label className="text-sm font-bold text-text-muted uppercase tracking-wide mb-2 opacity-80 flex items-center gap-2">
+                                    <i className="fas fa-stopwatch"></i> Durée de la session
+                                </label>
+                                <div className="flex bg-white dark:bg-gray-800 rounded-xl p-1 shadow-sm border border-gray-100 dark:border-gray-700">
+                                    <button onClick={() => setConvTimerMinutes(0)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${convTimerMinutes === 0 ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>Infini</button>
+                                    <button onClick={() => setConvTimerMinutes(3)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${convTimerMinutes === 3 ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>3 min (Sprint)</button>
+                                    <button onClick={() => setConvTimerMinutes(5)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${convTimerMinutes === 5 ? 'bg-primary text-white shadow' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>5 min</button>
+                                </div>
                             </div>
                             {/* Rate-limit warning banner */}
                             {convRateLimitSeconds > 0 && (
@@ -1436,8 +1934,17 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                             <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-bold">
                                 <i className="fas fa-comments"></i> {convThemeLabel}
                             </div>
-                            <button onClick={handleEndConversation} disabled={convMessages.length < 2}
-                                className="text-xs px-3 py-1.5 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-40 shadow-sm">
+                            
+                            {/* Timer Display */}
+                            {convTimerMinutes > 0 && (
+                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${convTimeLeft <= 30 ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-blue-100 text-blue-600'}`}>
+                                    <i className="fas fa-stopwatch"></i> 
+                                    {Math.floor(convTimeLeft / 60)}:{(convTimeLeft % 60).toString().padStart(2, '0')}
+                                </div>
+                            )}
+
+                            <button onClick={handleEndConversation}
+                                className="text-xs px-3 py-1.5 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 hover:border-red-300 hover:text-red-500 transition-colors shadow-sm">
                                 <i className="fas fa-flag-checkered mr-1"></i> Terminer
                             </button>
                         </div>
@@ -1457,10 +1964,33 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                         ))}
                         {draftMessage && (
                             <div className="flex w-full justify-end animate-fade-in-up">
-                                <div className={`max-w-[85%] rounded-2xl rounded-br-none px-4 py-3 shadow-sm ${listeningStatus === 'listening' ? 'bg-primary/5 border border-primary/30 text-primary' : 'bg-primary text-white'}`}>
+                                <div className={`max-w-[85%] rounded-2xl rounded-br-none px-4 py-3 shadow-sm ${listeningStatus === 'listening' ? 'bg-primary/5 border border-primary/30 text-primary' : 'bg-primary text-white flex flex-col min-w-[12rem] sm:min-w-[16rem]'}`}>
                                     {listeningStatus === 'listening'
                                         ? <div className="flex items-center gap-2"><span className="animate-pulse w-2 h-2 rounded-full bg-red-500"></span><span>{draftMessage}</span></div>
-                                        : <span>{draftMessage}</span>}
+                                        : (
+                                            <>
+                                                <textarea 
+                                                    value={draftMessage}
+                                                    onChange={(e) => setDraftMessage(e.target.value)}
+                                                    className="bg-transparent text-white w-full outline-none resize-none m-0 p-0 overflow-hidden leading-relaxed"
+                                                    style={{ minHeight: '24px' }}
+                                                    ref={(el) => {
+                                                        if (el) {
+                                                            el.style.height = 'auto';
+                                                            el.style.height = `${el.scrollHeight}px`;
+                                                        }
+                                                    }}
+                                                    onInput={(e) => {
+                                                        const target = e.target as HTMLTextAreaElement;
+                                                        target.style.height = 'auto';
+                                                        target.style.height = `${target.scrollHeight}px`;
+                                                    }}
+                                                />
+                                                <div className="text-[10px] text-white/70 mt-1 pt-1 flex items-center justify-end border-t border-white/20 select-none">
+                                                    <i className="fas fa-pencil-alt mr-1.5"></i> Éditable avant envoi
+                                                </div>
+                                            </>
+                                        )}
                                 </div>
                             </div>
                         )}
@@ -1490,6 +2020,38 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                             </div>
                         ) : convSummary ? (
                             <div className="max-w-lg mx-auto space-y-5 animate-fade-in-up pb-10">
+
+                                {/* Bouton pour relire la causerie */}
+                                <div className="text-center">
+                                    <button 
+                                        onClick={() => setShowFullTranscript(!showFullTranscript)}
+                                        className="text-xs font-bold text-primary hover:underline flex items-center gap-2 justify-center mx-auto bg-primary/5 px-4 py-2 rounded-xl border border-primary/10 transition-colors"
+                                    >
+                                        <i className={`fas fa-${showFullTranscript ? 'eye-slash' : 'eye'}`}></i>
+                                        {showFullTranscript ? "Masquer le transcript complet" : "Relire l'intégralité de la causerie"}
+                                    </button>
+                                </div>
+
+                                {showFullTranscript && (
+                                    <div className="bg-white dark:bg-gray-800 rounded-3xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 animate-fade-in space-y-3 max-h-[400px] overflow-y-auto">
+                                        {convMessages.map((msg, idx) => (
+                                            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                                <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                                                    msg.role === 'user' 
+                                                        ? 'bg-primary text-white rounded-tr-none' 
+                                                        : 'bg-background-secondary text-text rounded-tl-none border border-border/50'
+                                                }`}>
+                                                    <p className="leading-relaxed">{msg.content.split('|||')[0]}</p>
+                                                    {msg.role === 'assistant' && msg.content.includes('|||') && (
+                                                        <p className="text-[10px] opacity-60 italic border-t border-border/20 mt-1 pt-1">
+                                                            {msg.content.split('|||')[1]}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
 
                                 {/* Score + points forts */}
                                 <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
@@ -1551,17 +2113,45 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                     ) : (
                                         <p className="text-sm text-text-muted italic">Pas de vocabulaire clé relevé pour cette session.</p>
                                     )}
+                                    {convSummary.vocabulary.length > 0 && (
+                                        <div className="flex flex-col gap-2 mt-4">
+                                            <button
+                                                onClick={() => handleStartTargetedLesson(`Je veux faire un exercice pour m'approprier ce vocabulaire : ${convSummary.vocabulary.map(v => `${v.word} (${v.translation})`).join(', ')}. Propose-moi un quiz interactif (QCM ou phrases à compléter) pour vérifier si je maîtrise ces mots.`, 'vocab_key')}
+                                                className="w-full py-2.5 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors border border-blue-200 dark:border-blue-800"
+                                            >
+                                                <i className="fas fa-tasks"></i> S'entraîner sur ce vocabulaire (Leçon)
+                                            </button>
+                                            {onLaunchAIGenerator && (
+                                                <button
+                                                    onClick={() => onLaunchAIGenerator(
+                                                        `Mots : ${convSummary.vocabulary.map(v => v.word).join(', ')}`, 
+                                                        'quiz',
+                                                        `ajoute d'autres mots à ce vocabulaire dont le thème général est: ${convThemeLabel || convTheme || 'Causerie libre'}`
+                                                    )}
+                                                    className="w-full py-2.5 bg-primary/10 dark:bg-primary/10 hover:bg-primary/20 dark:hover:bg-primary/20 text-primary dark:text-primary rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors border border-primary/30 dark:border-primary"
+                                                >
+                                                    <i className="fas fa-layer-group"></i> Quiz complet des mots avec le générateur IA
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Erreurs récurrentes (patterns) */}
                                 {convSummary.error_patterns && convSummary.error_patterns.length > 0 && (
-                                    <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl px-5 py-4 border border-amber-200 dark:border-amber-800">
-                                        <p className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-2">⚠️ Points à travailler</p>
-                                        <div className="flex flex-wrap gap-2">
+                                    <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl px-5 py-5 border border-amber-200 dark:border-amber-800">
+                                        <p className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-3">⚠️ Points à travailler</p>
+                                        <div className="flex flex-wrap gap-2 mb-4">
                                             {convSummary.error_patterns.map((pattern, i) => (
                                                 <span key={i} className="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full text-xs font-medium">{pattern}</span>
                                             ))}
                                         </div>
+                                        <button
+                                            onClick={() => handleStartTargetedLesson(`Je voudrais que tu m'expliques et me fasses travailler ces points faibles : ${convSummary.error_patterns.join(', ')}. Fais un exercice ciblé pour chaque point.`, 'patterns_key')}
+                                            className="w-full py-2.5 bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-300 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors border border-amber-200 dark:border-amber-700"
+                                        >
+                                            <i className="fas fa-bolt"></i> Étudier ces points spécifiques
+                                        </button>
                                     </div>
                                 )}
 
@@ -1577,7 +2167,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                                     <>
                                                         <div className="flex items-center gap-2 mb-3"><span className="text-2xl">📚</span><h4 className="font-bold text-sm">{lesson.title}</h4></div>
                                                         {lesson.vocabulary_words && lesson.vocabulary_words.length > 0 ? (
-                                                            <div className="space-y-2">
+                                                            <div className="space-y-2 mb-3">
                                                                 {lesson.vocabulary_words.map((v, j) => (
                                                                     <div key={j} className="bg-blue-50 dark:bg-blue-900/20 rounded-xl px-4 py-2.5">
                                                                         <div className="flex items-center gap-2 flex-wrap">
@@ -1589,7 +2179,29 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                                                     </div>
                                                                 ))}
                                                             </div>
-                                                        ) : <p className="text-sm text-text-muted italic">Liste de vocabulaire non disponible.</p>}
+                                                        ) : <p className="text-sm text-text-muted italic mb-3">Liste de vocabulaire non disponible.</p>}
+                                                        {lesson.vocabulary_words && lesson.vocabulary_words.length > 0 && (
+                                                            <div className="flex flex-col gap-2">
+                                                                <button
+                                                                    onClick={() => handleStartTargetedLesson(`Je veux apprendre et réviser ce vocabulaire suggéré : ${lesson.vocabulary_words!.map(v => `${v.word} (${v.translation})`).join(', ')}. Fais-moi une leçon rapide suivie d'un quiz pour vérifier mes connaissances.`, `vocab_lesson_${i}`)}
+                                                                    className="w-full py-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors border border-blue-200 dark:border-blue-800"
+                                                                >
+                                                                    <i className="fas fa-graduation-cap"></i> Exercice sur ce vocabulaire (Leçon)
+                                                                </button>
+                                                                {onLaunchAIGenerator && (
+                                                                    <button
+                                                                        onClick={() => onLaunchAIGenerator(
+                                                                            `Révision : ${lesson.vocabulary_words!.map(v => v.word).join(', ')}`, 
+                                                                            'quiz',
+                                                                            `ajoute d'autres mots à ce vocabulaire dont le thème général est: ${convThemeLabel || convTheme || 'Causerie libre'}`
+                                                                        )}
+                                                                        className="w-full py-2 bg-primary/10 dark:bg-primary/10 hover:bg-primary/20 dark:hover:bg-primary/20 text-primary dark:text-primary rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors border border-primary/30 dark:border-primary"
+                                                                    >
+                                                                        <i className="fas fa-layer-group"></i> Quiz complet des mots avec le générateur IA
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </>
                                                 )}
                                                 {lesson.type === 'grammar' && lesson.grammar_focus && (
@@ -1601,7 +2213,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                                         </div>
                                                         <p className="text-sm text-text mb-3">{lesson.grammar_focus.explanation}</p>
                                                         {lesson.grammar_focus.example_incorrect && (
-                                                            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl px-4 py-3 border-l-4 border-orange-400">
+                                                            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl px-4 py-3 border-l-4 border-orange-400 mb-3">
                                                                 <p className="text-xs font-bold text-orange-600 mb-1">Exemple</p>
                                                                 <p className="text-sm">
                                                                     <span className="line-through text-gray-400">{lesson.grammar_focus.example_incorrect}</span>
@@ -1610,6 +2222,12 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                                                 </p>
                                                             </div>
                                                         )}
+                                                        <button
+                                                            onClick={() => handleStartTargetedLesson(`Je veux comprendre parfaitement cette règle de grammaire : "${lesson.grammar_focus!.rule}". Explication originale : ${lesson.grammar_focus!.explanation}. Explique-moi cela avec 3 nouveaux exemples très clairs, puis fais-moi passer un test de compréhension là-dessus.`, `grammar_lesson_${i}`)}
+                                                            className="w-full py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors border border-gray-200 dark:border-gray-600"
+                                                        >
+                                                            <i className="fas fa-pencil-ruler"></i> Exercice sur cette règle
+                                                        </button>
                                                     </>
                                                 )}
                                                 {lesson.type === 'scenario' && (
@@ -1633,23 +2251,73 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
 
                                 {/* Suggestion prochaine causerie */}
                                 {convSummary.next_theme_suggestion && (
-                                    <div className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-4 border border-primary/20 flex items-center gap-3">
-                                        <span className="text-2xl">💡</span>
-                                        <div>
-                                            <p className="text-xs font-bold text-primary uppercase tracking-wide">Prochaine session suggérée</p>
-                                            <p className="text-sm text-text mt-0.5">{convSummary.next_theme_suggestion}</p>
+                                    <div className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-5 border border-primary/20 flex flex-col items-start gap-4">
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-2xl pt-1">💡</span>
+                                            <div>
+                                                <p className="text-xs font-bold text-primary uppercase tracking-wide">Prochaine session suggérée</p>
+                                                <p className="text-sm text-text font-medium mt-1 leading-snug">{convSummary.next_theme_suggestion}</p>
+                                            </div>
                                         </div>
+                                        <button
+                                            onClick={() => {
+                                                if (tutor) startConversation(convSummary.next_theme_suggestion!, convSummary.next_theme_suggestion!);
+                                            }}
+                                            className="w-full py-2.5 bg-primary text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-sm shadow-primary/30"
+                                        >
+                                            <i className="fas fa-comments"></i> Lancer cette causerie
+                                        </button>
                                     </div>
                                 )}
+                                {/* ACTIONS - GENERATE LESSON */}
+                                <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                    <button 
+                                        onClick={() => {
+                                            if (remedialMessages.length === 0) handleGenerateLesson();
+                                            else setShowRemedialModal(true);
+                                        }} 
+                                        disabled={isGeneratingLesson}
+                                        className="w-full py-4 rounded-xl bg-primary/10 dark:bg-primary/30 text-primary dark:text-primary font-bold hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors flex items-center justify-center gap-2 border border-primary/30 dark:border-primary shadow-sm"
+                                    >
+                                        {isGeneratingLesson ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-magic"></i>}
+                                        {isGeneratingLesson ? "Création de votre leçon..." : (remedialMessages.length > 0 ? "Continuer ma leçon dynamique" : "Générer une leçon de consolidation ciblée")}
+                                    </button>
 
-                                {/* Actions */}
-                                <div className="flex gap-3">
-                                    <button onClick={() => handleExport('md')} className="flex-1 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold hover:bg-blue-100 transition-colors text-sm flex items-center justify-center gap-2">
-                                        <i className="fab fa-markdown"></i> Exporter
-                                    </button>
-                                    <button onClick={() => setLabMode('conversation_select')} className="flex-1 py-3 rounded-xl bg-primary text-white font-bold hover:opacity-90 transition-opacity text-sm flex items-center justify-center gap-2">
-                                        <i className="fas fa-redo"></i> Nouvelle causerie
-                                    </button>
+                                    {onSaveConvSession && (
+                                        <button
+                                            onClick={() => {
+                                                const session: ConversationSession = {
+                                                    id: uuidv4(),
+                                                    tutorId: tutor?.id || 'unknown',
+                                                    tutorName: tutor?.name || 'Tuteur',
+                                                    language: activeLang,
+                                                    theme: convThemeLabel || convTheme || 'Causerie libre',
+                                                    createdAt: new Date().toISOString(),
+                                                    lastActiveAt: new Date().toISOString(),
+                                                    messages: convMessages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+                                                    summary: convSummary as any,
+                                                    remedialMessages: remedialMessages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+                                                };
+                                                onSaveConvSession(session);
+                                                showToast('Causerie sauvegardée dans "Mes Leçons & Programmes" !', 'success');
+                                            }}
+                                            className="w-full py-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 font-bold hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors flex items-center justify-center gap-2 border border-green-200 dark:border-green-800 text-sm"
+                                        >
+                                            <i className="fas fa-save"></i> Sauvegarder cette causerie
+                                        </button>
+                                    )}
+
+                                    <div className="flex gap-3">
+                                        <button onClick={() => handleExport('md')} className="flex-1 py-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-sm flex items-center justify-center gap-2 border border-blue-100 dark:border-blue-800">
+                                            <i className="fab fa-markdown"></i> Exporter
+                                        </button>
+                                        <button onClick={() => {
+                                            setLabMode('conversation_select');
+                                            setRemedialMessages([]);
+                                        }} className="flex-1 py-3 rounded-xl bg-primary text-white font-bold hover:opacity-90 transition-opacity text-sm flex items-center justify-center gap-2 shadow-md">
+                                            <i className="fas fa-redo"></i> Nouvelle causerie
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ) : (
@@ -1731,7 +2399,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                     <div className="absolute inset-0 flex items-center justify-center text-3xl animate-pulse">🎭</div>
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-2">{t('lab.scenarios.preparing')}</h3>
+                                    <h3 className="text-2xl font-bold text-primary mb-2">{t('lab.scenarios.preparing')}</h3>
                                     <p className="text-text-muted">{t('lab.scenarios.preparingDesc')}</p>
                                 </div>
                              </div>
@@ -1925,7 +2593,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     <div className="flex-1 flex flex-col p-4 overflow-hidden relative bg-gray-50 dark:bg-gray-900">
                         {!pronunciationChallenges.length ? (
                             <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-6">
-                                <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-5xl shadow-lg mb-4 text-white">
+                                <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center text-5xl shadow-lg mb-4 text-white">
                                     🎙️
                                 </div>
                                 <h2 className="text-2xl font-bold">Coach de Prononciation</h2>
@@ -1935,7 +2603,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                 <button 
                                     onClick={() => generatePronunciationChallenges('challenges')}
                                     disabled={isGeneratingChallenges}
-                                    className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg font-bold text-lg hover:shadow-xl transition-transform hover:scale-105 disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3"
+                                    className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl shadow-lg font-bold text-lg hover:opacity-90 transition-transform hover:scale-105 disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3"
                                 >
                                     {isGeneratingChallenges ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-random"></i>}
                                     {isGeneratingChallenges ? "Génération..." : "10 Défis Aléatoires"}
@@ -1945,19 +2613,19 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                 {!showTopicInput ? (
                                     <button 
                                         onClick={() => setShowTopicInput(true)}
-                                        className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl shadow-lg font-bold text-lg hover:shadow-xl transition-transform hover:scale-105 flex items-center justify-center gap-3"
+                                        className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl shadow-lg font-bold text-lg hover:opacity-90 transition-transform hover:scale-105 flex items-center justify-center gap-3"
                                     >
                                         <i className="fas fa-comments"></i> Dialogue (Roleplay)
                                     </button>
                                 ) : (
-                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg flex flex-col gap-3 border border-purple-200 animate-fade-in-up w-full sm:w-80">
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg flex flex-col gap-3 border border-primary/30 animate-fade-in-up w-full sm:w-80">
                                         <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Sujet du dialogue (optionnel) :</label>
                                         <input 
                                             type="text" 
                                             value={dialogueTopic}
                                             onChange={(e) => setDialogueTopic(e.target.value)}
                                             placeholder="Ex: Au restaurant, Entretien..."
-                                            className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none bg-gray-50 dark:bg-gray-700"
+                                            className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary outline-none bg-gray-50 dark:bg-gray-700"
                                         />
                                         
                                         <label className="text-sm font-bold text-gray-700 dark:text-gray-300 mt-2">Niveau :</label>
@@ -1986,7 +2654,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                                 onClick={() => setDialogueLevel('advanced')}
                                                 className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${
                                                     dialogueLevel === 'advanced' 
-                                                        ? 'bg-purple-500 text-white' 
+                                                        ? 'bg-primary text-white' 
                                                         : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
                                                 }`}
                                             >
@@ -2004,7 +2672,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                             <button 
                                                 onClick={() => generatePronunciationChallenges('dialogue')}
                                                 disabled={isGeneratingChallenges}
-                                                className="flex-1 py-2 bg-purple-600 text-white rounded-lg text-sm font-bold hover:bg-purple-700 transition-colors"
+                                                className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:hover:bg-primary/90 transition-colors"
                                             >
                                                 {isGeneratingChallenges ? <i className="fas fa-spinner fa-spin"></i> : "Générer"}
                                             </button>
@@ -2035,7 +2703,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                     )}
 
                                     {pronunciationType === 'dialogue' && (
-                                        <div className="absolute top-0 left-0 px-4 py-2 rounded-br-2xl text-xs font-bold bg-purple-100 text-purple-700 uppercase tracking-wider">
+                                        <div className="absolute top-0 left-0 px-4 py-2 rounded-br-2xl text-xs font-bold bg-primary/20 text-primary uppercase tracking-wider">
                                             {pronunciationChallenges[currentChallengeIndex].speaker === 'A' ? 'Personnage A' : 'Personnage B'}
                                         </div>
                                     )}
@@ -2147,7 +2815,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                                 className={`w-24 h-24 rounded-full shadow-2xl flex items-center justify-center transition-all transform hover:scale-105 mb-4 ${
                                                     listeningStatus === 'listening' 
                                                         ? 'bg-red-500 text-white animate-pulse ring-4 ring-red-200'
-                                                    : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
+                                                    : 'bg-primary text-white'
                                                 }`}
                                             >
                                                 <i className={`fas fa-${listeningStatus === 'listening' ? 'stop' : 'microphone'} text-4xl`}></i>
@@ -2168,7 +2836,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
             </div>
 
             {/* CONTROLS (Chat, Causerie & Scenario Only) */}
-            {labMode !== 'study' && labMode !== 'pronunciation' && labMode !== 'conversation_select' && labMode !== 'conversation_summary' && (
+            {labMode !== 'study' && labMode !== 'pronunciation' && labMode !== 'conversation_select' && labMode !== 'conversation_summary' && labMode !== 'vocabulary' && (
                 <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 safe-area-bottom">
                 <div className="flex items-center gap-3 max-w-3xl mx-auto">
                     {/* Toggle Input Mode (Chat only) */}
@@ -2230,6 +2898,106 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     )}
                 </div>
             </div>
+            )}
+
+            {/* --- MODAL DE LEÇON INTERACTIVE --- */}
+            {showRemedialModal && (
+                <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+                    <div className="bg-white dark:bg-gray-800 w-full max-w-3xl h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-scale-in border border-primary/30 dark:border-primary">
+                        {/* Modal Header */}
+                        <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-primary/10 dark:bg-primary/30">
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={() => setShowRemedialModal(false)}
+                                    className="text-primary dark:text-primary hover:text-primary dark:hover:text-primary/80 transition-colors flex items-center gap-2 text-xs font-black uppercase tracking-wider bg-white dark:bg-gray-800/50 px-3 py-2 rounded-xl border border-primary/30 dark:border-primary shadow-sm"
+                                >
+                                    <i className="fas fa-chevron-left text-[10px]"></i> 
+                                    <span>Retour</span>
+                                </button>
+                                <h3 className="font-bold text-lg text-primary dark:text-primary m-0 p-0 hidden sm:flex items-center gap-2">
+                                    <i className="fas fa-book-reader"></i> Leçon interactive : {tutor?.name}
+                                </h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {onSaveConvSession && (
+                                    <button
+                                        onClick={() => {
+                                            const session: ConversationSession = {
+                                                id: uuidv4(),
+                                                tutorId: tutor?.id || 'unknown',
+                                                tutorName: tutor?.name || 'Tuteur',
+                                                language: activeLang,
+                                                theme: convThemeLabel || convTheme || 'Causerie libre',
+                                                createdAt: new Date().toISOString(),
+                                                lastActiveAt: new Date().toISOString(),
+                                                messages: convMessages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+                                                summary: convSummary as any,
+                                                remedialMessages: remedialMessages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+                                            };
+                                            onSaveConvSession(session);
+                                            showToast('Causerie + leçon sauvegardées !', 'success');
+                                        }}
+                                        title="Sauvegarder la causerie et la leçon"
+                                        className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 transition-colors p-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 text-sm font-bold flex items-center gap-1.5"
+                                    >
+                                        <i className="fas fa-save"></i> <span className="hidden sm:inline">Sauvegarder</span>
+                                    </button>
+                                )}
+                                <button onClick={() => setShowRemedialModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <i className="fas fa-times text-xl"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {/* Chat Scroll Area — key=remedialKey force le remontage de ReactMarkdown à chaque nouvelle leçon */}
+                        <div key={remedialKey} className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-5 bg-gray-50/50 dark:bg-gray-900/50">
+                            {remedialMessages.map((msg, i) => (
+                                <div key={`${remedialKey}-${i}`} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`p-4 sm:p-5 text-sm sm:text-base ${msg.role === 'user' ? 'bg-primary text-white rounded-2xl rounded-tr-sm max-w-[85%]' : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm rounded-2xl rounded-tl-sm text-text max-w-none w-full remedial-md'}`}>
+                                        {msg.role === 'user'
+                                            ? <span>{msg.content}</span>
+                                            : <InteractiveMessageRenderer content={msg.content} />
+                                        }
+                                    </div>
+                                </div>
+                            ))}
+                            {isSendingRemedial && (
+                                <div className="flex justify-start">
+                                    <div className="p-4 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm rounded-tl-sm w-16 flex justify-center">
+                                        <i className="fas fa-circle-notch fa-spin text-primary text-lg"></i>
+                                    </div>
+                                </div>
+                            )}
+                            <div id="remedial-box-end" />
+                        </div>
+
+                        {/* Chat Input */}
+                        <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                            <div className="flex gap-2 items-end max-w-4xl mx-auto relative">
+                                <textarea
+                                    value={remedialDraft}
+                                    onChange={(e) => setRemedialDraft(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleSendRemedialMessage();
+                                        }
+                                    }}
+                                    className="flex-1 resize-none bg-gray-100 dark:bg-gray-700 rounded-2xl p-4 pr-12 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base text-text border border-transparent shadow-inner"
+                                    placeholder="Demander plus d'exemples, répondre au quiz..."
+                                    rows={remedialDraft.split('\n').length > 1 ? Math.min(remedialDraft.split('\n').length, 4) : 1}
+                                />
+                                <button
+                                    onClick={handleSendRemedialMessage}
+                                    disabled={!remedialDraft.trim() || isSendingRemedial}
+                                    className="absolute right-2 bottom-2 bg-primary text-white rounded-xl w-10 h-10 flex items-center justify-center disabled:opacity-50 hover:hover:bg-primary/90 hover:scale-105 transition-all shadow-md"
+                                >
+                                    <i className="fas fa-paper-plane text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

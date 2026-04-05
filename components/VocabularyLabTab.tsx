@@ -873,7 +873,8 @@ Réponds toujours en français avec les mots en ${targetLangName} en gras (**mot
                 <div className="flex flex-col h-full overflow-hidden">
                     {/* Result Header */}
                     <div className="flex-shrink-0 px-4 pt-3 pb-3 bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/20 dark:to-primary/10 border-b border-primary/20">
-                        <div className="flex items-center justify-between mb-2">
+                        {/* Row 1 : Retour + Titre */}
+                        <div className="flex items-center gap-2 mb-2">
                             <button
                                 onClick={() => {
                                     setVocabData(null);
@@ -881,19 +882,30 @@ Réponds toujours en français avec les mots en ${targetLangName} en gras (**mot
                                     setShowChatPanel(false);
                                     setScopedCache(prev => { const n = { ...prev }; delete n['__active_theme__']; return n; });
                                 }}
-                                className="flex items-center gap-1.5 text-primary/80 dark:text-gray-300 hover:text-primary dark:hover:text-white text-xs transition-colors bg-white hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40 px-2.5 py-1 rounded-full shadow-sm"
+                                className="flex-shrink-0 flex items-center gap-1.5 text-primary/80 dark:text-gray-300 hover:text-primary dark:hover:text-white text-xs transition-colors bg-white hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40 px-2.5 py-1 rounded-full shadow-sm"
                             >
                                 <i className="fas fa-arrow-left text-[10px]"></i> Thèmes
                             </button>
-                            <div className="text-center">
-                                <h2 className="font-black text-base text-primary dark:text-primary leading-none">{vocabData.theme}</h2>
+                            <div className="flex-1 text-center min-w-0">
+                                <h2 className="font-black text-base text-primary dark:text-primary leading-none truncate">{vocabData.theme}</h2>
                                 <p className="text-primary/70 dark:text-gray-400 font-medium text-[10px] mt-0.5">en {targetLangName} • {difficulty}</p>
                             </div>
-                            <div className="flex gap-1.5">
+                        </div>
+
+                        {/* Row 2 : Stats + Boutons d'action */}
+                        <div className="flex items-center justify-between gap-2">
+                            {/* Stats */}
+                            <div className="flex gap-1.5 text-[10px] flex-wrap">
+                                <span className="bg-primary/20 dark:bg-primary/30 text-primary dark:text-white px-2 py-0.5 rounded-full font-bold whitespace-nowrap">{vocabData.words.length} mots</span>
+                                <span className="bg-primary/20 dark:bg-primary/30 text-primary dark:text-white px-2 py-0.5 rounded-full font-bold whitespace-nowrap">{vocabData.expressions.length} expr.</span>
+                                <span className="bg-primary/20 dark:bg-primary/30 text-primary dark:text-white px-2 py-0.5 rounded-full font-bold whitespace-nowrap">{vocabData.exercises.length} exo.</span>
+                            </div>
+                            {/* Action buttons */}
+                            <div className="flex gap-1.5 flex-shrink-0">
                                 {onSaveVocabList && (
                                     <button
                                         onClick={handleSaveToLessons}
-                                        className="text-primary/80 hover:text-primary dark:text-gray-300 dark:hover:text-white text-[10px] bg-white hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40 px-2 py-1 rounded-full transition-colors flex items-center gap-1 shadow-sm"
+                                        className="text-primary/80 hover:text-primary dark:text-gray-300 dark:hover:text-white text-[10px] bg-white hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40 px-2 py-1 rounded-full transition-colors flex items-center gap-1 shadow-sm whitespace-nowrap"
                                         title="Sauvegarder dans Mes Leçons"
                                     >
                                         <i className="fas fa-save text-[11px]"></i> Sauv.
@@ -902,20 +914,19 @@ Réponds toujours en français avec les mots en ${targetLangName} en gras (**mot
                                 {onAddCards && (
                                     <button
                                         onClick={handleAddAllToFlashcards}
-                                        className="text-primary/80 hover:text-primary dark:text-gray-300 dark:hover:text-white text-[10px] bg-white hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40 px-2 py-1 rounded-full transition-colors flex items-center gap-1 shadow-sm"
+                                        className="text-primary/80 hover:text-primary dark:text-gray-300 dark:hover:text-white text-[10px] bg-white hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40 px-2 py-1 rounded-full transition-colors flex items-center gap-1 shadow-sm whitespace-nowrap"
                                         title={
                                             activeSection === 'expressions'
                                                 ? 'Ajouter les expressions en flashcards'
                                                 : 'Ajouter les mots en flashcards'
                                         }
                                     >
-                                        <i className="fas fa-plus-circle text-[11px]"></i>
-                                        {activeSection === 'expressions' ? 'Cards (expr.)' : 'Cards (mots)'}
+                                        <i className="fas fa-plus-circle text-[11px]"></i> Cards
                                     </button>
                                 )}
                                 <button
                                     onClick={() => setShowChatPanel(!showChatPanel)}
-                                    className={`text-[10px] px-2 py-1 rounded-full transition-colors flex items-center gap-1 shadow-sm ${showChatPanel ? 'bg-primary text-white font-bold' : 'text-primary/80 hover:text-primary dark:text-gray-300 dark:hover:text-white bg-white hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40'}`}
+                                    className={`text-[10px] px-2 py-1 rounded-full transition-colors flex items-center gap-1 shadow-sm whitespace-nowrap ${showChatPanel ? 'bg-primary text-white font-bold' : 'text-primary/80 hover:text-primary dark:text-gray-300 dark:hover:text-white bg-white hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40'}`}
                                     title="Chat avec l'IA"
                                 >
                                     <i className="fas fa-comments text-[11px]"></i> Chat

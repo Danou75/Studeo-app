@@ -1456,16 +1456,17 @@ NE METS PAS l'intégralité de ta réponse dans un bloc de code.`;
                     </button>
                 )}
                 {/* Top Row: Back + Title + Settings */}
-                <div className="flex items-center justify-between">
-                    <div className="flex gap-2 items-center">
+                <div className="flex flex-wrap items-start sm:items-center justify-between gap-y-3 mb-2 sm:mb-0">
+                    {/* GAUCHE: Accueil & Historique */}
+                    <div className="flex gap-1 sm:gap-2 items-center order-1">
                         <button 
                             onClick={() => {
                                 window.speechSynthesis.cancel();
                                 onBack();
                             }}
-                            className={`transition-all rounded-lg px-3 py-1.5 backdrop-blur-sm flex items-center gap-2 text-sm ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80`}
+                            className={`transition-all rounded-lg px-2 sm:px-3 py-1.5 backdrop-blur-sm flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80`}
                         >
-                            <i className="fas fa-home text-inherit"></i> Accueil
+                            <i className="fas fa-home text-inherit"></i> <span className="hidden xs:inline">Accueil</span>
                         </button>
 
                         {['conversation_select', 'conversation_active', 'conversation_summary', 'vocabulary'].includes(labMode) && onNavigateToCurriculum && (
@@ -1478,7 +1479,7 @@ NE METS PAS l'intégralité de ta réponse dans un bloc de code.`;
                                     );
                                     onNavigateToCurriculum();
                                 }}
-                                className={`transition-all rounded-lg w-8 h-8 backdrop-blur-sm flex items-center justify-center text-sm ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary/70 hover:bg-black/10' : 'bg-white/10 text-white/80 hover:bg-white/20'} hover:opacity-100 flex-shrink-0`}
+                                className={`transition-all rounded-lg w-7 h-7 sm:w-8 sm:h-8 backdrop-blur-sm flex items-center justify-center text-xs sm:text-sm ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary/70 hover:bg-black/10' : 'bg-white/10 text-white/80 hover:bg-white/20'} hover:opacity-100 flex-shrink-0`}
                                 title={labMode === 'vocabulary' ? "Listes de vocabulaire enregistrées" : "Causeries enregistrées"}
                             >
                                 <i className="fas fa-history text-inherit"></i>
@@ -1486,10 +1487,11 @@ NE METS PAS l'intégralité de ta réponse dans un bloc de code.`;
                         )}
                     </div>
                     
-                    <div className="text-center text-inherit">
-                        <h1 className="text-lg font-bold flex items-center gap-2 justify-center text-inherit">
-                            <span className="text-2xl">{tutor?.emoji}</span>
-                            <span className="font-bold text-inherit">{tutor?.name}</span>
+                    {/* CENTRE: Titre */}
+                    <div className="text-center text-inherit order-3 sm:order-2 w-full sm:w-auto flex-1 min-w-0 sm:min-w-[200px]">
+                        <h1 className="text-base sm:text-lg font-bold flex items-center gap-2 justify-center text-inherit line-clamp-1">
+                            <span className="text-xl sm:text-2xl">{tutor?.emoji}</span>
+                            <span className="font-bold text-inherit truncate">{tutor?.name}</span>
                         </h1>
                      <div className="flex items-center justify-center gap-3 mt-1">
                             {/* Lang Toggle */}
@@ -1523,13 +1525,14 @@ NE METS PAS l'intégralité de ta réponse dans un bloc de code.`;
                         </div>
                     </div>
                     
-                    <div className="flex gap-2 relative">
+                    {/* DROITE: Export & Réglages */}
+                    <div className="flex gap-1 sm:gap-2 relative order-2 sm:order-3">
                         {/* Export Button (Discrete) */}
                         {(labMode === 'chat' || labMode === 'conversation_active' || labMode === 'conversation_summary' || (labMode === 'scenario_play' && activeScenario.length > 0)) && (
                             <>
                                 <button 
                                     onClick={() => setShowExportMenu(!showExportMenu)}
-                                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                                    className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-base transition-all ${
                                         showExportMenu 
                                             ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-primary text-white' : 'bg-white text-primary') 
                                             : (themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white')
@@ -1563,7 +1566,7 @@ NE METS PAS l'intégralité de ta réponse dans un bloc de code.`;
 
                          {/* Settings Button */}
                          <button onClick={() => setShowVoiceSettings(!showVoiceSettings)}
-                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                            className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-base transition-all ${
                                 showVoiceSettings 
                                     ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-primary text-white' : 'bg-white text-primary') 
                                     : (themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white')
@@ -1575,41 +1578,41 @@ NE METS PAS l'intégralité de ta réponse dans un bloc de code.`;
                     </div>
                 </div>
 
-                <div className="flex justify-center">
-                    <div className={`p-1 rounded-full flex gap-1 ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5' : 'bg-black/20'}`}>
+                <div className="flex sm:justify-center mt-2 sm:mt-0 max-w-full overflow-hidden">
+                    <div className={`p-1 rounded-xl sm:rounded-full flex gap-1 overflow-x-auto scrollbar-hide w-full sm:w-auto ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5' : 'bg-black/20'}`}>
                         <button 
                             onClick={() => setLabMode('chat')} 
-                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode === 'chat' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${labMode === 'chat' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
                         >
                             {t('lab.tabs.chat')}
                         </button>
                         <button 
                             onClick={() => setLabMode('conversation_select')} 
-                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode.startsWith('conversation') ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${labMode.startsWith('conversation') ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
                         >
                             🗣️ Causerie
                         </button>
                         <button 
                             onClick={() => setLabMode('scenario_list')} 
-                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode.startsWith('scenario') ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${labMode.startsWith('scenario') ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
                         >
                             {t('lab.tabs.scenarios')}
                         </button>
                         <button 
                             onClick={() => setLabMode('study')} 
-                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode === 'study' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${labMode === 'study' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
                         >
                             {t('lab.tabs.study')}
                         </button>
                         <button 
                             onClick={() => setLabMode('pronunciation')} 
-                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode === 'pronunciation' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${labMode === 'pronunciation' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
                         >
                             <i className="fas fa-microphone-alt mr-1"></i> Coach
                         </button>
                         <button 
                             onClick={() => setLabMode('vocabulary')} 
-                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${labMode === 'vocabulary' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap ${labMode === 'vocabulary' ? (themeStyle === 'apple' && themeMode === 'light' ? 'bg-white text-primary shadow-sm' : 'bg-white text-primary shadow-sm') : (themeStyle === 'apple' && themeMode === 'light' ? 'text-primary/60 hover:text-primary' : 'text-white/70 hover:text-white')}`}
                         >
                             📚 Vocab
                         </button>

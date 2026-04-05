@@ -1446,15 +1446,7 @@ NE METS PAS l'intégralité de ta réponse dans un bloc de code.`;
                 className={`transition-all duration-500 pt-safe p-4 shadow-md z-10 space-y-3 group relative ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
-                {onNavigateToSettings && (
-                    <button 
-                        onClick={onNavigateToSettings}
-                        className="absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
-                        title="Paramètres de l'IA"
-                    >
-                        <i className="fas fa-cog text-inherit"></i>
-                    </button>
-                )}
+
                 {/* Top Row: Back + Title + Settings */}
                 <div className="flex flex-wrap items-start sm:items-center justify-between gap-y-3 mb-2 sm:mb-0">
                     {/* GAUCHE: Accueil & Historique */}
@@ -1564,7 +1556,8 @@ NE METS PAS l'intégralité de ta réponse dans un bloc de code.`;
                             </>
                         )}
 
-                         {/* Settings Button */}
+
+                         {/* Settings Button (Voice) */}
                          <button onClick={() => setShowVoiceSettings(!showVoiceSettings)}
                             className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-base transition-all ${
                                 showVoiceSettings 
@@ -1575,6 +1568,17 @@ NE METS PAS l'intégralité de ta réponse dans un bloc de code.`;
                         >
                             <i className="fas fa-sliders-h text-inherit"></i>
                         </button>
+
+                        {/* AI Settings Button */}
+                        {onNavigateToSettings && (
+                            <button 
+                                onClick={onNavigateToSettings}
+                                className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-base transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80`}
+                                title="Paramètres de l'IA"
+                            >
+                                <i className="fas fa-cog text-inherit"></i>
+                            </button>
+                        )}
                     </div>
                 </div>
 

@@ -142,19 +142,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             }}
         >
             {/* Header / Top Bar */}
-            <div className="flex flex-row items-center justify-between gap-2 mb-4 sm:mb-6 md:mb-8 pt-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 sm:mb-6 md:mb-8 pt-1">
                 {/* Logo & Slogan */}
-                <div className="text-left flex-1 min-w-0">
+                <div className="text-left w-full sm:flex-1 sm:min-w-0">
                     <h1 
-                        className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter drop-shadow-sm filter bg-clip-text text-transparent leading-none"
+                        className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter drop-shadow-sm filter bg-clip-text text-transparent"
                         style={{ 
                             backgroundImage: brandGradient,
                             backgroundSize: '200% auto',
+                            lineHeight: 1.1,
                         }}
                     >
                         Studeo
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400 text-[9px] sm:text-[10px] md:text-xs font-medium tracking-wide line-clamp-1 mt-0.5">
+                    <p className="text-gray-500 dark:text-gray-400 text-[10px] sm:text-[10px] md:text-xs font-medium tracking-wide mt-0.5">
                         {themeStyle === 'french' && "L'outil pour tout apprendre"}
                         {themeStyle === 'english' && "The tool to learn everything"}
                         {themeStyle === 'spanish' && "La herramienta para aprender todo"}
@@ -165,8 +166,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     </p>
                 </div>
 
-                {/* Zone des Contrôles — compact sur mobile */}
-                <div className="flex items-center gap-1.5 flex-shrink-0 z-30">
+                {/* Zone des Contrôles — ligne complète sur mobile, alignée à droite sur sm+ */}
+                <div className="flex items-center gap-1.5 flex-shrink-0 z-30 flex-wrap">
                     {/* Streak */}
                     <div 
                         className="flex items-center gap-1 px-2 py-1.5 text-white shadow-md rounded-xl text-[10px] font-black"

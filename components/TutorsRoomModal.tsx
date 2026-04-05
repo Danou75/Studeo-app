@@ -260,7 +260,7 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
 
                                     <div>
                                         <label className="block text-sm font-medium text-text-secondary mb-1">{t('tutors.guest.labelEmoji')}</label>
-                                        <div className="flex gap-2 text-2xl">
+                                        <div className="flex flex-wrap gap-2 text-2xl">
                                             {['🎓', '🕵️‍♂️', '👩‍🔬', '🧙‍♂️', '🤖', '🦉', '🧠'].map(emoji => (
                                                 <button
                                                     key={emoji}

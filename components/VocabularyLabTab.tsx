@@ -241,20 +241,20 @@ export const ExerciseCard: React.FC<{
                     <>
                         <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{exercise.sentence?.replace('_____', '_____ ')}</p>
                         {!state.revealed ? (
-                            <div className="flex gap-2">
+                            <div className="flex flex-col gap-2">
                                 <input
                                     type="text"
                                     value={state.userAnswer}
                                     onChange={e => setState(s => ({ ...s, userAnswer: e.target.value }))}
                                     onKeyDown={e => e.key === 'Enter' && handleSubmitFillIn()}
                                     placeholder="Votre réponse..."
-                                    className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:border-blue-400 text-gray-800 dark:text-gray-100"
+                                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:border-blue-400 text-gray-800 dark:text-gray-100"
                                 />
                                 <button
                                     onClick={handleSubmitFillIn}
-                                    className="flex-shrink-0 whitespace-nowrap px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition-colors"
+                                    className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-bold transition-colors"
                                 >
-                                    Valider
+                                    ✓ Valider
                                 </button>
                             </div>
                         ) : (
@@ -273,20 +273,20 @@ export const ExerciseCard: React.FC<{
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Traduisez en {exercise.targetLanguage || 'la langue cible'}</p>
                         {!state.revealed ? (
-                            <div className="flex gap-2">
+                            <div className="flex flex-col gap-2">
                                 <input
                                     type="text"
                                     value={state.userAnswer}
                                     onChange={e => setState(s => ({ ...s, userAnswer: e.target.value }))}
                                     onKeyDown={e => e.key === 'Enter' && setState(s => ({ ...s, revealed: true }))}
                                     placeholder="Votre traduction..."
-                                    className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:border-emerald-400 text-gray-800 dark:text-gray-100"
+                                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:border-emerald-400 text-gray-800 dark:text-gray-100"
                                 />
                                 <button
                                     onClick={handleReveal}
-                                    className="flex-shrink-0 whitespace-nowrap px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-medium transition-colors"
+                                    className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold transition-colors"
                                 >
-                                    Voir
+                                    👁 Voir la réponse
                                 </button>
                             </div>
                         ) : (

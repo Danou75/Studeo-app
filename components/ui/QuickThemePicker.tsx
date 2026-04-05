@@ -54,7 +54,7 @@ export const QuickThemePicker: React.FC = () => {
             background: isDark ? 'rgba(17,24,39,0.97)' : 'rgba(255,255,255,0.97)',
             border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
             backdropFilter: 'blur(16px)',
-            minWidth: '220px',
+            minWidth: '240px',
           }}
         >
           {/* En-tête du popover */}
@@ -84,7 +84,7 @@ export const QuickThemePicker: React.FC = () => {
           </div>
 
           {/* Grille des thèmes */}
-          <div className="p-2 grid grid-cols-4 gap-1.5">
+          <div className="p-2 grid grid-cols-3 gap-1.5">
             {THEME_STYLES.map((style: ThemeStyle) => {
               const theme = THEMES[style];
               const colors = theme.colors[isDark ? 'dark' : 'light'];
@@ -121,7 +121,7 @@ export const QuickThemePicker: React.FC = () => {
                   </div>
                   {/* Nom du thème */}
                   <span
-                    className="text-[9px] font-bold leading-tight text-center truncate w-full"
+                    className="text-[9px] font-bold leading-tight text-center w-full break-words"
                     style={{
                       color: isActive
                         ? colors.primary

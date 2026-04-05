@@ -252,7 +252,7 @@ export const ExerciseCard: React.FC<{
                                 />
                                 <button
                                     onClick={handleSubmitFillIn}
-                                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition-colors"
+                                    className="flex-shrink-0 whitespace-nowrap px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition-colors"
                                 >
                                     Valider
                                 </button>
@@ -284,7 +284,7 @@ export const ExerciseCard: React.FC<{
                                 />
                                 <button
                                     onClick={handleReveal}
-                                    className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-medium transition-colors"
+                                    className="flex-shrink-0 whitespace-nowrap px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-medium transition-colors"
                                 >
                                     Voir
                                 </button>

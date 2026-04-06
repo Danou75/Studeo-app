@@ -786,11 +786,27 @@ export const ChessChallengeScreen: React.FC<ChessChallengeScreenProps> = ({ onBa
                                             const encodedPGN = encodeURIComponent(game.moves);
                                             const lichessUrl = `https://lichess.org/paste?pgn=${encodedPGN}`;
                                             try {
-                                                await open(lichessUrl);
+                                                if (typeof window !== 'undefined' && '__TAURI__' in window) {
+                                                    await open(lichessUrl);
+                                                } else {
+                                                    const anchor = document.createElement('a');
+                                                    anchor.href = lichessUrl;
+                                                    anchor.target = '_blank';
+                                                    anchor.rel = 'noopener noreferrer';
+                                                    document.body.appendChild(anchor);
+                                                    anchor.click();
+                                                    setTimeout(() => document.body.removeChild(anchor), 100);
+                                                }
                                             } catch (error) {
                                                 console.error('Error opening Lichess:', error);
-                                                // Fallback to window.open for web mode
-                                                window.open(lichessUrl, '_blank');
+                                                // Last resort fallback
+                                                const anchor = document.createElement('a');
+                                                anchor.href = lichessUrl;
+                                                anchor.target = '_blank';
+                                                anchor.rel = 'noopener noreferrer';
+                                                document.body.appendChild(anchor);
+                                                anchor.click();
+                                                setTimeout(() => document.body.removeChild(anchor), 100);
                                             }
                                         }}
                                         className="border-[#b58863] text-[#b58863] hover:!bg-[#b58863] hover:!text-white transition-colors"

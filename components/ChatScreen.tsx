@@ -759,7 +759,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                                                             ),
                                                         blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-primary/50 pl-4 italic my-4 text-text-secondary bg-primary/5 p-3 rounded-r-lg" {...props} />,
                                                         hr: ({node, ...props}) => <hr className="my-5 border-border" {...props} />,
-                                                        a: ({node, ...props}) => <a className="text-primary underline font-bold hover:text-primary-dark transition-colors" {...props} />,
+                                                        a: ({node, ...props}) => <a className="text-primary underline font-bold hover:text-primary-dark transition-colors" target="_blank" rel="noopener noreferrer" {...props} />,
                                                         table: ({node, ...props}) => (
                                                             <div className="overflow-x-auto my-5 rounded-xl border border-border shadow-sm">
                                                                 <table className="min-w-full border-collapse" {...props} />

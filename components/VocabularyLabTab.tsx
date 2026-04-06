@@ -669,6 +669,8 @@ Réponds toujours en français avec les mots en ${targetLangName} en gras (**mot
             .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
             // Inline code
             .replace(/`([^`]+)`/g, '<code class="bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs font-mono">$1</code>')
+            // Links [text](url)
+            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary underline font-bold hover:text-primary-dark transition-colors">$1</a>')
             // Numbered lists
             .replace(/^(\d+)\. (.+)$/gm, '<div class="flex gap-2 my-0.5"><span class="font-bold text-primary flex-shrink-0">$1.</span><span>$2</span></div>')
             // Bullet lists

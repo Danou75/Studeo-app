@@ -113,17 +113,9 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
     setPendingUrl(finalUrl);
   };
 
-  // Ferme le panneau de lien
-  const closeLinkPanel = () => setPendingUrl(null);
-
-  // Ouvre l'URL via window.location.href (quitte la PWA / navigue dans Safari)
-  const confirmOpenLink = () => {
-    if (!pendingUrl) return;
-    const url = pendingUrl;
-    setPendingUrl(null);
-    // window.location.href est la méthode la plus fiable sur iOS PWA.
-    // L'utilisateur revient avec le bouton Retour de Safari ou depuis l'écran d'accueil.
-    window.location.href = url;
+  // Ferme le panneau de lien (avec un léger délai pour laisser le temps au clic natif de se propager)
+  const closeLinkPanel = () => {
+    setTimeout(() => setPendingUrl(null), 100);
   };
 
   // Copie l'URL dans le presse-papier (fallback si l'utilisateur préfère coller dans Safari)
@@ -770,7 +762,7 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
         
         {/* Footer info */}
         <div className="mt-8 text-center text-text-muted text-sm pb-8">
-            Généré par {tutor?.name} via IA • Studeo <span className="opacity-40 text-xs">v3.1.2</span>
+            Généré par {tutor?.name} via IA • Studeo <span className="opacity-40 text-xs">v3.1.3</span>
         </div>
       </div>
 
@@ -830,13 +822,16 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
                 <i className="fas fa-copy" />
                 Copier l'URL
               </button>
-              <button
-                onClick={confirmOpenLink}
-                className="flex-1 py-3 px-4 rounded-xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-all active:scale-95"
+              <a
+                href={pendingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={closeLinkPanel}
+                className="flex-1 py-3 px-4 rounded-xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-all active:scale-95 no-underline"
               >
                 <i className="fas fa-external-link-alt" />
-                Ouvrir dans Safari
-              </button>
+                Ouvrir
+              </a>
             </div>
           </div>
         </div>

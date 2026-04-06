@@ -85,8 +85,8 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
   const openLink = (url: string) => {
     let finalUrl = url;
 
-    // Transforme les liens Google en DuckDuckGo (WebView-friendly, pas de page blanche)
-    if (url.includes('google.com/search') || url.includes('google.fr/search')) {
+    // Transforme les liens Google ou Perplexity en DuckDuckGo (WebView-friendly, pas de page blanche)
+    if (url.includes('google.com/search') || url.includes('google.fr/search') || url.includes('perplexity.ai/search')) {
         try {
             const match = url.match(/[?&]q=([^&]+)/);
             if (match && match[1]) {
@@ -762,7 +762,7 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
         
         {/* Footer info */}
         <div className="mt-8 text-center text-text-muted text-sm pb-8">
-            Généré par {tutor?.name} via IA • Studeo <span className="opacity-40 text-xs">v3.1.3</span>
+            Généré par {tutor?.name} via IA • Studeo <span className="opacity-40 text-xs">v3.1.4</span>
         </div>
       </div>
 

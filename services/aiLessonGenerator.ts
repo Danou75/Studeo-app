@@ -74,12 +74,12 @@ const getLessonPromptForTutor = (tutorId: string | undefined, topic: string, tar
     Propose 3 à 5 suggestions pour approfondir le sujet, en MÉLANGEANT :
     - Des **sujets connexes** que l'élève pourrait te demander (sans lien URL, juste le titre du sujet)
     - Des **ressources externes** pertinentes sous forme de liens Markdown : [Titre de la ressource](URL)
-      * Privilégie des liens vers Perplexity pour des recherches approfondies : https://www.perplexity.ai/search?q=Sujet+Expliqué
+      * Privilégie des liens vers DuckDuckGo pour des recherches approfondies : https://duckduckgo.com/?q=Sujet+Expliqué
       * Ou vers des ressources académiques/culturelles de qualité
     
     Exemple de format attendu :
     - La Révolution Française et ses conséquences
-    - [Les philosophes des Lumières sur Perplexity](https://www.perplexity.ai/search?q=Philosophes+Lumières)
+    - [Les philosophes des Lumières sur DuckDuckGo](https://duckduckgo.com/?q=Philosophes+Lumières)
     - Le rôle de Versailles dans la monarchie absolue
     - [Documentaire : Louis XIV sur Arte](https://www.arte.tv/fr/videos/...)
     

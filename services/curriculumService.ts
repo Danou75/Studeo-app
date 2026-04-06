@@ -435,8 +435,8 @@ export const generateModuleContent = async (
     6. Termine par un résumé synthétique en FRANÇAIS.
     7. AJOUTE UNE SECTION FINALE "📚 Pour aller plus loin" :
        - Propose 3 à 5 concepts à approfondir.
-       - Formate-les comme des liens Markdown vers une recherche DuckDuckGo : [Sujet](https://duckduckgo.com/?q=Sujet+Expliqué).
-       - DuckDuckGo permet d'avoir une page de recherche qui fonctionne parfaitement sur iPad.
+       - Formate-les comme des liens Markdown vers une recherche Perplexity : [Sujet](https://www.perplexity.ai/search?q=Sujet+Expliqué).
+       - Perplexity permet d'avoir une réponse synthétique et sourcée.
     
     IMPORTANT :
     - Réponds UNIQUEMENT avec le contenu du cours en format MARKDOWN (Texte).

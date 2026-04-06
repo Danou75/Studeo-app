@@ -113,10 +113,20 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
         return;
     }
 
-    // Sur tous les autres contextes (Safari, Chrome, iOS PWA standalone) :
-    // On affiche le panneau de lien. C'est la méthode 100% fiable.
-    // Le panel propose "Ouvrir dans Safari" via window.location.href (garanti de fonctionner)
-    // et "Copier l'URL" en fallback.
+    // Ouverture directe (iPhone, Mac Vercel, Android, Navigateurs classiques)
+    if (!isIPadPwa()) {
+        const a = document.createElement('a');
+        a.href = finalUrl;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return;
+    }
+
+    // Sur iPad PWA (où l'ouverture directe fait un écran blanc bloqué) :
+    // On affiche le panneau de lien ("Ouvrir" / "Copier").
     setPendingUrl(finalUrl);
   };
 
@@ -769,7 +779,7 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
         
         {/* Footer info */}
         <div className="mt-8 text-center text-text-muted text-sm pb-8">
-            Généré par {tutor?.name} via IA • Studeo <span className="opacity-40 text-xs">v3.1.5</span>
+            Généré par {tutor?.name} via IA • Studeo <span className="opacity-40 text-xs">v3.1.6</span>
         </div>
       </div>
 

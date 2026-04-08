@@ -782,7 +782,7 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
         
         {/* Footer info */}
         <div className="mt-8 text-center text-text-muted text-sm pb-8">
-            Généré par {tutor?.name} via IA • Studeo <span className="opacity-40 text-xs">v3.1.7</span>
+            Généré par {tutor?.name} via IA • Studeo <span className="opacity-40 text-xs">v3.1.8</span>
         </div>
       </div>
 

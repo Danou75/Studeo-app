@@ -255,15 +255,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             {/* GRILLE */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
                 
-                {/* COLONNE GAUCHE (Labo IA + Bibliothèque) */}
+                {/* COLONNE GAUCHE — Apprentissage IA */}
                 <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8">
-                    <Section title={t('home.sections.aiLab')} icon="⚡️">
+                    <Section title="IA &amp; Tuteurs" icon="⚡️">
                         <FeatureCard icon="👨‍🏫" title={t('home.features.tutorsRoom.title')} desc={t('home.features.tutorsRoom.description')} onClick={onNavigateToTutorsRoom} colorClass="bg-primary/10 text-primary"/>
                         <FeatureCard icon="💬" title={t('home.features.chat.title')} desc={t('home.features.chat.description')} onClick={onNavigateToChat} colorClass="bg-accent/10 text-accent"/>
                         <FeatureCard icon="✨" title={t('home.features.aiGenerator.title')} desc={t('home.features.aiGenerator.description')} onClick={onNavigateToAIGenerator} colorClass="bg-primary/10 text-primary"/>
                     </Section>
- 
-                    <Section title={t('home.sections.library')} icon="📚">
+
+                    <Section title="Labs d'Apprentissage" icon="🔬">
+                        <FeatureCard icon="🗣️" title={t('home.features.languageLab.title')} desc={t('home.features.languageLab.description')} onClick={onNavigateToLanguageLab} colorClass="bg-accent/10 text-accent"/>
+                        <FeatureCard icon="🎥" title={t('home.features.videoLearning.title')} desc={t('home.features.videoLearning.description')} onClick={onNavigateToVideoLab} colorClass="bg-error/10 text-error"/>
+                        <FeatureCard icon="🗺️" title={t('home.features.curriculum.title')} desc={t('home.features.curriculum.description')} onClick={onNavigateToCurriculum} colorClass="bg-info/10 text-info"/>
+                    </Section>
+                </div>
+
+                {/* COLONNE DROITE — Entraînement & Suivi */}
+                <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8">
+                    <Section title="Bibliothèque &amp; Révision" icon="📚">
                         <FeatureCard 
                             icon="📂" 
                             title={t('home.features.library.title')} 
@@ -274,23 +283,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             onClick={onNavigateToLibrary} 
                             colorClass="bg-info/10 text-info"
                         />
-                        <FeatureCard icon="🗺️" title={t('home.features.curriculum.title')} desc={t('home.features.curriculum.description')} onClick={onNavigateToCurriculum} colorClass="bg-info/10 text-info"/>
                         <FeatureCard icon="🧠" title={t('home.features.srs.title')} desc={t('home.cardsToReview', { count: dueCardsCount })} onClick={onNavigateToSRS} colorClass="bg-warning/10 text-warning" badge={dueCardsCount}/>
+                        <FeatureCard icon="🌌" title={t('home.features.knowledgeMap.title')} desc={t('home.features.knowledgeMap.description')} onClick={onNavigateToKnowledgeMap} colorClass="bg-accent/10 text-accent"/>
                     </Section>
-                </div>
- 
-                {/* COLONNE DROITE (Zone Entraînement + Analyse) */}
-                <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8">
-                     <Section title={t('home.sections.training')} icon="🎯">
+
+                    <Section title="Entraînement &amp; Progrès" icon="🎯">
                         <FeatureCard icon="📝" title={t('home.features.quiz.title')} desc={t('home.features.quiz.description')} onClick={onNavigateToQuiz} colorClass="bg-success/10 text-success"/>
                         <FeatureCard icon="🔤" title={t('home.features.conjugator.title')} desc={t('home.features.conjugator.description')} onClick={onNavigateToConjugator} colorClass="bg-info/10 text-info"/>
-                        <FeatureCard icon="🗣️" title={t('home.features.languageLab.title')} desc={t('home.features.languageLab.description')} onClick={onNavigateToLanguageLab} colorClass="bg-accent/10 text-accent"/>
-                    </Section>
- 
-                    <Section title={t('home.sections.analysis')} icon="🔭">
-                         <FeatureCard icon="📊" title={t('home.features.stats.title')} desc={t('home.features.stats.description')} onClick={onNavigateToDashboard} colorClass="bg-primary/10 text-primary"/>
-                        <FeatureCard icon="🌌" title={t('home.features.knowledgeMap.title')} desc={t('home.features.knowledgeMap.description')} onClick={onNavigateToKnowledgeMap} colorClass="bg-accent/10 text-accent"/>
-                        <FeatureCard icon="🎥" title={t('home.features.videoLearning.title')} desc={t('home.features.videoLearning.description')} onClick={onNavigateToVideoLab} colorClass="bg-error/10 text-error"/>
+                        <FeatureCard icon="📊" title={t('home.features.stats.title')} desc={t('home.features.stats.description')} onClick={onNavigateToDashboard} colorClass="bg-primary/10 text-primary"/>
                     </Section>
                 </div>
             </div>

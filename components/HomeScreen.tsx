@@ -252,10 +252,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
             </div>
 
-            {/* GRILLE */}
+            {/* GRILLE 2 colonnes */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
                 
-                {/* COLONNE GAUCHE — Apprentissage IA */}
+                {/* COLONNE GAUCHE */}
                 <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8">
                     <Section title="IA &amp; Tuteurs" icon="⚡️">
                         <FeatureCard icon="👨‍🏫" title={t('home.features.tutorsRoom.title')} desc={t('home.features.tutorsRoom.description')} onClick={onNavigateToTutorsRoom} colorClass="bg-primary/10 text-primary"/>
@@ -266,13 +266,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     <Section title="Labs d'Apprentissage" icon="🔬">
                         <FeatureCard icon="🗣️" title={t('home.features.languageLab.title')} desc={t('home.features.languageLab.description')} onClick={onNavigateToLanguageLab} colorClass="bg-accent/10 text-accent"/>
                         <FeatureCard icon="🎥" title={t('home.features.videoLearning.title')} desc={t('home.features.videoLearning.description')} onClick={onNavigateToVideoLab} colorClass="bg-error/10 text-error"/>
-                        <FeatureCard icon="🗺️" title={t('home.features.curriculum.title')} desc={t('home.features.curriculum.description')} onClick={onNavigateToCurriculum} colorClass="bg-info/10 text-info"/>
                     </Section>
                 </div>
 
-                {/* COLONNE DROITE — Entraînement & Suivi */}
+                {/* COLONNE DROITE */}
                 <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8">
                     <Section title="Bibliothèque &amp; Révision" icon="📚">
+                        <FeatureCard icon="🗺️" title={t('home.features.curriculum.title')} desc={t('home.features.curriculum.description')} onClick={onNavigateToCurriculum} colorClass="bg-info/10 text-info"/>
                         <FeatureCard 
                             icon="📂" 
                             title={t('home.features.library.title')} 
@@ -284,14 +284,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             colorClass="bg-info/10 text-info"
                         />
                         <FeatureCard icon="🧠" title={t('home.features.srs.title')} desc={t('home.cardsToReview', { count: dueCardsCount })} onClick={onNavigateToSRS} colorClass="bg-warning/10 text-warning" badge={dueCardsCount}/>
-                        <FeatureCard icon="🌌" title={t('home.features.knowledgeMap.title')} desc={t('home.features.knowledgeMap.description')} onClick={onNavigateToKnowledgeMap} colorClass="bg-accent/10 text-accent"/>
                     </Section>
 
-                    <Section title="Entraînement &amp; Progrès" icon="🎯">
+                    <Section title="Entraînements" icon="🎯">
                         <FeatureCard icon="📝" title={t('home.features.quiz.title')} desc={t('home.features.quiz.description')} onClick={onNavigateToQuiz} colorClass="bg-success/10 text-success"/>
                         <FeatureCard icon="🔤" title={t('home.features.conjugator.title')} desc={t('home.features.conjugator.description')} onClick={onNavigateToConjugator} colorClass="bg-info/10 text-info"/>
-                        <FeatureCard icon="📊" title={t('home.features.stats.title')} desc={t('home.features.stats.description')} onClick={onNavigateToDashboard} colorClass="bg-primary/10 text-primary"/>
                     </Section>
+                </div>
+            </div>
+
+            {/* SECTION PLEINE LARGEUR — Carte du Savoir & Statistiques */}
+            <div className="mt-3 sm:mt-4 md:mt-6 lg:mt-8">
+                <div
+                    className={`flex flex-col gap-2 sm:gap-3 md:gap-4 p-3 sm:p-4 md:p-6 rounded-2xl md:rounded-3xl border shadow-sm transition-all duration-300 ${themeStyle === 'apple' ? 'bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl' : 'bg-white dark:bg-gray-800'}`}
+                    style={{ borderColor: `${themeColors.primary}30`, boxShadow: `0 4px 20px -8px ${themeColors.primary}20` }}
+                >
+                    <h3 className="text-[10px] sm:text-xs font-black flex items-center gap-1.5 uppercase tracking-widest" style={{ color: themeColors.primary }}>
+                        <span className="text-base sm:text-xl filter drop-shadow-sm">🔭</span> Carte du Savoir &amp; Statistiques
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+                        <FeatureCard icon="🌌" title={t('home.features.knowledgeMap.title')} desc={t('home.features.knowledgeMap.description')} onClick={onNavigateToKnowledgeMap} colorClass="bg-accent/10 text-accent"/>
+                        <FeatureCard icon="📊" title={t('home.features.stats.title')} desc={t('home.features.stats.description')} onClick={onNavigateToDashboard} colorClass="bg-primary/10 text-primary"/>
+                    </div>
                 </div>
             </div>
             

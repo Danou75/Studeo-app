@@ -80,10 +80,11 @@ export const en: typeof fr = {
         cardsToReview: "{count} cards to review",
         totalCards: "{count} cards in total",
         sections: {
-            aiLab: "AI Lab & Assistants",
-            library: "Library & Tracking",
-            training: "Training Zone",
-            analysis: "Analysis & Knowledge"
+            aiTutors: "AI & Tutors",
+            learningLabs: "Learning Labs",
+            libraryReview: "Library & Review",
+            training: "Practice & Training",
+            knowledgeStats: "Knowledge Map & Stats"
         },
         features: {
             chat: {

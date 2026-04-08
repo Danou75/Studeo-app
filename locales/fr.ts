@@ -78,10 +78,11 @@ export const fr = {
         cardsToReview: "{count} fiches à réviser",
         totalCards: "{count} fiches au total",
         sections: {
-            aiLab: "Labo IA & Assistants",
-            library: "Bibliothèque & Suivi",
-            training: "Zone d'Entraînement",
-            analysis: "Analyse & Savoir"
+            aiTutors: "IA & Tuteurs",
+            learningLabs: "Labs d'Apprentissage",
+            libraryReview: "Bibliothèque & Révision",
+            training: "Entraînements",
+            knowledgeStats: "Carte du Savoir & Statistiques"
         },
         features: {
             chat: {

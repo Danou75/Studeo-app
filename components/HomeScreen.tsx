@@ -71,15 +71,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                                                     themeStyle === 'apple' ? 'linear-gradient(to right, #1D1D1F, #86868B)' :
                           `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary || themeColors.primary})`;
 
-    const Section = ({ title, icon, children }: { title: string, icon: string, children: React.ReactNode }) => (
+    const Section = ({ title, icon, children, color = themeColors.primary }: { title: string, icon: string, children: React.ReactNode, color?: string }) => (
         <div 
             className={`flex flex-col gap-2 sm:gap-3 md:gap-5 flex-1 p-3 sm:p-4 md:p-6 rounded-2xl md:rounded-3xl border shadow-sm transition-all duration-300 ${themeStyle === 'apple' ? 'bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl' : 'bg-white dark:bg-gray-800'}`}
             style={{ 
-                borderColor: `${themeColors.primary}30`,
-                boxShadow: `0 4px 20px -8px ${themeColors.primary}20`
+                borderColor: `${color}30`,
+                boxShadow: `0 4px 20px -8px ${color}20`
             }}
         >
-            <h3 className={`text-[10px] sm:text-xs font-black flex items-center gap-1.5 uppercase tracking-widest`} style={{ color: themeColors.primary }}>
+            <h3 className={`text-[10px] sm:text-xs font-black flex items-center gap-1.5 uppercase tracking-widest`} style={{ color: color }}>
                 <span className="text-base sm:text-xl filter drop-shadow-sm">{icon}</span> {title}
             </h3>
             <div className="grid gap-2 sm:gap-3 md:gap-4 grid-cols-1 flex-1 content-start">
@@ -158,7 +158,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     <p className="text-gray-500 dark:text-gray-400 text-[10px] sm:text-[10px] md:text-xs font-medium tracking-wide mt-0.5">
                         {themeStyle === 'french' && "L'outil pour tout apprendre"}
                         {themeStyle === 'english' && "The tool to learn everything"}
-                        {themeStyle === 'spanish' && "La herramienta para aprender todo"}
+                        {themeStyle === 'spanish' && "La herramienta para apprendre tout"}
                         {themeStyle === 'italian' && "Lo strumento per imparare tutto"}
                         {themeStyle === 'german' && "Das Werkzeug, um alles zu lernen"}
                         {themeStyle === 'russian' && "Инструмент, чтобы выучить все"}
@@ -180,12 +180,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     {/* Langue UI */}
                     <div className="flex bg-white/80 dark:bg-gray-800/80 rounded-xl p-0.5 shadow-sm border border-gray-200/50 dark:border-gray-700/50">
                         <button 
-                           onClick={() => setLanguage('fr')} 
-                           className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${language === 'fr' ? 'bg-primary text-white shadow-sm' : 'text-gray-400'}`}
+                            onClick={() => setLanguage('fr')} 
+                            className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${language === 'fr' ? 'bg-primary text-white shadow-sm' : 'text-gray-400'}`}
                         >FR</button>
                         <button 
-                           onClick={() => setLanguage('en')} 
-                           className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${language === 'en' ? 'bg-primary text-white shadow-sm' : 'text-gray-400'}`}
+                            onClick={() => setLanguage('en')} 
+                            className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all ${language === 'en' ? 'bg-primary text-white shadow-sm' : 'text-gray-400'}`}
                         >EN</button>
                     </div>
 
@@ -257,21 +257,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 
                 {/* COLONNE GAUCHE */}
                 <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8">
-                    <Section title="IA &amp; Tuteurs" icon="⚡️">
+                    <Section title="IA &amp; Tuteurs" icon="⚡️" color={themeColors.primary}>
                         <FeatureCard icon="👨‍🏫" title={t('home.features.tutorsRoom.title')} desc={t('home.features.tutorsRoom.description')} onClick={onNavigateToTutorsRoom} colorClass="bg-primary/10 text-primary"/>
-                        <FeatureCard icon="💬" title={t('home.features.chat.title')} desc={t('home.features.chat.description')} onClick={onNavigateToChat} colorClass="bg-accent/10 text-accent"/>
+                        <FeatureCard icon="💬" title={t('home.features.chat.title')} desc={t('home.features.chat.description')} onClick={onNavigateToChat} colorClass="bg-primary/10 text-primary"/>
                         <FeatureCard icon="✨" title={t('home.features.aiGenerator.title')} desc={t('home.features.aiGenerator.description')} onClick={onNavigateToAIGenerator} colorClass="bg-primary/10 text-primary"/>
                     </Section>
 
-                    <Section title="Labs d'Apprentissage" icon="🔬">
+                    <Section title="Labs d'Apprentissage" icon="🔬" color={themeColors.accent}>
                         <FeatureCard icon="🗣️" title={t('home.features.languageLab.title')} desc={t('home.features.languageLab.description')} onClick={onNavigateToLanguageLab} colorClass="bg-accent/10 text-accent"/>
-                        <FeatureCard icon="🎥" title={t('home.features.videoLearning.title')} desc={t('home.features.videoLearning.description')} onClick={onNavigateToVideoLab} colorClass="bg-error/10 text-error"/>
+                        <FeatureCard icon="🎥" title={t('home.features.videoLearning.title')} desc={t('home.features.videoLearning.description')} onClick={onNavigateToVideoLab} colorClass="bg-accent/10 text-accent"/>
                     </Section>
                 </div>
 
                 {/* COLONNE DROITE */}
                 <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-8">
-                    <Section title="Bibliothèque &amp; Révision" icon="📚">
+                    <Section title="Bibliothèque &amp; Révision" icon="📚" color={themeColors.info}>
                         <FeatureCard icon="🗺️" title={t('home.features.curriculum.title')} desc={t('home.features.curriculum.description')} onClick={onNavigateToCurriculum} colorClass="bg-info/10 text-info"/>
                         <FeatureCard 
                             icon="📂" 
@@ -283,12 +283,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             onClick={onNavigateToLibrary} 
                             colorClass="bg-info/10 text-info"
                         />
-                        <FeatureCard icon="🧠" title={t('home.features.srs.title')} desc={t('home.cardsToReview', { count: dueCardsCount })} onClick={onNavigateToSRS} colorClass="bg-warning/10 text-warning" badge={dueCardsCount}/>
+                        <FeatureCard icon="🧠" title={t('home.features.srs.title')} desc={t('home.cardsToReview', { count: dueCardsCount })} onClick={onNavigateToSRS} colorClass="bg-info/10 text-info" badge={dueCardsCount}/>
                     </Section>
 
-                    <Section title="Entraînements" icon="🎯">
+                    <Section title="Entraînements" icon="🎯" color={themeColors.success}>
                         <FeatureCard icon="📝" title={t('home.features.quiz.title')} desc={t('home.features.quiz.description')} onClick={onNavigateToQuiz} colorClass="bg-success/10 text-success"/>
-                        <FeatureCard icon="🔤" title={t('home.features.conjugator.title')} desc={t('home.features.conjugator.description')} onClick={onNavigateToConjugator} colorClass="bg-info/10 text-info"/>
+                        <FeatureCard icon="🔤" title={t('home.features.conjugator.title')} desc={t('home.features.conjugator.description')} onClick={onNavigateToConjugator} colorClass="bg-success/10 text-success"/>
                     </Section>
                 </div>
             </div>
@@ -297,20 +297,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="mt-3 sm:mt-4 md:mt-6 lg:mt-8">
                 <div
                     className={`flex flex-col gap-2 sm:gap-3 md:gap-4 p-3 sm:p-4 md:p-6 rounded-2xl md:rounded-3xl border shadow-sm transition-all duration-300 ${themeStyle === 'apple' ? 'bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl' : 'bg-white dark:bg-gray-800'}`}
-                    style={{ borderColor: `${themeColors.primary}30`, boxShadow: `0 4px 20px -8px ${themeColors.primary}20` }}
+                    style={{ borderColor: `${themeColors.secondary || themeColors.primary}30`, boxShadow: `0 4px 20px -8px ${themeColors.secondary || themeColors.primary}20` }}
                 >
-                    <h3 className="text-[10px] sm:text-xs font-black flex items-center gap-1.5 uppercase tracking-widest" style={{ color: themeColors.primary }}>
+                    <h3 className="text-[10px] sm:text-xs font-black flex items-center gap-1.5 uppercase tracking-widest" style={{ color: themeColors.secondary || themeColors.primary }}>
                         <span className="text-base sm:text-xl filter drop-shadow-sm">🔭</span> Carte du Savoir &amp; Statistiques
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-                        <FeatureCard icon="🌌" title={t('home.features.knowledgeMap.title')} desc={t('home.features.knowledgeMap.description')} onClick={onNavigateToKnowledgeMap} colorClass="bg-accent/10 text-accent"/>
-                        <FeatureCard icon="📊" title={t('home.features.stats.title')} desc={t('home.features.stats.description')} onClick={onNavigateToDashboard} colorClass="bg-primary/10 text-primary"/>
+                        <FeatureCard icon="🌌" title={t('home.features.knowledgeMap.title')} desc={t('home.features.knowledgeMap.description')} onClick={onNavigateToKnowledgeMap} colorClass="bg-warning/10 text-warning"/>
+                        <FeatureCard icon="📊" title={t('home.features.stats.title')} desc={t('home.features.stats.description')} onClick={onNavigateToDashboard} colorClass="bg-warning/10 text-warning"/>
                     </div>
                 </div>
             </div>
             
              <div className="text-center text-[10px] mt-4 pb-2 font-mono uppercase tracking-widest opacity-30" style={{ color: themeColors.text }}>
-                Studeo v{__APP_VERSION__}
+                Studeo v3.1.9
             </div>
         </div>
     );

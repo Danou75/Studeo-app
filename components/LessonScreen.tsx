@@ -85,15 +85,18 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
   const openLink = (url: string) => {
     let finalUrl = url;
 
-    // Détection stricte : PWA sur iPad uniquement (où Perplexity bloque les webviews)
-    const isIPadPwa = () => {
+    // Détection stricte : VIEUX iPad PWA uniquement (iPad Air 2 s'arrête à iOS 15)
+    // À partir d'iOS 16, les PWA gèrent mieux "target=_blank" et Perplexity.
+    // L'astuce : Safari 16 a introduit Array.prototype.toReversed. S'il n'existe pas, c'est iOS <= 15.
+    const isOldIPadPwa = () => {
         const isPwa = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
         const isIPad = /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        return isPwa && isIPad;
+        const isOldIOS = typeof (Array.prototype as any).toReversed === 'undefined';
+        return isPwa && isIPad && isOldIOS;
     };
 
-    // Transforme les liens Google/Perplexity en DuckDuckGo UNIQUEMENT sur iPad PWA
-    if (isIPadPwa() && (url.includes('google.com/search') || url.includes('google.fr/search') || url.includes('perplexity.ai/search'))) {
+    // Transforme les liens Google/Perplexity en DuckDuckGo UNIQUEMENT sur vieux iPad PWA
+    if (isOldIPadPwa() && (url.includes('google.com/search') || url.includes('google.fr/search') || url.includes('perplexity.ai/search'))) {
         try {
             const match = url.match(/[?&]q=([^&]+)/);
             if (match && match[1]) {
@@ -113,8 +116,8 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
         return;
     }
 
-    // Ouverture directe (iPhone, Mac Vercel, Android, Navigateurs classiques)
-    if (!isIPadPwa()) {
+    // Ouverture directe (iPhone, Mac Vercel, Android, iPad récents iOS 16+)
+    if (!isOldIPadPwa()) {
         const a = document.createElement('a');
         a.href = finalUrl;
         a.target = '_blank';
@@ -125,7 +128,7 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
         return;
     }
 
-    // Sur iPad PWA (où l'ouverture directe fait un écran blanc bloqué) :
+    // Sur VIEUX iPad PWA (où l'ouverture directe fait un écran blanc bloqué) :
     // On affiche le panneau de lien ("Ouvrir" / "Copier").
     setPendingUrl(finalUrl);
   };
@@ -779,7 +782,7 @@ export const LessonScreen: React.FC<LessonScreenProps> = ({ lesson, onBack, onHo
         
         {/* Footer info */}
         <div className="mt-8 text-center text-text-muted text-sm pb-8">
-            Généré par {tutor?.name} via IA • Studeo <span className="opacity-40 text-xs">v3.1.6</span>
+            Généré par {tutor?.name} via IA • Studeo <span className="opacity-40 text-xs">v3.1.7</span>
         </div>
       </div>
 

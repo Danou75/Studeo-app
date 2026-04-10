@@ -137,9 +137,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     return (
         <div 
             className="flex-1 min-h-0 overflow-y-auto pt-safe p-3 sm:p-4 pb-20 w-full mx-auto transition-colors duration-500"
-            style={{ 
-                background: `linear-gradient(135deg, ${themeColors.background} 0%, ${themeColors.backgroundSecondary} 100%)`
-            }}
         >
             {/* Header / Top Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 sm:mb-6 md:mb-8 pt-1">
@@ -222,6 +219,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     >
                         <i className={`fas text-xs ${user ? 'fa-user-check' : 'fa-cloud-upload-alt'}`}></i>
                     </button>
+
+                    {/* Theme Indicator */}
+                    <div 
+                        className="flex items-center gap-1 px-2 py-1.5 bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm border border-transparent cursor-help"
+                        title={`Thème actuel : ${activeTheme.name} (Cmd+Flèches pour changer)`}
+                    >
+                        <span className="text-sm">{activeTheme.emoji}</span>
+                    </div>
 
                     {/* Thème clair/sombre */}
                     <button 

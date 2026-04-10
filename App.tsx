@@ -50,6 +50,7 @@ import { TUTORS } from "./constants";
 import { ConfirmationProvider } from "./contexts/ConfirmationContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { THEME_STYLES, ThemeStyle } from "./constants/themes";
 import { migrateLocalStorage } from "./utils/migration";
 import { ChatService } from "./services/chatService";
 import { getDeviceName } from "./utils/deviceInfo";
@@ -137,6 +138,36 @@ const AppContent: React.FC = () => {
         return newHistory;
     });
   };
+
+  // Raccourcis clavier pour changer de thème
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Vérifier si un champ de texte est actif pour ne pas court-circuiter la saisie
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          
+          const currentIndex = THEME_STYLES.indexOf(theme.themeStyle as ThemeStyle);
+          let nextIndex = currentIndex;
+          
+          if (e.key === 'ArrowRight') {
+            nextIndex = (currentIndex + 1) % THEME_STYLES.length;
+          } else if (e.key === 'ArrowLeft') {
+            nextIndex = (currentIndex - 1 + THEME_STYLES.length) % THEME_STYLES.length;
+          }
+          
+          const targetTheme = THEME_STYLES[nextIndex];
+          theme.setThemeStyle(targetTheme);
+          coordinator.showToast(`Thème: ${targetTheme}`, 'info', 1000);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [theme.themeStyle, theme.setThemeStyle, coordinator.showToast]);
+
 
   const isInitialSyncProgress = React.useRef(false);
   const [canAutoPush, setCanAutoPush] = React.useState(false);
@@ -1093,13 +1124,16 @@ const AppContent: React.FC = () => {
   return (
     <ThemeProvider value={{ themeMode: theme.themeMode, themeStyle: theme.themeStyle, setThemeMode: theme.setThemeMode, setThemeStyle: theme.setThemeStyle }}>
     <div 
-      className={`h-full w-full overflow-hidden flex flex-col font-sans transition-colors duration-500 ${theme.themeStyle === 'apple' ? 'bg-[#E8E8ED] dark:bg-black' : 'bg-gray-100 dark:bg-gray-900'}`}
-      style={{ height: '100dvh' }}
+      className={`h-full w-full overflow-hidden flex flex-col font-sans transition-colors duration-500 text-text`}
+      style={{ 
+          height: '100dvh',
+          background: `linear-gradient(135deg, var(--color-background) 0%, var(--color-background-secondary) 100%)`
+      }}
     >
         <main className={`mx-auto transition-all duration-500 relative flex flex-col overflow-hidden ${
           theme.themeStyle === 'apple' 
-            ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-3xl border-none md:border border-white/10' 
-            : 'bg-white dark:bg-gray-800 border-none md:border border-border'
+            ? 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-3xl border-none md:border border-white/10' 
+            : 'bg-transparent border-none md:border border-border backdrop-blur-sm'
         } ${
           ['home', 'drawing-tutorial', 'srs-preview', 'tutors-room', 'ai-generator', 'conjugator', 'curriculum', 'setup', 'chat', 'tutor-selection', 'language-lab', 'knowledge-map', 'video-lab', 'dashboard', 'library', 'reviewAll', 'completion', 'lesson', 'exercises', 'drawing-challenge', 'music-challenge', 'chess-challenge', 'progress', 'revision', 'settings', 'saved-lessons', 'quiz'].includes(screen)
             ? 'w-full max-w-6xl flex-1 min-h-0 p-0 md:rounded-3xl md:my-2 shadow-2xl' 

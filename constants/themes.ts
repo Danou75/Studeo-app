@@ -48,9 +48,9 @@ export interface Theme {
   };
 }
 
-// Thème par défaut (Indigo)
-const defaultTheme: Theme = {
-  name: 'Défaut',
+// Thème Classique (Ancien Défaut)
+const classicTheme: Theme = {
+  name: 'Classique Indigo',
   emoji: '🎨',
   description: 'Thème par défaut avec couleurs indigo',
   colors: {
@@ -558,22 +558,73 @@ const polishTheme: Theme = {
   },
 };
 
-export type ThemeStyle = 'default' | 'french' | 'english' | 'italian' | 'spanish' | 'portuguese' | 'german' | 'russian' | 'polish' | 'apple';
- 
- export const THEMES: Record<ThemeStyle, Theme> = {
-   default: defaultTheme,
-   french: frenchTheme,
-   english: englishTheme,
-   italian: italianTheme,
-   spanish: spanishTheme,
-   portuguese: portugueseTheme,
-   german: germanTheme,
-   russian: russianTheme,
-   polish: polishTheme,
-   apple: appleTheme,
- };
- 
- export const THEME_STYLES: ThemeStyle[] = ['default', 'french', 'english', 'italian', 'spanish', 'portuguese', 'german', 'russian', 'polish', 'apple'];
+// Thème Test: Slate (SaaS Moderne)
+const slateTheme: Theme = {
+  name: 'Modern Slate',
+  emoji: '🪨',
+  description: 'Fond grisé/bleuté ultra-doux (Look Premium SaaS)',
+  colors: {
+    ...classicTheme.colors,
+    light: {
+      ...classicTheme.colors.light,
+      background: '#F8FAFC',
+      backgroundSecondary: '#F1F5F9',
+      backgroundTertiary: '#E2E8F0',
+    }
+  }
+};
+
+// Thème Test: Warm (Chaleureux & Naturel)
+const warmTheme: Theme = {
+  name: 'Warm Ivory',
+  emoji: '☕',
+  description: 'Fond blanc cassé chaud, idéal pour la concentration',
+  colors: {
+    ...classicTheme.colors,
+    light: {
+      ...classicTheme.colors.light,
+      background: '#FCFDF8',
+      backgroundSecondary: '#F5F6F0',
+      backgroundTertiary: '#EAEBDB',
+    }
+  }
+};
+
+// Thème Opal (Nouveau Défaut)
+const defaultTheme: Theme = {
+  name: 'Opal Glass (Défaut)',
+  emoji: '✨',
+  description: 'Fond très subtilement teinté d\'indigo/lavande',
+  colors: {
+    ...classicTheme.colors,
+    light: {
+      ...classicTheme.colors.light,
+      background: '#F5F7FF',
+      backgroundSecondary: '#EBEDFA',
+      backgroundTertiary: '#DFE3F2',
+    }
+  }
+};
+
+export type ThemeStyle = 'default' | 'classic' | 'french' | 'english' | 'italian' | 'spanish' | 'portuguese' | 'german' | 'russian' | 'polish' | 'apple' | 'slate' | 'warm';
+  
+  export const THEMES: Record<ThemeStyle, Theme> = {
+    default: defaultTheme,
+    classic: classicTheme,
+    french: frenchTheme,
+    english: englishTheme,
+    italian: italianTheme,
+    spanish: spanishTheme,
+    portuguese: portugueseTheme,
+    german: germanTheme,
+    russian: russianTheme,
+    polish: polishTheme,
+    apple: appleTheme,
+    slate: slateTheme,
+    warm: warmTheme,
+  };
+  
+  export const THEME_STYLES: ThemeStyle[] = ['default', 'classic', 'slate', 'warm', 'apple', 'french', 'english', 'italian', 'spanish', 'portuguese', 'german', 'russian', 'polish'];
  
  export const getThemeGradient = (style: ThemeStyle, mode: ThemeMode): string => {
    const isDark = mode === 'dark'; 
@@ -610,7 +661,7 @@ export type ThemeStyle = 'default' | 'french' | 'english' | 'italian' | 'spanish
         ? 'linear-gradient(135deg, #1D1D1F 0%, #000000 100%)' 
         : 'linear-gradient(135deg, #FFFFFF 0%, #E8E8ED 100%)'; 
      default:
-       const themeColors = THEMES['default'].colors[isDark ? 'dark' : 'light'];
+       const themeColors = THEMES['classic'].colors[isDark ? 'dark' : 'light'];
        return `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.accent} 100%)`;
    }
  };

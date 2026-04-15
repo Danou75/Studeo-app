@@ -1,29 +1,34 @@
 
 import React from 'react';
-import { GamificationData, AnalyticsData, Flashcard, QuizConfig } from '../types';
+import { Flashcard, QuizConfig } from '../types';
 import { Button } from './ui/Button';
 import { ActivityHeatmap } from './ui/ActivityHeatmap';
 import { SkillsRadar } from './ui/SkillsRadar';
 import { NemesisWall } from './ui/NemesisWall';
 import { useTranslation } from '../contexts/LanguageContext';
-import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
-import { deduplicateCards } from '../utils/flashcardHelpers';
-
+import { useTheme } from '../contexts/ThemeContext';
+import { useGamificationStore } from '../stores/useGamificationStore';
+import { deduplicateCards } from "../utils/flashcardHelpers";
+import { getThemeGradient } from "../constants/themes";
+import { useFlashcardStore } from '../stores/useFlashcardStore';
+import { useQuizStore } from '../stores/useQuizStore';
+import { useAnalytics } from '../hooks/useAnalytics';
 interface DashboardScreenProps {
-    gamificationData: GamificationData;
-    analyticsData: AnalyticsData;
-    allFlashcards: Flashcard[];
     onStartQuiz: (cards: Flashcard[], config: QuizConfig) => void;
     onBack: () => void;
-    themeMode: ThemeMode;
-    themeStyle: ThemeStyle;
     onSyncPush?: () => void;
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({ 
-    gamificationData, analyticsData, allFlashcards, onStartQuiz, onBack, themeMode, themeStyle, onSyncPush 
+    onStartQuiz, onBack, onSyncPush 
 }) => {
     const { t } = useTranslation();
+    const { themeMode, themeStyle } = useTheme();
+    const gamificationData = useGamificationStore(s => s.gamificationData);
+    const flashcardSets = useFlashcardStore(s => s.flashcardSets);
+    const allFlashcards = Object.values(flashcardSets).flat();
+    const history = useQuizStore(s => s.history);
+    const analyticsData = useAnalytics(history);
     
     // Formater le temps d'étude
     const formatTime = (seconds: number) => {

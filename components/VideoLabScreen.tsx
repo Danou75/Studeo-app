@@ -6,7 +6,8 @@ import { generateFlashcardsWithAI } from '../services/aiCardGenerator';
 import { useAIConfig } from '../contexts/AIConfigContext';
 import { v4 as uuidv4 } from 'uuid';
 import { Flashcard, Lesson } from '../types';
-import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
+import { getThemeGradient } from '../constants/themes';
+import { useTheme } from '../contexts/ThemeContext';
 import { TUTORS } from '../constants';
 import { AILoader } from './ui/AILoader';
 import ReactMarkdown from 'react-markdown';
@@ -22,21 +23,18 @@ interface VideoLabScreenProps {
     onURLChange?: (url: string) => void;
     initialAnalysis?: { summary?: string; videoTitle?: string } | null;
     onAnalysisChange?: (analysis: { summary?: string; videoTitle?: string } | null) => void;
-    themeMode: ThemeMode;
-    themeStyle: ThemeStyle;
     onNavigateToSettings?: () => void;
 }
 
 export const VideoLabScreen: React.FC<VideoLabScreenProps> = ({ 
     onBack, onAddCards, onCreateSet, onLessonGenerated, onShowSavedLessons,
     initialURL = "", onURLChange, initialAnalysis = null, onAnalysisChange,
-    themeMode,
-    themeStyle,
     onNavigateToSettings
 }) => {
     const { t, language } = useTranslation();
     const { showToast } = useToast();
     const { config } = useAIConfig();
+    const { themeMode, themeStyle } = useTheme();
     
     const [url, setUrl] = useState(initialURL);
     const [videoTitle, setVideoTitle] = useState(initialAnalysis?.videoTitle || '');

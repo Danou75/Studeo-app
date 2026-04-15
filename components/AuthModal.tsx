@@ -2,20 +2,20 @@ import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { Button } from './ui/Button';
 import { useToast } from '../contexts/ToastContext';
-import { ThemeMode, ThemeStyle, getThemeGradient } from '../constants/themes';
+import { getThemeGradient } from '../constants/themes';
 import { useTranslation } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface AuthModalProps {
     isOpen: boolean;
     onClose: () => void;
-    themeMode: ThemeMode;
-    themeStyle: ThemeStyle;
     onForceRefresh?: () => void;
     onResetData?: () => void;
     user: any;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, themeMode, themeStyle, onForceRefresh, onResetData, user }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onForceRefresh, onResetData, user }) => {
+    const { themeMode, themeStyle } = useTheme();
     const { t } = useTranslation();
     const [email, setEmail] = useState(() => localStorage.getItem('studeo_remember_email') || '');
     const [password, setPassword] = useState('');

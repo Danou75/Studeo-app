@@ -1,29 +1,14 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { ReactNode } from 'react';
+import { useLanguageStore } from '../stores/useLanguageStore';
 import { fr, Translations } from '../locales/fr';
 import { en } from '../locales/en';
-
-type Language = 'fr' | 'en';
-
-interface LanguageContextType {
-    language: Language;
-    setLanguage: (lang: Language) => void;
-    t: (key: string, params?: Record<string, any>) => any;
-}
-
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+import { Language } from '../types';
 
 const translations: Record<Language, Translations> = { fr, en };
 
-export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [language, setLanguageState] = useState<Language>(() => {
-        const saved = localStorage.getItem('language');
-        return (saved as Language) || 'fr';
-    });
-
-    const setLanguage = (lang: Language) => {
-        setLanguageState(lang);
-        localStorage.setItem('language', lang);
-    };
+export const useTranslation = () => {
+    const language = useLanguageStore(s => s.language);
+    const setLanguage = useLanguageStore(s => s.setLanguage);
 
     const t = (key: string, params?: Record<string, any>): any => {
         const keys = key.split('.');
@@ -48,17 +33,9 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
         return value;
     };
 
-    return (
-        <LanguageContext.Provider value={{ language, setLanguage, t }}>
-            {children}
-        </LanguageContext.Provider>
-    );
+    return { language, setLanguage, t };
 };
 
-export const useTranslation = () => {
-    const context = useContext(LanguageContext);
-    if (!context) {
-        throw new Error('useTranslation must be used within a LanguageProvider');
-    }
-    return context;
+export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    return <>{children}</>;
 };

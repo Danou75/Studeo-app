@@ -1,7 +1,8 @@
 import React from 'react';
 import { Tutor } from '../types';
 import { TUTORS } from '../constants';
-import { ThemeMode, ThemeStyle, getThemeGradient } from '../constants/themes';
+import { getThemeGradient } from '../constants/themes';
+import { useTheme } from '../contexts/ThemeContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { Button } from './ui/Button';
 
@@ -10,19 +11,16 @@ interface TutorSelectionModalProps {
     onClose: () => void;
     onSelectTutor: (tutor: Tutor) => void;
     guestTutors: Tutor[];
-    themeMode: ThemeMode;
-    themeStyle: ThemeStyle;
 }
 
 export const TutorSelectionModal: React.FC<TutorSelectionModalProps> = ({
     isOpen,
     onClose,
     onSelectTutor,
-    guestTutors,
-    themeMode,
-    themeStyle
+    guestTutors
 }) => {
     const { t } = useTranslation();
+    const { themeMode, themeStyle } = useTheme();
     
     if (!isOpen) return null;
 

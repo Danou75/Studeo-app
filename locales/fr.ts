@@ -845,9 +845,21 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
         conjugateSubtitle: "Conjuguez n'importe quel verbe instantanément",
         translateSubtitle: "Traduisez mots, phrases et expressions"
     },
+    library: {
+        allTeachers: "Tous les professeurs",
+        importSuccess: "Collection \"{name}\" importée !",
+        searchPlaceholder: "Rechercher un set (ex: Italien, Médecine...)",
+        cardsCount: "{count} fiches"
+    },
     curriculum: {
         title: "Mes Leçons & Programmes",
         subtitle: "Programmes sur mesure générés par vos mentors IA",
+        tabs: {
+            programs: "Programmes",
+            lessons: "Leçons",
+            causeries: "Causeries",
+            vocab: "Vocabulaire"
+        },
         new: "Nouveau",
         backToList: "Retour aux parcours",
         deleteTitle: "Supprimer le parcours",
@@ -892,10 +904,14 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
         tabs: {
             chat: "💬 Discussion",
             scenarios: "🎭 Scénarios",
-            study: "🎧 Étude"
+            study: "🎧 Étude",
+            conversation: "🎙️ Conversation",
+            prononciation: "📢 Prononciation",
+            vocab: "✅ Vocab"
         },
         chat: {
             placeholder: "Appuyez sur le micro (ou Espace) pour parler.",
+            inputPlaceholder: "Appuyez sur le micro (ou Espace) pour parler.",
             edit: "Modifier le texte",
             processing: "Réflexion...",
             errorConnection: "Désolé, j'ai eu un problème de connexion.",

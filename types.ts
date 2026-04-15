@@ -469,5 +469,6 @@ export interface SavedVocabList {
   };
   savedAt: string;
   wordCount: number;
+  tutorId?: string;
   chatHistory?: { role: 'system' | 'user' | 'assistant'; content: string }[];
 }

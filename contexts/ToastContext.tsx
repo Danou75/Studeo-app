@@ -1,25 +1,14 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { Toast, ToastType } from '../components/ui/Toast';
+import React, { ReactNode } from 'react';
+import { Toast } from '../components/ui/Toast';
+import { useToastStore } from '../stores/useToastStore';
 
-interface ToastContextType {
-  showToast: (message: string, type?: ToastType, duration?: number) => void;
-}
-
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
-
+// We keep ToastProvider for backward compatibility in App.tsx
+// It's now just a container rendering the global Toast
 export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [toast, setToast] = useState<{ message: string; type: ToastType; duration: number } | null>(null);
-
-  const showToast = useCallback((message: string, type: ToastType = 'info', duration: number = 3000) => {
-    setToast({ message, type, duration });
-  }, []);
-
-  const closeToast = useCallback(() => {
-    setToast(null);
-  }, []);
+  const { toast, closeToast } = useToastStore();
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <>
       {children}
       {toast && (
         <Toast
@@ -29,14 +18,13 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           onClose={closeToast}
         />
       )}
-    </ToastContext.Provider>
+    </>
   );
 };
 
+// Returns exactly what useToast returned in the past
 export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
+  const showToast = useToastStore((state) => state.showToast);
+  
+  return { showToast };
 };

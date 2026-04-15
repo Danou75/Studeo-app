@@ -8,10 +8,11 @@ import { generateStudyProgram } from '../services/curriculumService';
 import { getYouTubeTranscript } from '../services/youtubeService';
 import { Button } from './ui/Button';
 import { useAIConfig } from '../contexts/AIConfigContext';
-import { ThemeMode, ThemeStyle, getThemeGradient } from '../constants/themes';
+import { getThemeGradient } from '../constants/themes';
 import { TUTORS } from '../constants';
 import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { AILoader } from './ui/AILoader';
 
 interface AIGeneratorModalProps {
@@ -26,8 +27,6 @@ interface AIGeneratorModalProps {
     initialTopic?: string;
     initialMode?: 'quiz' | 'lesson' | 'curriculum' | 'mixed-quiz' | undefined;
     initialContext?: string;
-    themeMode: ThemeMode;
-    themeStyle: ThemeStyle;
     onShowSavedLessons?: () => void;
     onNavigateToSettings?: () => void;
     guestTutors?: any[];
@@ -46,8 +45,6 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
     initialTopic = '',
     initialMode,
     initialContext = '',
-    themeMode,
-    themeStyle,
     onShowSavedLessons,
     onNavigateToSettings,
     guestTutors = [],
@@ -60,6 +57,7 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
     const [sourceLang, setSourceLang] = useState('fr');
     const { showToast } = useToast();
     const { t } = useTranslation();
+    const { themeMode, themeStyle } = useTheme();
 
     const { config, setSelectedTutor } = useAIConfig();
 

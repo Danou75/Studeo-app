@@ -1,18 +1,20 @@
-import { useState } from 'react';
+
 import { v4 as uuidv4 } from 'uuid';
 import { Lesson, StudyProgram, Screen, ConversationSession, SavedVocabList } from '../types';
 import { useToast } from '../contexts/ToastContext';
-import { useLocalStorage } from './useLocalStorage';
+import { useStudyContentStore } from '../stores/useStudyContentStore';
 
 export const useStudyContent = () => {
     const { showToast } = useToast();
-    const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
-    const [savedLessons, setSavedLessons] = useLocalStorage<Lesson[]>('savedLessons', []);
-    const [studyPrograms, setStudyPrograms] = useLocalStorage<StudyProgram[]>('studyPrograms', []);
-    const [curriculumSuggestions, setCurriculumSuggestions] = useLocalStorage<any[]>('curriculum_suggestions_catalog', []);
-    const [librarySuggestions, setLibrarySuggestions] = useLocalStorage<any[]>('library_custom_catalog', []);
-    const [savedConvSessions, setSavedConvSessions] = useLocalStorage<ConversationSession[]>('savedConvSessions', []);
-    const [savedVocabLists, setSavedVocabLists] = useLocalStorage<SavedVocabList[]>('savedVocabLists', []);
+    const { 
+        currentLesson, setCurrentLesson,
+        savedLessons, setSavedLessons,
+        studyPrograms, setStudyPrograms,
+        curriculumSuggestions, setCurriculumSuggestions,
+        librarySuggestions, setLibrarySuggestions,
+        savedConvSessions, setSavedConvSessions,
+        savedVocabLists, setSavedVocabLists
+    } = useStudyContentStore();
 
 
     const handleLessonGenerated = (lesson: Lesson, setScreen: (s: Screen) => void) => {

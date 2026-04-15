@@ -1,0 +1,19 @@
+{
+  "version": "3.2.0",
+  "notes": "Mise à jour disponible",
+  "pub_date": "2026-04-12T00:00:00Z",
+  "platforms": {
+    "darwin-x86_64": {
+      "signature": "REPLACE_WITH_SIGNATURE",
+      "url": "https://github.com/Danou75/Studeo-app/releases/download/v3.2.0/StudeoApp_3.2.0_x64.app.tar.gz"
+    },
+    "darwin-aarch64": {
+      "signature": "REPLACE_WITH_SIGNATURE",
+      "url": "https://github.com/Danou75/Studeo-app/releases/download/v3.2.0/StudeoApp_3.2.0_aarch64.app.tar.gz"
+    },
+    "windows-x86_64": {
+      "signature": "REPLACE_WITH_SIGNATURE",
+      "url": "https://github.com/Danou75/Studeo-app/releases/download/v3.2.0/StudeoApp_3.2.0_x64-setup.exe"
+    }
+  }
+}

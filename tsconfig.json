@@ -34,7 +34,12 @@
     "contexts/**/*.ts",
     "contexts/**/*.tsx",
     "locales/**/*.ts",
-    "data/**/*.ts"
+    "data/**/*.ts",
+    "stores/**/*.ts",
+    "stores/**/*.tsx",
+    "routes/**/*.ts",
+    "routes/**/*.tsx",
+    "router.tsx"
   ],
   "exclude": [
     "node_modules",

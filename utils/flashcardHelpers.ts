@@ -45,6 +45,11 @@ export function getQuestionText(card: Flashcard, lang: string): string {
         return card.clozeData.text[lang] || '';
     }
     
+    // Fallback for flat objects
+    if ((card as any)[lang] && typeof (card as any)[lang] === 'string') {
+        return (card as any)[lang];
+    }
+    
     return '';
 }
 
@@ -66,6 +71,11 @@ export function getAnswerText(card: Flashcard, lang: string): string {
     if (isFlashcardCloze(card)) {
         const answers = card.clozeData.answers[lang];
         return Array.isArray(answers) ? answers.join(', ') : '';
+    }
+    
+    // Fallback for flat objects
+    if ((card as any)[lang] && typeof (card as any)[lang] === 'string') {
+        return (card as any)[lang];
     }
     
     return '';

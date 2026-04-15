@@ -3,18 +3,18 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { useKnowledgeMap, KnowledgeNode } from '../hooks/useKnowledgeMap';
 import { Flashcard } from '../types';
 import { Button } from './ui/Button';
-import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
+import { getThemeGradient } from '../constants/themes';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface KnowledgeMapScreenProps {
     flashcardSets: Record<string, Flashcard[]>;
     onBack: () => void;
     onResetProgress: () => void;
-    themeMode: ThemeMode;
-    themeStyle: ThemeStyle;
 }
 
-export const KnowledgeMapScreen: React.FC<KnowledgeMapScreenProps> = ({ flashcardSets, onBack, onResetProgress, themeMode, themeStyle }) => {
+export const KnowledgeMapScreen: React.FC<KnowledgeMapScreenProps> = ({ flashcardSets, onBack, onResetProgress }) => {
     const { t } = useTranslation();
+    const { themeMode, themeStyle } = useTheme();
     const { nodes, edges } = useKnowledgeMap(flashcardSets);
     const [selectedNode, setSelectedNode] = useState<KnowledgeNode | null>(null);
     const containerRef = useRef<SVGSVGElement>(null);

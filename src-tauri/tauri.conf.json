@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "StudeoApp",
-    "version": "3.2.0"
+    "version": "3.2.1"
   },
   "tauri": {
     "allowlist": {
@@ -33,6 +33,14 @@
           "https://www.youtube.com/api/timedtext*"
         ]
       }
+    },
+    "updater": {
+      "active": true,
+      "dialog": false,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE0RjMyRjcxODE2MzM2MkUKUldRdU5tT0JjUy96RkRhMzJWSGMrVUxiNFI3Zi9vVEJHMXMrZ2tqL2N6NEI0Kys5ZGIxL2xTOWwK",
+      "endpoints": [
+        "https://raw.githubusercontent.com/Danou75/Studeo-app/main/releases/latest.json"
+      ]
     },
     "bundle": {
       "active": true,

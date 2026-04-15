@@ -355,9 +355,10 @@ interface VocabularyLabTabProps {
     vocabLabCache?: Record<string, any>;
     onSetVocabLabCache?: React.Dispatch<React.SetStateAction<Record<string, any>>>;
     onLaunchQuiz?: (setName: string) => void;
+    tutorId?: string;
 }
 
-export const VocabularyLabTab: React.FC<VocabularyLabTabProps> = ({ config, activeLang, onAddCards, onSaveVocabList, initialVocab, vocabLabCache, onSetVocabLabCache, onLaunchQuiz }) => {
+export const VocabularyLabTab: React.FC<VocabularyLabTabProps> = ({ config, activeLang, onAddCards, onSaveVocabList, initialVocab, vocabLabCache, onSetVocabLabCache, onLaunchQuiz, tutorId }) => {
     const { showToast } = useToast();
     const [selectedTheme, setSelectedTheme] = useState<string>('');
     const [customTheme, setCustomTheme] = useState('');
@@ -639,6 +640,7 @@ Réponds toujours en français avec les mots en ${targetLangName} en gras (**mot
             relatedThemes: vocabData.relatedThemes,
             savedAt: new Date().toISOString(),
             wordCount: vocabData.words.length,
+            tutorId,
             chatHistory: chatHistory.length > 0 ? chatHistory : undefined,
         };
         onSaveVocabList(saved);
@@ -805,12 +807,16 @@ Réponds toujours en français avec les mots en ${targetLangName} en gras (**mot
                         {(() => {
                             const predefinedLabels = new Set(PREDEFINED_THEMES.map(t => t.label));
                             const RESERVED = new Set(['__active_theme__', '__custom_theme__']);
-                            const cachedCustom = Object.keys(scopedCache).filter(k => !predefinedLabels.has(k) && !RESERVED.has(k));
+                            const cachedCustom = Object.keys(scopedCache).filter(k => (
+                                !predefinedLabels.has(k) && 
+                                !RESERVED.has(k) && 
+                                !k.startsWith('__chat_')
+                            ));
                             if (cachedCustom.length === 0) return null;
                             return (
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mb-1.5">
-                                        <i className="fas fa-history mr-1"></i>Listes personnalisées en mémoire :
+                                        <i className="fas fa-history mr-1"></i>Thèmes personnalisés en mémoire :
                                     </p>
                                     <div className="flex flex-wrap gap-1.5">
                                         {cachedCustom.map(label => (

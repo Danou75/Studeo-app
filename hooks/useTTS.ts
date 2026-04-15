@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 
-export const useTTS = (langCode: string = 'fr-FR') => {
+export const useTTS = (langCode: string = 'fr-FR', tutorId?: string | null) => {
     const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
 
-    const storageKey = `tts_voice_pref_${langCode}`;
+    const storageKey = `tts_voice_pref_${langCode}${tutorId ? `_${tutorId}` : ''}`;
 
     // Load and filter voices
     useEffect(() => {
@@ -49,9 +49,35 @@ export const useTTS = (langCode: string = 'fr-FR') => {
                 voiceToSelect = filtered.find(v => v.name === savedVoiceName);
             }
 
-            // Fallback: pick the first one from our sorted list (which is the "best" one)
-            if (!voiceToSelect) {
-               voiceToSelect = filtered[0];
+            // Fallback: pick the first one from our sorted list (which is the "best" one),
+            // but try to match the tutor's perceived gender if we know it!
+            if (!voiceToSelect && filtered.length > 0) {
+                let preferredGender: 'male' | 'female' | null = null;
+                if (tutorId) {
+                    if (/(mister|mr|maestro|mestre|herr|master|efendi|nauczyciel|prof-)/i.test(tutorId)) {
+                        preferredGender = 'male';
+                    } else if (/(madame|mme|jennifer|irma)/i.test(tutorId)) {
+                        preferredGender = 'female';
+                    }
+                }
+
+                if (preferredGender) {
+                    const genderMatchedVoice = filtered.find(v => {
+                        const vName = v.name.toLowerCase();
+                        if (preferredGender === 'male') {
+                            return vName.includes('male') || vName.includes('man') || vName.includes('boy') || vName.includes('david') || vName.includes('thomas');
+                        } else {
+                            return vName.includes('female') || vName.includes('woman') || vName.includes('girl') || vName.includes('marie') || vName.includes('amelie') || vName.includes('siri');
+                        }
+                    });
+                    if (genderMatchedVoice) {
+                        voiceToSelect = genderMatchedVoice;
+                    }
+                }
+
+                if (!voiceToSelect) {
+                    voiceToSelect = filtered[0];
+                }
             }
 
             // Only update if different (to avoid loops if selectedVoice is already set correctly)
@@ -71,7 +97,7 @@ export const useTTS = (langCode: string = 'fr-FR') => {
         return () => {
             window.speechSynthesis.onvoiceschanged = null;
         };
-    }, [langCode, storageKey]); // Removed selectedVoice from deps to avoid loop logic issues
+    }, [langCode, tutorId, storageKey]); // Removed selectedVoice from deps to avoid loop logic issues
 
     const updateSelectedVoice = useCallback((voice: SpeechSynthesisVoice) => {
         setSelectedVoice(voice);

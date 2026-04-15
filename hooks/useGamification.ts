@@ -1,15 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
-import { GamificationData, Achievement } from '../types';
-import { INITIAL_GAMIFICATION_DATA, checkAchievements } from '../utils/achievements';
-import { useLocalStorage } from './useLocalStorage';
-
+import { useGamificationStore } from '../stores/useGamificationStore';
+import { useCallback, useEffect } from 'react';
+import { checkAchievements } from '../utils/achievements';
 export const useGamification = () => {
-  const [gamificationData, setGamificationData] = useLocalStorage<GamificationData>(
-    'flashcardsGamification',
-    INITIAL_GAMIFICATION_DATA
-  );
-
-  const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
+  const { gamificationData, setGamificationData, newAchievements, setNewAchievements } = useGamificationStore();
 
   // Synchronisation automatique au chargement (migration/rétroactif)
   useEffect(() => {

@@ -6,7 +6,8 @@ import { ChatService, ChatSession, ChatMessage } from '../services/chatService';
 import { useAIConfig } from '../contexts/AIConfigContext';
 import { useToast } from '../contexts/ToastContext';
 import { Flashcard } from '../types';
-import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
+import { getThemeGradient } from '../constants/themes';
+import { useTheme } from '../contexts/ThemeContext';
 import { AILoader } from './ui/AILoader';
 
 interface ChatScreenProps {
@@ -15,8 +16,6 @@ interface ChatScreenProps {
     tutorSubject?: string;
     tutorStyle?: string;
     onStartQuiz?: (cards: Flashcard[]) => void;
-    themeMode: ThemeMode;
-    themeStyle: ThemeStyle;
 }
 
 export const ChatScreen: React.FC<ChatScreenProps> = ({ 
@@ -24,12 +23,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     tutorName: initialTutorName,
     tutorSubject: initialTutorSubject,
     tutorStyle: initialTutorStyle,
-    onStartQuiz,
-    themeMode,
-    themeStyle
+    onStartQuiz
 }) => {
     const { showToast } = useToast();
     const config = useAIConfig();
+    const { themeMode, themeStyle } = useTheme();
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);

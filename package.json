@@ -1,7 +1,7 @@
 {
   "name": "studeo",
   "private": true,
-  "version": "3.2.0",
+  "version": "3.2.1",
   "engines": {
     "node": "22.x"
   },
@@ -23,15 +23,22 @@
     "@google/genai": "^1.29.0",
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.91.1",
+    "@tanstack/react-query": "^5.99.0",
     "@tauri-apps/api": "^1.6.0",
+    "brace-expansion": "^2.0.3",
     "canvas-confetti": "^1.9.4",
     "chess.js": "^1.4.0",
+    "idb-keyval": "^6.2.2",
+    "minimatch": "^3.1.4",
+    "picomatch": "^2.3.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^8.0.7",
+    "react-router-dom": "^7.14.0",
     "remark-gfm": "^3.0.1",
     "uuid": "^9.0.1",
-    "youtube-transcript": "^1.2.1"
+    "youtube-transcript": "^1.2.1",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1.6.0",
@@ -45,6 +52,7 @@
     "@vercel/node": "^5.0.0",
     "@vitejs/plugin-legacy": "^7.2.1",
     "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/coverage-v8": "^4.1.4",
     "autoprefixer": "^10.4.22",
     "jsdom": "^27.3.0",
     "postcss": "^8.5.6",

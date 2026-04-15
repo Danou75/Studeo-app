@@ -1,10 +1,13 @@
-
-import { ThemeMode, ThemeStyle, THEMES } from '../constants/themes';
+import { THEMES } from '../constants/themes';
 import { useTranslation } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { useGamificationStore } from '../stores/useGamificationStore';
+import { useFlashcardStore } from '../stores/useFlashcardStore';
+
+import { useAppCoordinator } from '../hooks/useAppCoordinator';
+
 
 interface HomeScreenProps {
-    streak: number;
-    dueCardsCount: number;
     onNavigateToQuiz: () => void;
     onNavigateToSRS: () => void;
     onNavigateToAIGenerator: () => void;
@@ -18,11 +21,6 @@ interface HomeScreenProps {
     onNavigateToVideoLab: () => void;
     onNavigateToChat: () => void;
     onNavigateToLanguageLab: () => void;
-    flashcardSets: Record<string, any[]>;
-    themeMode: ThemeMode;
-    themeStyle: ThemeStyle;
-    onThemeModeChange: (mode: ThemeMode) => void;
-    onThemeStyleChange: (style: ThemeStyle) => void;
     onShowHelp: () => void;
     onOpenAuth: () => void;
     onSyncPush?: () => void;
@@ -31,8 +29,6 @@ interface HomeScreenProps {
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
-    streak,
-    dueCardsCount,
     onNavigateToQuiz,
     onNavigateToSRS,
     onNavigateToAIGenerator,
@@ -46,11 +42,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     onNavigateToVideoLab,
     onNavigateToChat,
     onNavigateToLanguageLab,
-    flashcardSets,
-    themeMode,
-    themeStyle,
-    onThemeModeChange,
-    onThemeStyleChange: _onThemeStyleChange,
     onShowHelp,
     onOpenAuth,
     onSyncPush,
@@ -58,6 +49,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     user
 }) => {
     const { t, language, setLanguage } = useTranslation();
+    const { themeMode, themeStyle, setThemeMode } = useTheme();
+    const streak = useGamificationStore(s => s.gamificationData.streak.currentStreak);
+    const coordinator = useAppCoordinator();
+    const flashcardSets = useFlashcardStore(s => s.flashcardSets);
+    
+    // On calcule le nombre de cartes dues final avec la même logique que la méthode de révision SRS
+    const dueCardsCount = coordinator.getSRSDueCardsDetails().cards.length;
 
     // Récupération du thème actif pour le style dynamique
     const activeTheme = THEMES[themeStyle] || THEMES.default;
@@ -230,7 +228,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
                     {/* Thème clair/sombre */}
                     <button 
-                        onClick={() => onThemeModeChange(themeMode === 'dark' ? 'light' : 'dark')} 
+                        onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')} 
                         className="p-2 bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm text-gray-400 hover:text-primary transition-colors border border-transparent"
                         title={themeMode === 'dark' ? 'Mode clair' : 'Mode sombre'}
                     >

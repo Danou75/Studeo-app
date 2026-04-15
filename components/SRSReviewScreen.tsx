@@ -2,7 +2,8 @@ import React from 'react';
 import { Flashcard, Language } from '../types';
 import { Button } from './ui/Button';
 import { useTranslation } from '../contexts/LanguageContext';
-import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
+import { getThemeGradient } from '../constants/themes';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface SRSReviewScreenProps {
   dueCards: Flashcard[];
@@ -10,8 +11,6 @@ interface SRSReviewScreenProps {
   answerLang: Language;
   onStartReview: () => void;
   onCancel: () => void;
-  themeMode: ThemeMode;
-  themeStyle: ThemeStyle;
 }
 
 export const SRSReviewScreen: React.FC<SRSReviewScreenProps> = ({
@@ -19,10 +18,9 @@ export const SRSReviewScreen: React.FC<SRSReviewScreenProps> = ({
   questionLang,
   answerLang,
   onStartReview,
-  onCancel,
-  themeMode,
-  themeStyle
+  onCancel
 }) => {
+  const { themeMode, themeStyle } = useTheme();
   const { t } = useTranslation();
 
   const formatDate = (isoString: string) => {
@@ -109,13 +107,13 @@ export const SRSReviewScreen: React.FC<SRSReviewScreenProps> = ({
               ? card.terms[questionLang] 
               : card.type === 'mcq' && card.mcqData 
               ? card.mcqData.question[questionLang]
-              : '';
+              : ((card as any)[questionLang] || '');
             
             const answer = card.type === 'classic' && card.terms 
               ? card.terms[answerLang] 
               : card.type === 'mcq' && card.mcqData 
               ? card.mcqData.answer[answerLang]
-              : '';
+              : ((card as any)[answerLang] || '');
 
             const interval = card.srsData?.interval ?? 0;
             const mastery = getMasteryLevel(interval);

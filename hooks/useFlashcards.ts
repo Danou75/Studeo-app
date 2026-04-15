@@ -1,4 +1,4 @@
-import { useLocalStorage } from './useLocalStorage';
+import { useFlashcardStore } from '../stores/useFlashcardStore';
 import { Flashcard } from '../types';
 import { DEFAULT_FLASHCARDS, DEFAULT_FLASHCARD_SET_NAME, CUSTOM_CARDS_NAME } from '../constants';
 import { parseFile } from '../services/fileParser';
@@ -12,10 +12,7 @@ import { useConfirmation } from '../contexts/ConfirmationContext';
 export const useFlashcards = () => {
     const { showToast } = useToast();
     const { showConfirmation } = useConfirmation();
-    const [flashcardSets, setFlashcardSets] = useLocalStorage<Record<string, Flashcard[]>>('flashcardSets', {
-        [DEFAULT_FLASHCARD_SET_NAME]: DEFAULT_FLASHCARDS,
-    });
-    const [currentSetName, setCurrentSetName] = useLocalStorage<string>('currentFlashcardSet', DEFAULT_FLASHCARD_SET_NAME);
+    const { flashcardSets, setFlashcardSets, setFlashcardSetsMetadata, currentSetName, setCurrentSetName } = useFlashcardStore();
     
     const allFlashcards = useMemo(() => flashcardSets[currentSetName] || [], [flashcardSets, currentSetName]);
 
@@ -140,10 +137,14 @@ export const useFlashcards = () => {
         }));
     };
 
-    const createSet = (name: string, cards: Flashcard[]) => {
+    const createSet = (name: string, cards: Flashcard[], tutorId?: string) => {
         setFlashcardSets(prev => ({
             ...prev,
             [name]: cards
+        }));
+        setFlashcardSetsMetadata(prev => ({
+            ...prev,
+            [name]: { createdAt: Date.now(), tutorId }
         }));
         setCurrentSetName(name);
     };

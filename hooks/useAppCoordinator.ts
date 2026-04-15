@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
 import { useAIConfig } from '../contexts/AIConfigContext';
 import { useToast } from '../contexts/ToastContext';
 import { useFlashcards } from '../hooks/useFlashcards';
-import { useQuizSession } from '../hooks/useQuizSession';
+import { useQuizSessionStore } from '../stores/useQuizSessionStore';
+import { useQuizStore } from '../stores/useQuizStore';
 import { useGamification } from '../hooks/useGamification';
 import { useAnalytics } from '../hooks/useAnalytics';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../contexts/ThemeContext';
 import { useSRS } from '../hooks/useSRS';
 import { useAppNavigation } from '../hooks/useAppNavigation';
+import { useConfirmation } from '../contexts/ConfirmationContext';
 import { useStudyContent } from '../hooks/useStudyContent';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import { Flashcard, QuizConfig, Lesson, StudyProgram, StudyModule, Tutor, TutorCategory, QuizResult, UpdateStatus } from '../types';
+import { Flashcard, QuizConfig, Lesson, StudyProgram, StudyModule, Tutor, QuizResult, Language } from '../types';
 
 import { generateModuleContent, generateBonusExercises } from '../services/curriculumService';
 import { generateExercisesFromLesson } from '../services/exerciseGenerationService';
@@ -21,7 +21,12 @@ import { INITIAL_GAMIFICATION_DATA } from '../utils/achievements';
 import { getAIClientConfig } from '../utils/aiConfigHelper';
 import { deduplicateCards } from '../utils/flashcardHelpers';
 import { clearAudioCache } from '../services/geminiService';
-import { ChatMessage } from '../services/conversationService';
+import { useTutorStore } from '../stores/useTutorStore';
+import { useUIStore } from '../stores/useUIStore';
+import { useUpdater } from '../hooks/useUpdater';
+import { useGenerateCards } from '../hooks/useGenerateCards';
+import { useGenerateLesson } from '../hooks/useGenerateLesson';
+import { useGenerateCurriculum } from '../hooks/useGenerateCurriculum';
 
 
 
@@ -34,69 +39,29 @@ export const useAppCoordinator = () => {
     const { config, setSelectedTutor } = useAIConfig();
     const { showToast } = useToast();
 
-    const [voiceEngine, setVoiceEngine] = useState<QuizConfig["voiceEngine"]>("local");
-    const [autoPlayAudio, setAutoPlayAudio] = useState(true);
-    const [isProgramCompleted, setIsProgramCompleted] = useState(false);
+    const { 
+        voiceEngine, setVoiceEngine, autoPlayAudio, setAutoPlayAudio,
+        aiModalInitialTopic, setAiModalInitialTopic, aiModalInitialMode, setAiModalInitialMode,
+        aiModalInitialContext, setAiModalInitialContext, srsPreviewCards, setSrsPreviewCards,
+        srsPreviewConfig, setSrsPreviewConfig,
+        targetedLessons, setTargetedLessons, vocabLabCache, setVocabLabCache,
+        videoLabURL, setVideoLabURL, videoLabAnalysis, setVideoLabAnalysis,
+        isProgramCompleted, setIsProgramCompleted,
+    } = useUIStore();
 
-    // SRS Preview State (Peut être extrait dans un useSRSUI plus tard)
-    const [srsPreviewCards, setSrsPreviewCards] = useState<Flashcard[]>([]);
-    const [srsPreviewConfig, setSrsPreviewConfig] = useState<Omit<QuizConfig, "voiceEngine" | "autoPlayAudio" | "quizName"> | null>(null);
-
-    // AI Modal State
-    const [aiModalInitialTopic, setAiModalInitialTopic] = useState("");
-    const [aiModalInitialMode, setAiModalInitialMode] = useState<"quiz" | "lesson" | "curriculum" | "mixed-quiz" | undefined>(undefined);
-    const [aiModalInitialContext, setAiModalInitialContext] = useState<string | undefined>(undefined);
-    
-    // Cache pour la persistence du générateur IA par topic
-    const [aiGenCache, setAiGenCache] = useState<Record<string, any>>({});
-    const clearAiGenCache = () => {
-        setAiGenCache({});
-        setTargetedLessons({}); // On vide aussi les leçons interactives
-    };
-
-    // Leçons interactives persistantes pour le LanguageLab
-    const [targetedLessons, setTargetedLessons] = useState<Record<string, ChatMessage[]>>({});
-
-    // Vocab Lab Cache (transient per-session persistence for generated vocab lists)
-    const [vocabLabCache, setVocabLabCache] = useState<Record<string, any>>({});
-
-    // Guest Tutors (Multiple)
-    const [guestTutors, setGuestTutors] = useLocalStorage<Tutor[]>('guestTutors', []);
-
-    // Helper functions for guest tutors
-    const addGuestTutor = (tutor: Tutor) => {
-        setGuestTutors(prev => [...prev, tutor]);
-    };
-
-    const updateGuestTutor = (tutorId: string, updatedTutor: Tutor) => {
-        setGuestTutors(prev => prev.map(t => t.id === tutorId ? updatedTutor : t));
-    };
-
-    const removeGuestTutor = (tutorId: string) => {
-        setGuestTutors(prev => prev.filter(t => t.id !== tutorId));
-    };
-
-    // Tutors Room State persistence
-    const [tutorsRoomCategory, setTutorsRoomCategory] = useState<TutorCategory>('languages');
-
-    // Video Lab State persistence
-    const [videoLabURL, setVideoLabURL] = useState("");
-    const [videoLabAnalysis, setVideoLabAnalysis] = useState<{ summary?: string; videoTitle?: string } | null>(null);
-
-    // Update State
-    const [latestVersion, setLatestVersion] = useState<string | null>(null);
-    const [updateStatus, setUpdateStatus] = useState<UpdateStatus>(null);
-    const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+    const { guestTutors, setGuestTutors, tutorsRoomCategory, setTutorsRoomCategory, addGuestTutor, updateGuestTutor, removeGuestTutor } = useTutorStore();
 
     // ------------------------------------------------------------
     // 2. LOGIC HOOKS INTEGRATION
     // ------------------------------------------------------------
     const flashcards = useFlashcards();
-    const quizSession = useQuizSession();
+    const quizSession = useQuizSessionStore();
+    const { history } = useQuizStore();
     const gamification = useGamification();
-    const analyticsData = useAnalytics(quizSession.history);
+    const analyticsData = useAnalytics(history);
     const srs = useSRS();
     const theme = useTheme();
+    const { showConfirmation } = useConfirmation();
 
     // ------------------------------------------------------------
     // 3. COMPUTED DATA
@@ -129,94 +94,16 @@ export const useAppCoordinator = () => {
     const availableLanguages = Array.from(new Set(["fr", "en", "es", "it", "pt", "de", ...detectedLanguages]));
 
     // ------------------------------------------------------------
-    // 4. AUTO-UPDATE CHECK
+    // 4. UPDATER (Tauri natif + web fallback)
     // ------------------------------------------------------------
-    const checkForUpdates = async (silent = true) => {
-        setIsCheckingUpdate(true);
-        console.log("[UpdateCheck] Starting check...");
-        try {
-            // Priority: Try relative version.json if running as Web/PWA
-            // Fallback: GitHub Raw URL
-            const isWeb = typeof window !== 'undefined' && !window.__TAURI_IPC__;
-            let checkUrl = `https://raw.githubusercontent.com/Danou75/Studeo-app/refs/heads/main/public/version.json?t=${Date.now()}`;
-            
-            // On web, try to hit the same server to avoid CORS/GitHub blocks
-            if (isWeb) {
-                try {
-                    const localRes = await fetch(`/version.json?t=${Date.now()}`);
-                    if (localRes.ok) {
-                        const localData = await localRes.json();
-                        if (localData.version) {
-                            console.log("[UpdateCheck] Successfully fetched from local origin.");
-                            processVersionResult(localData.version, silent);
-                            return;
-                        }
-                    }
-                } catch (e) {
-                    console.log("[UpdateCheck] Local origin fetch failed, falling back to GitHub...");
-                }
-            }
+    const updater = useUpdater(showToast);
 
-            const response = await fetch(checkUrl);
-            if (!response.ok) throw new Error(`Dépôt GitHub injoignable (${response.status})`);
-            
-            const data = await response.json();
-            processVersionResult(data.version, silent);
-        } catch (err) {
-            console.error("[UpdateCheck] Error:", err);
-            setUpdateStatus('error');
-            const isNetworkError = err instanceof Error && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'));
-            if (!silent) {
-                const message = isNetworkError 
-                    ? "Connexion au serveur GitHub impossible. Vérifiez votre internet."
-                    : "Erreur lors de la vérification des mises à jour.";
-                showToast(message, "error");
-            }
-        } finally {
-            setIsCheckingUpdate(false);
-        }
-    };
-
-    const processVersionResult = (remoteVersion: string, silent: boolean) => {
-        // @ts-ignore - __APP_VERSION__ is defined by Vite
-        const currentVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '2.7.2';
-
-        console.log(`[UpdateCheck] Version Comparison - Local: v${currentVersion}, Remote: v${remoteVersion}`);
-        setLatestVersion(remoteVersion);
-        
-        // Proper semantic version comparison (v1.v2.v3)
-        const remoteParts = remoteVersion.split('.').map(Number);
-        const currentParts = currentVersion.split('.').map(Number);
-        
-        let isNewer = false;
-        for (let i = 0; i < 3; i++) {
-            if ((remoteParts[i] || 0) > (currentParts[i] || 0)) {
-                isNewer = true;
-                break;
-            }
-            if ((remoteParts[i] || 0) < (currentParts[i] || 0)) {
-                break;
-            }
-        }
-
-        if (isNewer) {
-            setUpdateStatus('available');
-            if (!silent) showToast(`🚀 Une nouvelle version (v${remoteVersion}) est disponible !`, "info", 10000);
-        } else {
-            setUpdateStatus('up-to-date');
-            if (!silent) showToast("Votre application est à jour ! 🎉", "success");
-        }
-    }
-
-    // Initial check at launch
-    useEffect(() => {
-        // En différé pour ne pas ralentir le démarrage immédiat
-        console.log("[UpdateCheck] Initial check scheduled in 5s...");
-        const timer = setTimeout(() => {
-            checkForUpdates(true);
-        }, 5000);
-        return () => clearTimeout(timer);
-    }, []);
+    // ------------------------------------------------------------
+    // 5. GENERATEURS IA (React Query)
+    // ------------------------------------------------------------
+    const cardGen      = useGenerateCards();
+    const lessonGen    = useGenerateLesson();
+    const curriculumGen = useGenerateCurriculum();
 
 
     // ------------------------------------------------------------
@@ -258,9 +145,10 @@ export const useAppCoordinator = () => {
     };
 
     const handleLaunchAIVocabQuiz = (topic: string, mode: 'quiz' | 'lesson' | 'curriculum' | 'mixed-quiz' | undefined = 'quiz', context?: string) => {
-        // Si on a déjà généré des fiches pour ce topic dans cette session, on va direct au setup
-        if (aiGenCache[topic] && aiGenCache[topic].cards) {
-            handleAICardsGenerated(aiGenCache[topic].cards);
+        // Vérifier le cache React Query avant de lancer la génération
+        const cached = cardGen.getCachedCards(topic, config.provider, config.geminiModel);
+        if (cached) {
+            handleAICardsGenerated(cached);
             return;
         }
 
@@ -503,11 +391,12 @@ export const useAppCoordinator = () => {
         }
     };
 
-    const handleNavigateToSRS = () => {
-        const dueCards = srs.getDueCards(flashcards.allFlashcards);
+    const getSRSDueCardsDetails = () => {
+        const allCardsAggregated = Object.values(flashcards.flashcardSets).flat() as Flashcard[];
+        const dueCards = srs.getDueCards(allCardsAggregated);
+        
         if (dueCards.length === 0) {
-            showToast("Aucune carte à réviser pour le moment. Revenez plus tard ! 🎉", "info");
-            return;
+            return { cards: [], questionLang: 'fr', answerLang: 'en' };
         }
 
         // Détection dynamique de langue (simplifié)
@@ -560,16 +449,22 @@ export const useAppCoordinator = () => {
             return (card as any)[questionLang] && (card as any)[answerLang];
         });
 
-         if (validDueCards.length === 0) {
-            showToast(`Aucune carte à réviser pour la paire ${questionLang.toUpperCase()} - ${answerLang.toUpperCase()}.`, 'info');
+        const uniqueCards = deduplicateCards(validDueCards, questionLang, answerLang);
+        return { cards: uniqueCards, questionLang, answerLang };
+    };
+
+    const handleNavigateToSRS = () => {
+        const { cards, questionLang, answerLang } = getSRSDueCardsDetails();
+
+        if (cards.length === 0) {
+            showToast("Aucune carte à réviser pour le moment. Revenez plus tard ! 🎉", "info");
             return;
         }
 
-        const uniqueCards = deduplicateCards(validDueCards, questionLang, answerLang);
-        const shuffledCards = [...uniqueCards].sort(() => 0.5 - Math.random());
+        const shuffledCards = [...cards].sort(() => 0.5 - Math.random());
         onShowSRSPreview(shuffledCards, {
-            questionLang,
-            answerLang,
+            questionLang: questionLang as Language,
+            answerLang: answerLang as Language,
             voiceGender: "female",
             mode: "classic",
             gameMode: "normal",
@@ -622,6 +517,38 @@ export const useAppCoordinator = () => {
         }
     };
 
+    const getPersistentErrorCards = (allFlashcards: Flashcard[]) => {
+        const errorThreshold = 2;
+        const persistentErrors = useQuizStore.getState().persistentErrors;
+        return allFlashcards.filter(card => (persistentErrors[card.id] || 0) >= errorThreshold);
+    };
+
+    const deleteHistoryEntry = (entryId: number) => {
+        showConfirmation({
+            title: "Supprimer l'historique",
+            message: "Êtes-vous sûr de vouloir supprimer cette entrée de l'historique ?",
+            variant: 'warning',
+            onConfirm: () => {
+                useQuizStore.getState().setHistory(prev => prev.filter(entry => entry.id !== entryId));
+            }
+        });
+    };
+
+    const resetPersistentError = (cardId: string) => {
+        showConfirmation({
+            title: "Réinitialiser l'erreur",
+            message: "Êtes-vous sûr de vouloir réinitialiser les erreurs de cette carte ?",
+            variant: 'info',
+            onConfirm: () => {
+                useQuizStore.getState().setPersistentErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors[cardId];
+                    return newErrors;
+                });
+            }
+        });
+    };
+
     const onSaveEditedCardsWrapper = (jsonString: string) => {
         const success = flashcards.handleSaveEditedCards(jsonString);
         if (success) navigation.setIsEditModalOpen(false);
@@ -629,14 +556,8 @@ export const useAppCoordinator = () => {
     };
 
     const handleAICardsGenerated = (newCards: Flashcard[]) => {
-        // Si on a un topic initial (provient du labo de langue), on cache
-        if (aiModalInitialTopic) {
-            setAiGenCache(prev => ({
-                ...prev,
-                [aiModalInitialTopic]: { ...prev[aiModalInitialTopic], cards: newCards }
-            }));
-        }
-
+        // Le cache React Query est alimenté automatiquement via useGenerateCards.mutateAsync
+        // (onSuccess dans useGenerateCards.ts). Rien à faire ici.
         const newListName = `Généré par IA (${new Date().toLocaleTimeString()})`;
         flashcards.setFlashcardSets((prev: Record<string, Flashcard[]>) => ({ ...prev, [newListName]: newCards }));
         flashcards.setCurrentSetName(newListName);
@@ -812,15 +733,21 @@ export const useAppCoordinator = () => {
         
         aiModalInitialTopic, aiModalInitialMode, aiModalInitialContext,
         setAiModalInitialContext,
-        aiGenCache,
-        setAiGenCache,
-        clearAiGenCache,
+        // React Query cache helpers (remplace aiGenCache)
+        getCachedCards:      cardGen.getCachedCards,
+        clearCardCache:      cardGen.clearCardCache,
+        getCachedLesson:     lessonGen.getCachedLesson,
+        getCachedCurriculum: curriculumGen.getCachedCurriculum,
         targetedLessons,
         setTargetedLessons,
         
         // Hooks Data
         flashcards,
         quizSession,
+        history,
+        getPersistentErrorCards,
+        deleteHistoryEntry,
+        resetPersistentError,
         gamification,
         analyticsData,
         srs,
@@ -862,6 +789,7 @@ export const useAppCoordinator = () => {
         handleInteractiveExercises,
         handleExerciseComplete,
         handleNavigateToSRS,
+        getSRSDueCardsDetails,
         onQuizEnd,
         onSaveEditedCardsWrapper,
         handleNavigateToAIGenerator,
@@ -880,8 +808,8 @@ export const useAppCoordinator = () => {
             studyContent.setCurriculumSuggestions([]);
             studyContent.setLibrarySuggestions([]);
             gamification.setGamificationData(INITIAL_GAMIFICATION_DATA);
-            quizSession.setHistory([]);
-            quizSession.setPersistentErrors({});
+            useQuizStore.getState().setHistory([]);
+            useQuizStore.getState().setPersistentErrors({});
             ChatService.clearAllSessions();
         },
         
@@ -894,10 +822,12 @@ export const useAppCoordinator = () => {
         videoLabAnalysis, setVideoLabAnalysis,
         isProgramCompleted, setIsProgramCompleted,
         
-        // Update Management
-        latestVersion,
-        updateStatus,
-        isCheckingUpdate,
-        checkForUpdates
+        // Update Management (délégué à useUpdater)
+        latestVersion:      updater.latestVersion,
+        updateStatus:       updater.updateStatus,
+        isCheckingUpdate:   updater.isCheckingUpdate,
+        updateNotes:        updater.updateNotes,
+        checkForUpdates:    updater.checkForUpdates,
+        installAndRelaunch: updater.installAndRelaunch,
     };
 };

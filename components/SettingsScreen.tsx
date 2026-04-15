@@ -19,7 +19,9 @@ interface SettingsScreenProps {
   latestVersion: string | null;
   updateStatus: UpdateStatus;
   isCheckingUpdate: boolean;
+  updateNotes?: string | null;
   onCheckUpdate: (silent?: boolean) => void;
+  onInstallUpdate?: () => Promise<void>;
 }
 
 import { UpdateStatus } from '../types';
@@ -34,7 +36,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   latestVersion,
   updateStatus,
   isCheckingUpdate,
-  onCheckUpdate
+  updateNotes,
+  onCheckUpdate,
+  onInstallUpdate,
 }) => {
   const { config, updateConfig, setGeminiApiKey } = useAIConfig();
   const { showToast } = useToast();
@@ -51,7 +55,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   });
 
   const DEFAULT_GEMINI_MODELS = [
-    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.5 Flash-Lite (Recommandé ✨)' },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Recommandé ✨)' },
     { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Stable & Performant ✅)' },
     { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Classique)' },
     { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Haute Précision)' },
@@ -94,8 +98,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 }))
                 .sort((a: any, b: any) => b.id.localeCompare(a.id));
             
-            setGeminiModelsList(models);
-            localStorage.setItem('studeo_gemini_models', JSON.stringify(models));
+            // Deduplicate models by ID to avoid React key warnings
+            const uniqueModels = Array.from(new Map<string, {id: string, name: string}>(models.map((m: any) => [m.id, m])).values());
+            
+            setGeminiModelsList(uniqueModels);
+            localStorage.setItem('studeo_gemini_models', JSON.stringify(uniqueModels));
+
+            // Auto-select 2.5 Flash if available
+            if (uniqueModels.some((m: {id: string}) => m.id === 'gemini-2.5-flash')) {
+                updateConfig({ geminiModel: 'gemini-2.5-flash' });
+            } else if (!config.geminiModel && uniqueModels.length > 0) {
+                updateConfig({ geminiModel: uniqueModels[0].id });
+            }
         } else if (data.error) {
             throw new Error(data.error.message);
         }
@@ -565,8 +579,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             </div>
                         )}
                         {updateStatus === 'available' && (
-                            <div className="mt-3 text-center text-accent text-xs font-bold animate-pulse">
-                                {t(`🚀 v${latestVersion} disponible !`)}
+                            <div className="mt-3 space-y-2">
+                                <div className="text-center text-accent text-xs font-bold animate-pulse">
+                                    {`🚀 v${latestVersion} disponible !`}
+                                </div>
+                                {updateNotes && (
+                                    <p className="text-[10px] text-text-muted text-center leading-snug">{updateNotes}</p>
+                                )}
+                                {onInstallUpdate && (
+                                    <button
+                                        id="btn-install-update"
+                                        onClick={onInstallUpdate}
+                                        className="w-full mt-2 px-4 py-2 bg-accent text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow"
+                                    >
+                                        <i className="fas fa-download"></i>
+                                        Télécharger et installer v{latestVersion}
+                                    </button>
+                                )}
                             </div>
                         )}
                         {updateStatus === 'error' && (

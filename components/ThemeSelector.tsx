@@ -1,19 +1,12 @@
 import React from 'react';
 import { ThemeMode, ThemeStyle, THEME_STYLES, THEMES } from '../constants/themes';
+import { useTheme } from '../contexts/ThemeContext';
 
-interface ThemeSelectorProps {
-  themeMode: ThemeMode;
-  themeStyle: ThemeStyle;
-  onThemeModeChange: (mode: ThemeMode) => void;
-  onThemeStyleChange: (style: ThemeStyle) => void;
-}
-
-export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ 
-  themeMode, 
-  themeStyle, 
-  onThemeModeChange, 
-  onThemeStyleChange 
-}) => {
+export const ThemeSelector: React.FC = () => {
+  const { themeMode, themeStyle, setThemeMode, setThemeStyle } = useTheme();
+  
+  const onThemeModeChange = (mode: ThemeMode) => setThemeMode(mode);
+  const onThemeStyleChange = (style: ThemeStyle) => setThemeStyle(style);
   const modes: { value: ThemeMode; icon: string; label: string }[] = [
     { value: 'light', icon: '☀️', label: 'Clair' },
     { value: 'dark', icon: '🌙', label: 'Sombre' },

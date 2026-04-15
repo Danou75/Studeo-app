@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Tutor, TutorCategory } from '../types';
 import { TUTORS } from '../constants';
-import { ThemeMode, ThemeStyle, getThemeGradient } from '../constants/themes';
+import { getThemeGradient } from '../constants/themes';
+import { useTheme } from '../contexts/ThemeContext';
 import { useConfirmation } from '../contexts/ConfirmationContext';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -19,8 +20,6 @@ interface TutorsRoomModalProps {
     onAddGuestTutor: (tutor: Tutor) => void;
     onUpdateGuestTutor: (tutorId: string, tutor: Tutor) => void;
     onRemoveGuestTutor: (tutorId: string) => void;
-    themeMode: ThemeMode;
-    themeStyle: ThemeStyle;
     onOpenLanguageLab?: () => void;
     selectedCategory: TutorCategory;
     onSelectCategory: (category: TutorCategory) => void;
@@ -43,8 +42,6 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
     onAddGuestTutor,
     onUpdateGuestTutor,
     onRemoveGuestTutor,
-    themeMode, 
-    themeStyle,
     onOpenLanguageLab,
     selectedCategory,
     onSelectCategory,
@@ -54,6 +51,7 @@ export const TutorsRoomModal: React.FC<TutorsRoomModalProps> = ({
 }) => {
     const { showConfirmation } = useConfirmation();
     const { t } = useTranslation();
+    const { themeMode, themeStyle } = useTheme();
     
     // Form inputs state
     const [guestName, setGuestName] = useState('');

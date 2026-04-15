@@ -1,43 +1,16 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { ReactNode } from 'react';
+import { useConfirmationStore } from '../stores/useConfirmationStore';
 
-interface ConfirmationOptions {
-    title: string;
-    message: string;
-    onConfirm: () => void;
-    onCancel?: () => void;
-    confirmText?: string;
-    cancelText?: string;
-    variant?: 'danger' | 'warning' | 'info';
-}
 
-interface ConfirmationContextType {
-    showConfirmation: (options: ConfirmationOptions) => void;
-    closeConfirmation: () => void;
-}
-
-const ConfirmationContext = createContext<ConfirmationContextType | undefined>(undefined);
 
 export const useConfirmation = () => {
-    const context = useContext(ConfirmationContext);
-    if (!context) {
-        throw new Error('useConfirmation must be used within a ConfirmationProvider');
-    }
-    return context;
+    const showConfirmation = useConfirmationStore(s => s.showConfirmation);
+    const closeConfirmation = useConfirmationStore(s => s.closeConfirmation);
+    return { showConfirmation, closeConfirmation };
 };
 
 export const ConfirmationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [options, setOptions] = useState<ConfirmationOptions | null>(null);
-
-    const showConfirmation = (opts: ConfirmationOptions) => {
-        setOptions(opts);
-        setIsOpen(true);
-    };
-
-    const closeConfirmation = () => {
-        setIsOpen(false);
-        setOptions(null);
-    };
+    const { isOpen, options, closeConfirmation } = useConfirmationStore();
 
     const handleConfirm = () => {
         if (options?.onConfirm) {
@@ -54,7 +27,7 @@ export const ConfirmationProvider: React.FC<{ children: ReactNode }> = ({ childr
     };
 
     return (
-        <ConfirmationContext.Provider value={{ showConfirmation, closeConfirmation }}>
+        <>
             {children}
             {isOpen && options && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
@@ -99,6 +72,6 @@ export const ConfirmationProvider: React.FC<{ children: ReactNode }> = ({ childr
                     </div>
                 </div>
             )}
-        </ConfirmationContext.Provider>
+        </>
     );
 };

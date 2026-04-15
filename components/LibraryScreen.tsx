@@ -9,9 +9,12 @@ import { generateFlashcardsWithAI } from '../services/aiCardGenerator';
 import { useAIConfig } from '../contexts/AIConfigContext';
 import { DEFAULT_FLASHCARD_SET_NAME } from '../constants';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
+import { getThemeGradient } from '../constants/themes';
+import { useTheme } from '../contexts/ThemeContext';
 import { ChatService } from '../services/chatService';
 import { useConfirmation } from '../contexts/ConfirmationContext';
+import { TUTORS } from '../constants';
+import { useFlashcardStore } from '../stores/useFlashcardStore';
 
 interface LibraryItem {
     id: string;
@@ -20,6 +23,7 @@ interface LibraryItem {
     category: string;
     cardsCount: number;
     cards: Flashcard[];
+    tutorId?: string;
 }
 
 const LIBRARY_COLLECTIONS: LibraryItem[] = [
@@ -29,6 +33,7 @@ const LIBRARY_COLLECTIONS: LibraryItem[] = [
         description: 'Les 50 verbes les plus utilisés avec leur conjugaison complète.',
         category: 'Langues',
         cardsCount: 50,
+        tutorId: 'maestro-italiano',
         cards: [
             { id: uuidv4(), type: 'classic', terms: { fr: 'Être', it: 'Essere' } },
             { id: uuidv4(), type: 'classic', terms: { fr: 'Avoir', it: 'Avere' } },
@@ -37,7 +42,7 @@ const LIBRARY_COLLECTIONS: LibraryItem[] = [
             { id: uuidv4(), type: 'mcq', mcqData: { 
                 question: { fr: 'Comment dit-on "Il peut" ?' }, 
                 answer: { it: 'Lui può' }, 
-                distractors: [{ it: 'Lui deve' }, { it: 'Lui vuole' }, { it: 'Lui sa' }] 
+                distractors: [{ it: 'Lui deve' }, { it: 'Lui veut' }, { it: 'Lui sait' }] 
             } }
         ]
     },
@@ -47,6 +52,7 @@ const LIBRARY_COLLECTIONS: LibraryItem[] = [
         description: 'Apprenez à identifier les quintes, quartes et tierces.',
         category: 'Musique',
         cardsCount: 24,
+        tutorId: 'prof-melodia',
         cards: [
             { id: uuidv4(), type: 'classic', terms: { fr: 'Quinte Juste', en: 'Perfect Fifth (3.5 tones)' } },
             { id: uuidv4(), type: 'classic', terms: { fr: 'Tierce Majeure', en: 'Major Third (2 tones)' } }
@@ -58,6 +64,7 @@ const LIBRARY_COLLECTIONS: LibraryItem[] = [
         description: 'Les principaux os du corps humain pour les étudiants en médecine.',
         category: 'Sciences',
         cardsCount: 40,
+        tutorId: 'prof-biotique',
         cards: [
             { id: uuidv4(), type: 'classic', terms: { fr: 'Fémur', la: 'Os femoris' } },
             { id: uuidv4(), type: 'classic', terms: { fr: 'Humérus', la: 'Humerus' } }
@@ -67,7 +74,7 @@ const LIBRARY_COLLECTIONS: LibraryItem[] = [
 
 interface LibraryScreenProps {
     onBack: () => void;
-    onImport: (name: string, cards: Flashcard[]) => void;
+    onImport: (name: string, cards: Flashcard[], tutorId?: string) => void;
     onAddCardsToSet?: (newCards: Flashcard[], targetSetName?: string) => void;
     userSets?: Record<string, Flashcard[]>;
     onDeleteSet?: (name: string) => void;
@@ -75,8 +82,6 @@ interface LibraryScreenProps {
     currentSetName?: string;
     onSelectSet?: (name: string) => void;
     onStartQuiz?: () => void;
-    themeMode: ThemeMode;
-    themeStyle: ThemeStyle;
     customCollections?: any[];
     setCustomCollections?: (collections: any[] | ((prev: any[]) => any[])) => void;
     onNavigateToSettings?: () => void;
@@ -92,8 +97,6 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     currentSetName, 
     onSelectSet, 
     onStartQuiz,
-    themeMode,
-    themeStyle,
     customCollections: propsCustomCollections = [],
     setCustomCollections: propsSetCustomCollections,
     onNavigateToSettings
@@ -103,10 +106,14 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     const customCollections = propsSetCustomCollections ? propsCustomCollections : localCollections;
     const setCustomCollections = propsSetCustomCollections || setLocalCollections;
 
+    const { flashcardSetsMetadata } = useFlashcardStore();
+    const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
+
     const { t, language } = useTranslation();
     const { showToast } = useToast();
     const { showConfirmation } = useConfirmation();
     const { config } = useAIConfig();
+    const { themeMode, themeStyle } = useTheme();
     const [search, setSearch] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isRenewingCatalog, setIsRenewingCatalog] = useState(false);
@@ -128,10 +135,14 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     const [previewTitle, setPreviewTitle] = useState('');
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    const filtered = LIBRARY_COLLECTIONS.filter(item => 
-        item.title.toLowerCase().includes(search.toLowerCase()) || 
-        item.category.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredCollections = useMemo(() => {
+        return LIBRARY_COLLECTIONS.filter(item => {
+            const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase()) || 
+                                 item.category.toLowerCase().includes(search.toLowerCase());
+            const matchesTutor = !selectedTutorId || item.tutorId === selectedTutorId;
+            return matchesSearch && matchesTutor;
+        });
+    }, [search, selectedTutorId]);
 
     const generateCompleteCollection = async (topicToGen: string, countToGen: number, itemId?: string) => {
         if (itemId) setGeneratingId(itemId);
@@ -185,7 +196,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                 apiUrl: apiUrl || ''
             });
 
-            onImport(topicToGen, response);
+            onImport(topicToGen, response, config.selectedTutor?.id);
             showToast(`Collection "${topicToGen}" (${response.length} fiches) ajoutée !`, 'success');
         } catch (error: any) {
             console.error("Library Generation Error:", error);
@@ -270,7 +281,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                 showToast(`Génération de la collection complète "${item.title}"...`, 'info');
                 await generateCompleteCollection(item.title, item.cardsCount, item.id);
             } else {
-                onImport(item.title, item.cards);
+                onImport(item.title, item.cards, item.tutorId);
                 showToast(t('library.importSuccess', { name: item.title }), 'success');
             }
         };
@@ -365,7 +376,8 @@ Format JSON STRICT (tableau d'objets) :
                 description: s.description || 'Pas de description disponible',
                 category: 'IA Suggéré',
                 cardsCount: 20,
-                cards: []
+                cards: [],
+                tutorId: config.selectedTutor?.id
             }));
 
             setCustomCollections(newItems);
@@ -427,19 +439,53 @@ Format JSON STRICT (tableau d'objets) :
             await executeEnrich();
         }
     };
+    const userSetsList = useMemo(() => {
+        const raw = Object.entries(userSets).map(([name, cards]) => ({
+            id: `user-set-${name}`,
+            name,
+            count: cards.length,
+            category: 'Mes Listes',
+            isUser: true,
+            isActive: name.trim() === (currentSetName || '').trim(),
+            tutorId: flashcardSetsMetadata[name]?.tutorId
+        }));
+        
+        // Final unique deduplication to prevent React crash (NotFoundError)
+        const seen = new Set();
+        return raw.filter(set => {
+            if (seen.has(set.id)) return false;
+            seen.add(set.id);
+            const matchesSearch = !search || set.name.toLowerCase().includes(search.toLowerCase());
+            const matchesTutor = !selectedTutorId || set.tutorId === selectedTutorId;
+            return matchesSearch && matchesTutor;
+        });
+    }, [userSets, flashcardSetsMetadata, currentSetName, search, selectedTutorId]);
 
-    const userSetsList = useMemo(() => Object.entries(userSets).map(([name, cards]) => ({
-        name,
-        count: cards.length,
-        category: 'Mes Listes',
-        isUser: true,
-        isActive: name.trim() === (currentSetName || '').trim()
-    })).filter(set => !search || set.name.toLowerCase().includes(search.toLowerCase())), [userSets, currentSetName, search]);
+    const staticCollections = useMemo(() => {
+        const customFiltered = customCollections.filter(item => !selectedTutorId || item.tutorId === selectedTutorId);
+        const combined = [...customFiltered, ...filteredCollections];
+        
+        // Final unique deduplication to prevent React crash (NotFoundError)
+        const seen = new Set();
+        return combined.filter(item => {
+            const uniqueId = item.id || item.title;
+            if (seen.has(uniqueId)) return false;
+            seen.add(uniqueId);
+            return true;
+        });
+    }, [customCollections, filteredCollections, selectedTutorId]);
 
-    const curatedList = [...customCollections, ...filtered];
+    // Dynamic tutors with content - calculated from unfiltered sources to avoid circular dependency
+    const tutorsWithContent = useMemo(() => {
+        const userTutorIds = Object.values(flashcardSetsMetadata).map(m => m.tutorId).filter(Boolean);
+        const curatedTutorIds = LIBRARY_COLLECTIONS.map(item => item.tutorId).filter(Boolean);
+        const customTutorIds = (customCollections || []).map(item => item.tutorId).filter(Boolean);
+        const uniqueTutorIds = new Set([...userTutorIds, ...curatedTutorIds, ...customTutorIds]);
+        return TUTORS.filter(tutor => uniqueTutorIds.has(tutor.id));
+    }, [flashcardSetsMetadata]); // Only depend on global metadata to maintain list stability
 
     return (
-        <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
+        <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative" translate="no">
              {/* Header */}
              <div 
                 className={`transition-all duration-500 pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 group ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
@@ -494,6 +540,11 @@ Format JSON STRICT (tableau d'objets) :
                                 <span className="font-bold uppercase tracking-wider text-[10px] hidden sm:inline">Lecteur de Quiz</span>
                             </Button>
                         )}
+                        {!onNavigateToSettings && (
+                             <button onClick={onNavigateToSettings} className="p-2 rounded-full hover:bg-white/10 text-white transition-all">
+                                <i className="fas fa-cog"></i>
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -524,6 +575,26 @@ Format JSON STRICT (tableau d'objets) :
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
+
+                     {/* Teacher Filter Dropdown */}
+                    <div className="relative group shrink-0" translate="no">
+                        <select
+                            value={selectedTutorId || ''}
+                            onChange={(e) => setSelectedTutorId(e.target.value || null)}
+                            className="appearance-none bg-background-secondary border border-border rounded-xl px-4 py-3.5 pr-10 text-sm font-medium text-text focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer hover:bg-background-tertiary w-full sm:w-auto min-w-[180px]"
+                        >
+                            <option value="">👤 {t('library.allTeachers') || t('curriculum.allTeachers') || 'Tous les professeurs'}</option>
+                            {tutorsWithContent.map(tutor => (
+                                <option key={tutor.id} value={tutor.id}>
+                                    {tutor.emoji} {tutor.name}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
+                            <i className="fas fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
+
                     <input 
                         type="file" 
                         ref={fileInputRef} 
@@ -533,10 +604,10 @@ Format JSON STRICT (tableau d'objets) :
                     />
                     <Button 
                         variant="secondary" 
-                        className="rounded-xl px-6 h-auto py-3.5 text-sm"
+                        className="rounded-xl px-6 h-auto py-3.5 text-sm shrink-0"
                         onClick={() => fileInputRef.current?.click()}
                     >
-                        <i className="fas fa-file-import mr-2"></i> Importer JSON
+                        <i className="fas fa-file-import mr-2"></i> Importer
                     </Button>
                 </div>
 
@@ -546,13 +617,15 @@ Format JSON STRICT (tableau d'objets) :
                             <h2 className="text-xl font-black mb-6 flex items-center gap-2 text-primary uppercase tracking-tighter">
                                 <i className="fas fa-folder-open"></i> Mes Collections
                             </h2>
-                            <div className={viewMode === 'grid' 
-                                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-                                : "flex flex-col gap-2"
-                            }>
+                            <div 
+                                className={viewMode === 'grid' 
+                                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                                    : "flex flex-col gap-2"
+                                }
+                            >
                                 {userSetsList.map((set) => (
                                     <div 
-                                        key={set.name} 
+                                        key={set.id} 
                                         onClick={() => !set.isActive && onSelectSet?.(set.name)}
                                         className={`group relative bg-white dark:bg-gray-800 border-2 rounded-2xl transition-all cursor-pointer ${
                                             viewMode === 'grid' 
@@ -564,10 +637,20 @@ Format JSON STRICT (tableau d'objets) :
                                                 : 'border-border hover:border-primary/50 hover:shadow-xl hover:bg-primary/[0.03]'
                                         }`}
                                     >
-                                        <div className={viewMode === 'grid' ? "flex justify-between items-start mb-2" : "flex flex-wrap items-center gap-3 flex-1 min-w-0"}>
-                                            <span className="px-2.5 py-0.5 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider rounded-lg outline outline-1 outline-primary/20 shrink-0">
-                                                {set.category}
-                                            </span>
+                                            <div className={viewMode === 'grid' ? "flex flex-col gap-2 mb-2" : "flex flex-wrap items-center gap-3 flex-1 min-w-0"}>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="px-2.5 py-0.5 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider rounded-lg outline outline-1 outline-primary/20 shrink-0">
+                                                        {set.category}
+                                                    </span>
+                                                    
+                                                    {/* Tutor Badge */}
+                                                    {set.tutorId && (
+                                                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-[10px] font-medium text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800/50">
+                                                            <span>{TUTORS.find(t => t.id === set.tutorId)?.emoji}</span>
+                                                            <span>{TUTORS.find(t => t.id === set.tutorId)?.name}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             
                                             {viewMode === 'list' && (
                                                 <div className="flex-1 min-w-0">
@@ -667,7 +750,7 @@ Format JSON STRICT (tableau d'objets) :
                         </div>
                     )}
 
-                    {curatedList.length > 0 && (
+                    {staticCollections.length > 0 && (
                         <div>
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-background-secondary/50 p-4 md:p-6 rounded-[2rem] border border-border/50">
                                 <div>
@@ -681,7 +764,7 @@ Format JSON STRICT (tableau d'objets) :
                                     {/* Sélecteur de Densité Global */}
                                     <div className="flex items-center gap-4 bg-background px-4 py-2 rounded-2xl border border-border shadow-sm min-w-[200px]">
                                         <div className="flex flex-col">
-                                            <span className="text-[9px] font-black uppercase text-primary leading-none mb-1">Densité IA</span>
+                                            <span className="text-[9px] font-black uppercase text-primary leading-none mb-1">Nombre de fiches</span>
                                             <input 
                                                 type="range" 
                                                 min="5" 
@@ -718,13 +801,15 @@ Format JSON STRICT (tableau d'objets) :
                                     </div>
                                 </div>
                             </div>
-                            <div className={viewMode === 'grid' 
-                                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-                                : "flex flex-col gap-2"
-                            }>
-                                {curatedList.map((item) => (
+                            <div 
+                                className={viewMode === 'grid' 
+                                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                                    : "flex flex-col gap-2"
+                                }
+                            >
+                                {staticCollections.map((item) => (
                                     <div 
-                                        key={item.id} 
+                                        key={item.id || item.title} 
                                         className={`group bg-white dark:bg-gray-800 border border-border rounded-2xl transition-all hover:shadow-xl ${
                                             viewMode === 'grid'
                                                 ? 'p-5 flex flex-col justify-between min-h-[180px] hover:-translate-y-1'
@@ -732,10 +817,18 @@ Format JSON STRICT (tableau d'objets) :
                                         }`}
                                     >
                                         <div className={viewMode === 'grid' ? "flex flex-col h-full" : "flex flex-col sm:flex-row sm:items-center gap-4 flex-1 min-w-0"}>
-                                            <div className={viewMode === 'grid' ? "flex justify-between items-start mb-2" : "flex flex-wrap items-center gap-3 shrink-0"}>
-                                                <span className="px-2.5 py-0.5 bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-wider rounded-lg outline outline-1 outline-accent/20 shrink-0">
+                                            <div className={viewMode === 'grid' ? "flex flex-col gap-2 mb-2" : "flex flex-wrap items-center gap-3 shrink-0"}>
+                                                <span className="px-2.5 py-0.5 bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-wider rounded-lg outline outline-1 outline-accent/20 shrink-0 self-start">
                                                     {item.category}
                                                 </span>
+                                                
+                                                {/* Tutor Badge */}
+                                                {item.tutorId && (
+                                                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-[10px] font-medium text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800/50 self-start">
+                                                        <span>{TUTORS.find(t => t.id === item.tutorId)?.emoji}</span>
+                                                        <span>{TUTORS.find(t => t.id === item.tutorId)?.name}</span>
+                                                    </div>
+                                                )}
                                                 
                                                 {viewMode === 'grid' && (
                                                     <div className="flex items-center gap-3">
@@ -902,7 +995,7 @@ Format JSON STRICT (tableau d'objets) :
                     )}
                 </div>
 
-                {filtered.length === 0 && (
+                {userSetsList.length === 0 && staticCollections.length === 0 && (
                     <div className="text-center py-20 bg-primary/5 rounded-[3rem] border border-dashed border-primary/20 animate-fade-in">
                         <div className="text-6xl mb-6">✨</div>
                         <h2 className="text-2xl font-black mb-4 uppercase tracking-tight">Bibliothèque Infinie</h2>
@@ -1051,7 +1144,7 @@ Format JSON STRICT (tableau d'objets) :
                         <div className="flex-1 overflow-y-auto p-4 md:p-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {previewCards.map((card, idx) => (
-                                    <div key={card.id || idx} className="p-5 rounded-2xl border border-border bg-background-secondary hover:border-primary/30 transition-all group">
+                                    <div key={`preview-card-${card.id || idx}-${idx}`} className="p-5 rounded-2xl border border-border bg-background-secondary hover:border-primary/30 transition-all group">
                                         <div className="flex justify-between items-start mb-3">
                                             <span className="text-[10px] font-black px-2 py-0.5 bg-primary/10 text-primary rounded-lg uppercase tracking-wider">{card.type}</span>
                                             <span className="text-[10px] text-text-muted font-mono opacity-50">#{idx + 1}</span>
@@ -1060,8 +1153,8 @@ Format JSON STRICT (tableau d'objets) :
                                         <div className="space-y-4">
                                             {card.type === 'classic' && card.terms && (
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    {Object.entries(card.terms).map(([lang, text]) => (
-                                                        <div key={lang}>
+                                                    {Object.entries(card.terms).map(([lang, text], tIdx) => (
+                                                        <div key={`preview-term-${lang}-${tIdx}`}>
                                                             <div className="text-[10px] font-bold text-text-muted uppercase tracking-tighter mb-1">{lang}</div>
                                                             <div className="text-sm font-semibold text-text">{text}</div>
                                                         </div>

@@ -9,59 +9,48 @@ import { LANGUAGE_CONFIG } from '../constants';
 import { useAIConfig } from '../contexts/AIConfigContext';
 import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from '../contexts/LanguageContext';
-import { getThemeGradient, ThemeMode, ThemeStyle } from '../constants/themes';
+import { getThemeGradient } from '../constants/themes';
 import { deduplicateCards } from '../utils/flashcardHelpers';
+import { useTheme } from '../contexts/ThemeContext';
+import { useUIStore } from '../stores/useUIStore';
+import { useGamificationStore } from '../stores/useGamificationStore';
+import { useFlashcardStore } from '../stores/useFlashcardStore';
 
 interface SetupScreenProps {
-    allFlashcards: Flashcard[];
-    flashcardSetName: string;
     onStartQuiz: (cards: Flashcard[], config: Omit<QuizConfig, 'voiceEngine' | 'autoPlayAudio' | 'quizName'>) => void;
     onShowSRSPreview: (cards: Flashcard[], config: Omit<QuizConfig, 'voiceEngine' | 'autoPlayAudio' | 'quizName'>) => void;
     onFileImport: (file: File) => void;
     onShowReview: () => void;
     onShowEdit: () => void;
-    voiceEngine: QuizConfig['voiceEngine'];
-    setVoiceEngine: React.Dispatch<React.SetStateAction<QuizConfig['voiceEngine']>>;
-    autoPlayAudio: boolean;
-    setAutoPlayAudio: React.Dispatch<React.SetStateAction<boolean>>;
-    streak: number;
     onBack?: () => void;
-    setCurrentSetName: (name: string) => void;
-    flashcardSets: Record<string, Flashcard[]>;
     onShowDashboard: () => void;
     onShowSettings?: () => void;
     onManageSets: () => void;
-    themeMode: ThemeMode;
-    themeStyle: ThemeStyle;
     cloudStatus?: 'idle' | 'syncing' | 'synced' | 'error';
 }
 
 export const SetupScreen: React.FC<SetupScreenProps> = ({ 
-    allFlashcards, 
-    flashcardSetName, 
     onStartQuiz,
     onShowSRSPreview,
     onFileImport, 
     onShowReview, 
     onShowEdit, 
-    voiceEngine, 
-    setVoiceEngine, 
-    autoPlayAudio, 
-    setAutoPlayAudio,
-    streak,
     onBack,
-    setCurrentSetName,
-    flashcardSets,
     onShowDashboard,
     onShowSettings,
     onManageSets,
-    themeMode,
-    themeStyle,
     cloudStatus
 }) => {
     const { config } = useAIConfig();
     const { showToast } = useToast();
     const { t } = useTranslation();
+    const { themeMode, themeStyle } = useTheme();
+    const { voiceEngine, setVoiceEngine, autoPlayAudio, setAutoPlayAudio } = useUIStore();
+    const streak = useGamificationStore(s => s.gamificationData.streak.currentStreak);
+    const flashcardSets = useFlashcardStore(s => s.flashcardSets);
+    const flashcardSetName = useFlashcardStore(s => s.currentSetName);
+    const setCurrentSetName = useFlashcardStore(s => s.setCurrentSetName);
+    const allFlashcards = Object.values(flashcardSets).flat();
     
     const allColumns = useColumns(allFlashcards);
     const { getDueCards } = useSRS();

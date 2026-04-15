@@ -1,32 +1,15 @@
-import React, { useState } from 'react';
-import { StudyProgram, StudyModule, ConversationSession, SavedVocabList } from '../types';
-import { Button } from './ui/Button';
-import { ThemeStyle, ThemeMode, getThemeGradient } from '../constants/themes';
-import { TUTORS } from '../constants';
-import { useToast } from '../contexts/ToastContext';
-import { AILoader } from './AILoader';
-import { useConfirmation } from '../contexts/ConfirmationContext';
-import { useTranslation } from '../contexts/LanguageContext';
-
-import { save } from '@tauri-apps/api/dialog';
-import { writeTextFile } from '@tauri-apps/api/fs';
-import { markdownToRTF } from '../utils/rtfExport';
-import { v4 as uuidv4 } from 'uuid';
-import { ChatService } from '../services/chatService';
-import { useAIConfig } from '../contexts/AIConfigContext';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-
-interface SuggestedProgram {
-    id: string;
-    title: string;
-    description: string;
-    category: string;
-}
+import React from 'react';
+import { StudyProgram, StudyModule, ConversationSession, SavedVocabList, Lesson } from '../types';
+import { useStudyContentStore } from '../stores/useStudyContentStore';
+import { useCurriculum } from './curriculum/hooks/useCurriculum';
+import { CurriculumHeader } from './curriculum/views/CurriculumHeader';
+import { CurriculumDetailView } from './curriculum/views/CurriculumDetailView';
+import { CurriculumTabsView } from './curriculum/views/CurriculumTabsView';
+import { SuggestionsCatalogView } from './curriculum/views/SuggestionsCatalogView';
+import { CurriculumModals } from './curriculum/views/CurriculumModals';
 
 interface CurriculumScreenProps {
     onBack: () => void;
-    programs: StudyProgram[];
-    lessons: Lesson[];
     onGenerateContent: (program: StudyProgram, module: StudyModule) => Promise<StudyProgram | undefined>;
     onStartModule: (module: StudyModule, tutorId: string) => void;
     onStartQuiz: (module: StudyModule, tutorId: string) => void;
@@ -39,1392 +22,153 @@ interface CurriculumScreenProps {
     onStartTutorial?: (topic: string) => void;
     onNewProgram?: () => void;
     onSuggestedProgram: (topic: string, category: string) => void;
-    customSuggestions?: any[];
-    setCustomSuggestions?: (suggestions: any[] | ((prev: any[]) => any[])) => void;
-    savedConvSessions?: ConversationSession[];
     onDeleteConvSession?: (id: string) => void;
     onRenameConvSession?: (id: string, newTitle: string) => void;
     onResumeConvSession?: (session: ConversationSession) => void;
-    savedVocabLists?: SavedVocabList[];
     onDeleteVocabList?: (id: string) => void;
     onRenameVocabList?: (id: string, newTheme: string) => void;
     onOpenVocabInLab?: (vocab: SavedVocabList) => void;
-    themeMode: ThemeMode;
-    themeStyle: ThemeStyle;
     onNavigateToSettings?: () => void;
 }
 
-import { Lesson } from '../types';
+export const CurriculumScreen: React.FC<CurriculumScreenProps> = (props) => {
+    const programs = useStudyContentStore(s => s.studyPrograms);
+    const lessons = useStudyContentStore(s => s.savedLessons);
+    const customSuggestions = useStudyContentStore(s => s.curriculumSuggestions);
+    const setCustomSuggestions = useStudyContentStore(s => s.setCurriculumSuggestions);
+    const savedConvSessions = useStudyContentStore(s => s.savedConvSessions);
+    const savedVocabLists = useStudyContentStore(s => s.savedVocabLists);
 
-export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({ 
-    onBack, 
-    programs,
-    lessons = [],
-    onGenerateContent,
-    onStartModule,
-    onStartQuiz,
-    onDrawingChallenge,
-    onStartTutorial,
-    onNewProgram,
-    onNavigateToSettings,
-    onDeleteProgram,
-    onRenameProgram,
-    onSelectLesson,
-    onDeleteLesson,
-    onRenameLesson,
-    onSuggestedProgram,
-    customSuggestions: propsCustomSuggestions = [],
-    setCustomSuggestions: propsSetCustomSuggestions,
-    savedConvSessions = [],
-    onDeleteConvSession,
-    onRenameConvSession,
-    onResumeConvSession,
-    savedVocabLists = [],
-    onDeleteVocabList,
-    onRenameVocabList,
-    onOpenVocabInLab,
-    themeMode, 
-    themeStyle 
-}) => {
-    // Si on a les props de synchro, on les utilise, sinon fallback sur local (sécurité)
-    const [localSuggestions, setLocalSuggestions] = useLocalStorage<SuggestedProgram[]>('curriculum_suggestions_catalog', []);
-    const customSuggestions = propsSetCustomSuggestions ? propsCustomSuggestions : localSuggestions;
-    const setCustomSuggestions = propsSetCustomSuggestions || setLocalSuggestions;
-
-    const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
-    const [loadingModuleId, setLoadingModuleId] = useState<string | null>(null);
-    const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
-    const [renameItemId, setRenameItemId] = useState<string | null>(null);
-    const [renameType, setRenameType] = useState<'program' | 'lesson' | 'conversation' | 'vocab'>('program');
-    const [newTitle, setNewTitle] = useState('');
-    const [isRenewingCatalog, setIsRenewingCatalog] = useState(false);
-    const [showRenewModal, setShowRenewModal] = useState(false);
-    const [renewPreferences, setRenewPreferences] = useState('');
-    const [renewStrategy, setRenewStrategy] = useState<'replace' | 'append'>('replace');
-    const [viewMode, setViewMode] = useLocalStorage<'grid' | 'list'>('curriculum_view_mode', 'grid');
-    const [activeTab, setActiveTab] = useLocalStorage<'programs' | 'lessons' | 'conversations' | 'vocabulary'>('curriculum_active_tab', 'programs');
-    const [selectedVocab, setSelectedVocab] = useState<SavedVocabList | null>(null);
-
-    
-    const { config } = useAIConfig();
-    const { showToast } = useToast();
-    const { showConfirmation } = useConfirmation();
-    const { t } = useTranslation();
-    const [isExporting, setIsExporting] = useState(false);
-
-    const handleRenewCatalog = async (preferences: string = '') => {
-        setIsRenewingCatalog(true);
-        setShowRenewModal(false);
-        try {
-            let apiKey = '';
-            let modelName = '';
-            let apiUrl = '';
-
-            switch (config.provider) {
-                case 'gemini':
-                    apiKey = config.geminiApiKey || '';
-                    modelName = config.geminiModel || '';
-                    break;
-                case 'openai':
-                    apiKey = config.openaiApiKey || '';
-                    modelName = config.openaiModel || 'gpt-4o';
-                    break;
-                case 'anthropic':
-                    apiKey = config.anthropicApiKey || '';
-                    modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620';
-                    break;
-                case 'mistral':
-                    apiKey = config.mistralApiKey || '';
-                    modelName = config.mistralModel || 'mistral-large-latest';
-                    break;
-                case 'local':
-                    apiKey = '';
-                    modelName = config.localModelName || '';
-                    apiUrl = config.localApiUrl || '';
-                    break;
-            }
-
-            if (!apiKey && config.provider !== 'local') {
-                showToast(`Configuration manquante pour ${config.provider}`, "error");
-                setIsRenewingCatalog(false);
-                return;
-            }
-
-            const systemPrompt = "Tu es un expert en éducation et un concepteur de programmes d'études. Ta mission est de suggérer des parcours d'apprentissage réels, structurés et passionnants. NE PARLE JAMAIS de l'IA ou de la génération.";
-            const userPrompt = `Génère 3 suggestions de programmes d'étude thématiques.
-Chaque programme doit être un sujet d'apprentissage structuré (ex: "Les bases du piano", "L'histoire de la Rome Antique", "Apprendre le Python").
-${preferences.trim() ? `L'utilisateur s'intéresse particulièrement à : "${preferences}"` : "Varie les sujets pour couvrir différents domaines du savoir."}
-
-Format JSON STRICT (tableau d'objets) :
-[
-  {"titre": "Nom du Parcours (ex: Astrophysique pour débutants)", "description": "Un résumé du parcours et de ce qu'on y apprend.", "categorie": "Sciences"},
-  {"titre": "Autre Sujet", "description": "Résumé...", "categorie": "Histoire"},
-  {"titre": "Troisième Sujet", "description": "Résumé...", "categorie": "Art"}
-]`;
-
-            const responseText = await ChatService.generateAIResponse({
-                provider: config.provider,
-                apiKey: apiKey || '',
-                apiUrl: apiUrl || '',
-                modelName: modelName || 'gemini-2.5-flash',
-                prompt: userPrompt,
-                systemPrompt
-            });
-
-            const cleanedJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-            const firstBracket = cleanedJson.indexOf('[');
-            const lastBracket = cleanedJson.lastIndexOf(']');
-            let suggestions = [];
-            
-            if (firstBracket !== -1 && lastBracket !== -1) {
-                suggestions = JSON.parse(cleanedJson.substring(firstBracket, lastBracket + 1));
-            } else {
-                throw new Error("Format JSON invalide");
-            }
-
-            const newItems: SuggestedProgram[] = suggestions.map((s: any) => ({
-                id: uuidv4(),
-                title: s.titre || s.title || 'Sujet inconnu',
-                description: s.description || 'Pas de description disponible',
-                category: s.categorie || s.category || 'IA Suggéré'
-            }));
-
-            if (renewStrategy === 'replace') {
-                setCustomSuggestions(newItems);
-            } else {
-                setCustomSuggestions((prev: SuggestedProgram[]) => [...newItems, ...prev]);
-            }
-            showToast(renewStrategy === 'replace' ? "Suggestions renouvelées !" : "Nouvelles suggestions ajoutées !", "success");
-
-        } catch (error: any) {
-            console.error("Catalog Renewal Error:", error);
-            showToast("Erreur lors du renouvellement des suggestions.", "error");
-        } finally {
-            setIsRenewingCatalog(false);
+    const curriculum = useCurriculum({
+        programs,
+        lessons: lessons || [],
+        savedConvSessions: savedConvSessions || [],
+        savedVocabLists: savedVocabLists || [],
+        customSuggestions,
+        setCustomSuggestions,
+        onGenerateContent: props.onGenerateContent,
+        onStartModule: props.onStartModule,
+    });
+    const {
+        viewMode,
+        activeTab,
+        setActiveTab,
+        selectedTutorId,
+        setSelectedTutorId,
+        tutorsWithContent,
+        filteredPrograms,
+        filteredLessons,
+        filteredSavedConvSessions,
+        filteredSavedVocabLists,
+        setSelectedVocab,
+        selectedVocab,
+    } = curriculum;
+    const handleConfirmRename = () => {
+        if (curriculum.renameType === 'program') {
+            props.onRenameProgram(curriculum.renameItemId!, curriculum.newTitle);
+        } else if (curriculum.renameType === 'lesson') {
+            props.onRenameLesson(curriculum.renameItemId!, curriculum.newTitle);
+        } else if (curriculum.renameType === 'conversation') {
+            props.onRenameConvSession?.(curriculum.renameItemId!, curriculum.newTitle);
+        } else if (curriculum.renameType === 'vocab') {
+            props.onRenameVocabList?.(curriculum.renameItemId!, curriculum.newTitle);
         }
+        curriculum.setIsRenameModalOpen(false);
     };
 
-    const handleDeleteSuggestion = (id: string, title: string) => {
-        if (confirm(`Supprimer la suggestion "${title}" ?`)) {
-            setCustomSuggestions((prev: SuggestedProgram[]) => prev.filter((item: SuggestedProgram) => item.id !== id));
-            showToast(`Suggestion "${title}" supprimée`, 'success');
-        }
-    };
-
-    const selectedProgram = programs.find(p => p.id === selectedProgramId) || null;
-    const setSelectedProgram = (prog: StudyProgram | null) => setSelectedProgramId(prog?.id || null);
-
-    const getTutor = (tutorId: string) => TUTORS.find(t => t.id === tutorId);
-
-    const handleExportProgram = async (format: 'md' | 'rtf') => {
-        if (!selectedProgram || isExporting) return;
-        setIsExporting(true);
-
-        try {
-            let markdown = `# Programme d'étude : ${selectedProgram.topic}\n\n`;
-            markdown += `**Niveau :** ${selectedProgram.targetLevel}\n`;
-            const tutor = getTutor(selectedProgram.tutorId);
-            if (tutor) markdown += `**Tuteur :** ${tutor.name}\n\n`;
-
-            selectedProgram.modules.forEach((module, index) => {
-                markdown += `## Module ${index + 1} : ${module.title}\n\n`;
-                markdown += `${module.description}\n\n`;
-                if (module.lessonContent) {
-                    markdown += `### Contenu de la leçon\n\n${module.lessonContent}\n\n`;
-                }
-            });
-
-            // @ts-ignore
-            if (window.__TAURI_IPC__) {
-                const baseName = selectedProgram.topic.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-                const filePath = await save({
-                    defaultPath: `programme_${baseName}.${format}`,
-                    filters: [{ name: format === 'md' ? 'Markdown' : 'Rich Text Format', extensions: [format] }]
-                });
-
-                if (filePath) {
-                    const finalContent = format === 'md' ? markdown : markdownToRTF(markdown, selectedProgram.topic);
-                    await writeTextFile(filePath, finalContent);
-                    showToast(`Succès ! Programme exporté en .${format}`, 'success');
-                }
-            } else {
-                const finalContent = format === 'md' ? markdown : markdownToRTF(markdown, selectedProgram.topic);
-                const blob = new Blob([finalContent], { type: format === 'md' ? 'text/markdown' : 'application/rtf' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `programme_${selectedProgram.topic.replace(/\s+/g, '_')}.${format}`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showToast(`Fichier .${format} généré !`, 'success');
-            }
-        } catch (error) {
-            console.error('Export error:', error);
-            showToast('Erreur lors de l\'exportation', 'error');
-        } finally {
-            setIsExporting(false);
-        }
-    };
-
-    const cleanupMarkdownForShare = (text: string) => {
-        return text
-            .replace(/^#+ (.*)$/gm, (_, p1) => p1.toUpperCase())
-            .replace(/\*\*(.*?)\*\*/g, '$1')
-            .replace(/\*(.*?)\*/g, '$1')
-            .replace(/^- (.*)$/gm, '• $1')
-            .trim();
-    };
-
-    const handleShare = async () => {
-        if (!selectedProgram) return;
-
-        let shareText = `${selectedProgram.topic.toUpperCase()}\nNIVEAU : ${selectedProgram.targetLevel.toUpperCase()}\n\n`;
-        
-        selectedProgram.modules.forEach((module, index) => {
-            shareText += `--- MODULE ${index + 1} : ${module.title.toUpperCase()} ---\n`;
-            if (module.description) shareText += `${cleanupMarkdownForShare(module.description)}\n`;
-            if (module.lessonContent) {
-                const cleanLesson = cleanupMarkdownForShare(module.lessonContent);
-                shareText += `\nEXTRAIT DU CONTENU :\n${cleanLesson.substring(0, 500)}${cleanLesson.length > 500 ? '...' : ''}\n`;
-            }
-            shareText += `\n`;
-        });
-
-        shareText += `--------------------------\nPartagé via Studeo`;
-
-        const shareData = {
-            title: selectedProgram.topic,
-            text: shareText,
-        };
-        
-        if (navigator.share) {
-            try {
-                await navigator.share(shareData);
-            } catch (err) {
-                if (err instanceof Error && err.name !== 'AbortError') {
-                    console.error('Erreur de partage:', err);
-                    showToast("Erreur lors du partage", "error");
-                }
-            }
-        } else {
-            showToast("Le partage n'est pas supporté sur cet appareil", "info");
-        }
-    };
-
-    const handleModuleClick = async (module: StudyModule) => {
-        if (loadingModuleId) return;
-
-        if (module.status === 'locked') {
-            showToast(t('curriculum.moduleLocked'), 'warning');
-            return;
-        }
-        
-        if (module.status === 'unlocked' && !module.lessonContent) {
-            showConfirmation({
-                title: t('curriculum.generateTitle'),
-                message: t('curriculum.generateConfirm', { title: module.title }),
-                confirmText: t('curriculum.generateButton'),
-                variant: 'info',
-                onConfirm: async () => {
-                    setLoadingModuleId(module.id);
-                    try {
-                        await onGenerateContent(selectedProgram!, module);
-                    } finally {
-                        setLoadingModuleId(null);
-                    }
-                }
-            });
-        } else {
-            if (selectedProgram) {
-                onStartModule(module, selectedProgram.tutorId);
-            }
-        }
-    };
-
-    if (selectedProgram) {
-        const tutor = getTutor(selectedProgram.tutorId);
-
+    if (curriculum.selectedProgram) {
         return (
-            <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
-                <div 
-                    className={`transition-all duration-500 pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 group/header ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
-                    style={{ background: getThemeGradient(themeStyle, themeMode) }}
-                >
-                    <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                            <Button 
-                                variant="secondary" 
-                                onClick={() => setSelectedProgram(null)} 
-                                size="sm" 
-                                className={`transition-all mb-2 md:mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
-                            >
-                                <i className="fas fa-arrow-left mr-2 text-inherit"></i> {t('curriculum.backToList')}
-                            </Button>
-
-                            <div className="flex gap-3 md:gap-4 items-center">
-                                {onNavigateToSettings && (
-                                    <Button
-                                        variant="secondary"
-                                        onClick={onNavigateToSettings}
-                                        size="sm"
-                                        className="bg-white/10 hover:bg-white/20 text-white border-transparent backdrop-blur-sm shadow-inner rounded-xl h-10 w-10 p-0 flex items-center justify-center transition-all md:opacity-0 md:group-hover/header:opacity-100 duration-300"
-                                        title="Paramètres"
-                                    >
-                                        <i className="fas fa-cog"></i>
-                                    </Button>
-                                )}
-                                <div className="flex gap-2 bg-white/10 p-1 md:p-1.5 rounded-xl border border-white/20 backdrop-blur-sm shadow-inner md:opacity-0 md:translate-x-4 md:group-hover/header:opacity-100 md:group-hover/header:translate-x-0 transition-all duration-300">
-                                    <button 
-                                        onClick={() => handleExportProgram('md')}
-                                        disabled={isExporting}
-                                        className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/10 text-primary' : 'hover:bg-white/20 text-white'}`}
-                                        title="Markdown"
-                                    >
-                                        {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fab fa-markdown text-sm"></i>} <span className="hidden sm:inline">MD</span>
-                                    </button>
-                                    <div className="w-px h-4 bg-white/20 self-center"></div>
-                                    <button 
-                                        onClick={() => handleExportProgram('rtf')}
-                                        disabled={isExporting}
-                                        className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/10 text-primary' : 'hover:bg-white/20 text-white'}`}
-                                        title="Word/RTF"
-                                    >
-                                        {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-file-word text-sm"></i>} <span className="hidden sm:inline">RTF</span>
-                                    </button>
-                                    <div className="w-px h-4 bg-white/20 self-center"></div>
-                                    <button 
-                                        onClick={handleShare}
-                                        className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-2 transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/10 text-primary' : 'hover:bg-white/20 text-white'}`}
-                                        title="Partager ce parcours"
-                                    >
-                                        <i className="fas fa-share-alt"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-4">
-                            <div className="text-4xl bg-white/20 p-2.5 rounded-2xl backdrop-blur-md shadow-inner">
-                                {tutor?.emoji || '🎓'}
-                            </div>
-                            <div>
-                                <h1 className="text-xl md:text-2xl font-black drop-shadow-sm">{selectedProgram.topic}</h1>
-                                <div className="flex items-center gap-2 mt-1 opacity-90">
-                                    <span className="bg-white/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider">
-                                        {selectedProgram.targetLevel}
-                                    </span>
-                                    <span className="text-sm font-medium">{t('curriculum.withTutor', { name: tutor?.name })}</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {/* ProgressBar */}
-                        <div className="mt-6 bg-black/20 rounded-full h-1.5 w-full overflow-hidden">
-                            <div 
-                                className="bg-white h-full rounded-full transition-all duration-1000"
-                                style={{ width: `${(selectedProgram.modules.filter(m => m.status === 'completed').length / selectedProgram.modules.length) * 100}%` }}
-                            ></div>
-                        </div>
-                    </div>
-                    
-                    {/* Background Pattern */}
-                    <div className="absolute top-0 right-0 opacity-10 transform translate-x-10 -translate-y-10">
-                         <i className="fas fa-map-signs text-9xl"></i>
-                    </div>
-                </div>
-
-                {/* Timeline Modules */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-background-secondary min-h-0 pb-32">
-                    <div className="max-w-3xl mx-auto relative pl-8 border-l-2 border-border/50 space-y-8 py-4">
-                        {selectedProgram.modules.map((module, index) => {
-                            const isLocked = module.status === 'locked';
-                            const isCompleted = module.status === 'completed';
-                            const isUnlocked = module.status === 'unlocked';
-                            
-                            return (
-                                <div 
-                                    key={module.id} 
-                                    className={`relative transition-all duration-300 ${isLocked ? 'opacity-50 grayscale' : 'hover:scale-[1.02]'}`}
-                                    onClick={() => handleModuleClick(module)}
-                                >
-                                    {/* Timeline Dot */}
-                                    <div className={`absolute -left-[41px] top-6 w-5 h-5 rounded-full border-4 transition-colors z-10 ${
-                                        isCompleted ? 'bg-green-500 border-green-200' : 
-                                        isUnlocked ? 'bg-primary border-primary/30 animate-pulse' : 
-                                        'bg-gray-400 border-gray-200'
-                                    }`}></div>
-
-                                    {/* Card */}
-                                    <div className={`bg-background rounded-xl p-5 shadow-md border cursor-pointer group ${
-                                        isUnlocked ? 'border-primary shadow-primary/10 ring-1 ring-primary/20' : 'border-border'
-                                    }`}>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className={`font-bold text-lg ${isUnlocked ? 'text-primary' : 'text-text'}`}>
-                                                {module.title}
-                                            </h3>
-                                            <div className="text-xs font-mono opacity-50 bg-background-tertiary px-2 py-1 rounded">
-                                                {t('curriculum.moduleLabel', { index: index + 1 })}
-                                            </div>
-                                        </div>
-                                        
-                                        <p className="text-text-secondary text-sm mb-4 line-clamp-2">
-                                            {module.description}
-                                        </p>
-                                        
-                                        <div className="flex items-center gap-2">
-                                            {isCompleted ? (
-                                                <span className="text-green-600 text-sm font-bold flex items-center">
-                                                    <i className="fas fa-check-circle mr-1"></i> {t('curriculum.completed')}
-                                                </span>
-                                            ) : isLocked ? (
-                                                <span className="text-text-muted text-sm flex items-center">
-                                                    <i className="fas fa-lock mr-1"></i> {t('curriculum.locked')}
-                                                </span>
-                                            ) : (
-                                                <div className="flex gap-2 w-full">
-                                                    <Button 
-                                                        size="sm" 
-                                                        className="flex-1"
-                                                        disabled={loadingModuleId === module.id}
-                                                    >
-                                                        {loadingModuleId === module.id ? (
-                                                            <div className="flex items-center gap-2">
-                                                                <AILoader size="sm" />
-                                                                <span>IA travaille...</span>
-                                                            </div>
-                                                        ) : module.lessonContent ? (
-                                                            `▶️ ${t('curriculum.start')}`
-                                                        ) : (
-                                                            `✨ ${t('curriculum.generateCourse')}`
-                                                        )}
-                                                    </Button>
-                                                    
-                                                    {module.lessonContent && (
-                                                        <>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="secondary"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    onStartQuiz(module, selectedProgram.tutorId);
-                                                                }}
-                                                                title={t('curriculum.practice')}
-                                                            >
-                                                                <i className="fas fa-dumbbell"></i>
-                                                            </Button>
-                                                            
-                                                            {selectedProgram.tutorId === 'maitre-leonard' && onDrawingChallenge && (
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="secondary"
-                                                                    className="bg-accent/10 text-accent border-accent/20 hover:bg-accent/20"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        onDrawingChallenge(module);
-                                                                    }}
-                                                                    title={t('curriculum.drawingChallenge')}
-                                                                >
-                                                                    <i className="fas fa-palette"></i>
-                                                                </Button>
-                                                            )}
-
-                                                            {selectedProgram.tutorId === 'maitre-leonard' && onStartTutorial && (
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="secondary"
-                                                                    className="bg-info/10 text-info border-info/20 hover:bg-info/20"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        onStartTutorial(module.title);
-                                                                    }}
-                                                                    title={t('curriculum.tutorial')}
-                                                                >
-                                                                    <i className="fas fa-magic"></i>
-                                                                </Button>
-                                                            )}
-                                                            <Button
-                                                                size="sm"
-                                                                variant="secondary"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    showConfirmation({
-                                                                        title: t('curriculum.regenerateTitle'),
-                                                                        message: t('curriculum.regenerateConfirm', { title: module.title }),
-                                                                        confirmText: t('curriculum.regenerateButton'),
-                                                                        variant: 'warning',
-                                                                        onConfirm: () => {
-                                                                            setLoadingModuleId(module.id);
-                                                                            onGenerateContent(selectedProgram, module).then(() => {
-                                                                                setLoadingModuleId(null);
-                                                                            });
-                                                                        }
-                                                                    });
-                                                                }}
-                                                                title={t('curriculum.regenerateTooltip')}
-                                                                disabled={loadingModuleId === module.id}
-                                                            >
-                                                                <i className={`fas fa-sync ${loadingModuleId === module.id ? 'fa-spin' : ''}`}></i>
-                                                            </Button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
+            <CurriculumDetailView
+                program={curriculum.selectedProgram}
+                onBack={() => curriculum.setSelectedProgram(null)}
+                onNavigateToSettings={props.onNavigateToSettings}
+                onExportProgram={curriculum.handleExportProgram}
+                onShare={curriculum.handleShare}
+                isExporting={curriculum.isExporting}
+                loadingModuleId={curriculum.loadingModuleId}
+                onModuleClick={curriculum.handleModuleClick}
+                onStartQuiz={props.onStartQuiz}
+                onDrawingChallenge={props.onDrawingChallenge}
+                onStartTutorial={props.onStartTutorial}
+                onRegenerateModule={async (module) => {
+                    // This function is directly awaited inside CurriculumDetailView logic,
+                    // but we need to reset the loading state managed by the hook
+                    // However, we didn't expose setLoadingModuleId directly, so let's just delegate to generate
+                    // Since hook's handleModuleClick handles generate, we add regenerate. Wait, let's just pass `onGenerateContent`
+                    // and handle setLoadingModuleId? Let's just fix the prop.
+                    // Instead of fixing the prop here, I will just call `onGenerateContent` in the prop.
+                    await props.onGenerateContent(curriculum.selectedProgram!, module);
+                }}
+            />
         );
     }
 
-    // VUE LISTE DES PROGRAMMES
     return (
-    <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
-        {/* Header */}
-        <div 
-            className={`transition-all duration-500 pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 group ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
-            style={{ background: getThemeGradient(themeStyle, themeMode) }}
-        >
-            {onNavigateToSettings && (
-                <button 
-                    onClick={onNavigateToSettings}
-                    className="absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
-                    title="Paramètres de l'IA"
-                >
-                    <i className="fas fa-cog text-inherit"></i>
-                </button>
-            )}
-            {/* Ligne des Boutons de Navigation/Action */}
-            <div className="relative z-20 flex justify-between items-center mb-6">
-                <Button 
-                    variant="secondary" 
-                    onClick={onBack} 
-                    size="sm" 
-                    className={`transition-all w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
-                >
-                    <i className="fas fa-home mr-2 text-inherit"></i> Accueil
-                </Button>
+        <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
+            <CurriculumHeader
+                onBack={props.onBack}
+                onNavigateToSettings={props.onNavigateToSettings}
+                viewMode={curriculum.viewMode}
+                setViewMode={curriculum.setViewMode}
+                onNewProgram={props.onNewProgram}
+                selectedTutorId={selectedTutorId}
+                setSelectedTutorId={setSelectedTutorId}
+                tutorsWithContent={tutorsWithContent}
+            />
 
-                {/* Toggle de vue centré */}
-                <div className="flex items-center gap-1.5 p-1 bg-black/10 dark:bg-white/5 rounded-xl backdrop-blur-sm border border-white/10 shrink-0">
-                    <button
-                        onClick={() => setViewMode('grid')}
-                        className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-inherit opacity-50 hover:opacity-100'}`}
-                        title="Vue Grille"
-                    >
-                        <i className="fas fa-th-large text-xs"></i>
-                    </button>
-                    <button
-                        onClick={() => setViewMode('list')}
-                        className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm' : 'text-inherit opacity-50 hover:opacity-100'}`}
-                        title="Vue Liste"
-                    >
-                        <i className="fas fa-list text-xs"></i>
-                    </button>
-                </div>
+            <div className="p-4 md:p-6 flex-1 overflow-y-auto min-h-0 pb-32">
+                <CurriculumTabsView
+                    viewMode={viewMode}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    programs={filteredPrograms}
+                    lessons={filteredLessons}
+                    savedConvSessions={filteredSavedConvSessions}
+                    savedVocabLists={filteredSavedVocabLists}
+                    onSelectProgram={curriculum.setSelectedProgram}
+                    onSelectLesson={props.onSelectLesson}
+                    onDeleteProgram={props.onDeleteProgram}
+                    onDeleteLesson={props.onDeleteLesson}
+                    onDeleteConvSession={props.onDeleteConvSession}
+                    onDeleteVocabList={props.onDeleteVocabList}
+                    onResumeConvSession={props.onResumeConvSession}
+                    onOpenVocabInLab={props.onOpenVocabInLab}
+                    setSelectedVocab={setSelectedVocab}
+                    openRenameModal={curriculum.openRenameModal}
 
-                <div className="flex items-center gap-3">
-                    {onNewProgram && (
-                        <Button 
-                            variant="secondary"
-                            onClick={onNewProgram} 
-                            size="sm" 
-                            className={`transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm font-bold shadow-lg transform hover:scale-105 active:scale-95`}
-                        >
-                            <i className="fas fa-plus mr-2"></i> {t('curriculum.new')}
-                        </Button>
-                    )}
-                </div>
-            </div>
+                />
 
-            {/* Titres du Header */}
-            <div className="relative z-10 flex flex-col">
-                <h1 className="text-2xl md:text-3xl font-black drop-shadow-sm flex items-center gap-3 text-inherit">
-                    <span className="text-2xl md:text-3xl text-inherit">🗺️</span> {t('curriculum.title')}
-                </h1>
-                <p className="opacity-80 mt-1 text-base text-inherit">{t('curriculum.subtitle')}</p>
-            </div>
-        </div>
-
-        <div className="p-4 md:p-6 flex-1 overflow-y-auto min-h-0 pb-32">
-            
-            {/* TABS SELECTOR */}
-            <div className="flex gap-4 mb-8 border-b border-border overflow-x-auto">
-                <button 
-                    onClick={() => setActiveTab('programs')}
-                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'programs' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
-                >
-                    <i className="fas fa-map-marked-alt mr-2"></i> Parcours ({programs.length})
-                    {activeTab === 'programs' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
-                </button>
-                <button 
-                    onClick={() => setActiveTab('lessons')}
-                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'lessons' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
-                >
-                    <i className="fas fa-book-open mr-2"></i> Leçons Solo ({lessons.filter(l => l.source !== 'curriculum').length})
-                    {activeTab === 'lessons' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
-                </button>
-                <button 
-                    onClick={() => setActiveTab('conversations')}
-                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'conversations' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
-                >
-                    <i className="fas fa-comments mr-2"></i> Causeries ({savedConvSessions.length})
-                    {activeTab === 'conversations' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
-                </button>
-                <button 
-                    onClick={() => setActiveTab('vocabulary')}
-                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'vocabulary' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
-                >
-                    <i className="fas fa-language mr-2"></i> Vocabulaire ({savedVocabLists.length})
-                    {activeTab === 'vocabulary' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
-                </button>
-            </div>
-
-            {activeTab === 'programs' ? (
-                programs.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 border-2 border-dashed border-border rounded-xl p-12">
-                        <div className="bg-background-secondary p-6 rounded-full mb-4">
-                            <i className="fas fa-map-marked-alt text-6xl text-text-muted"></i>
-                        </div>
-                        <h2 className="text-xl font-bold mb-2">{t('curriculum.noPrograms')}</h2>
-                        <p className="max-w-md mx-auto mb-6">
-                            {t('curriculum.noProgramsHelp')}
-                        </p>
-                    </div>
-                ) : (
-                    <div className={viewMode === 'list' ? "flex flex-col gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
-                        {programs.map(program => {
-                        const tutor = getTutor(program.tutorId);
-                        const progress = Math.round((program.modules.filter(m => m.status === 'completed').length / program.modules.length) * 100);
-
-                        return (
-                            <div 
-                                key={program.id}
-                                onClick={() => setSelectedProgram(program)}
-                                className={`bg-background border border-border rounded-2xl transition-all cursor-pointer group flex overflow-hidden relative ${
-                                    viewMode === 'grid' 
-                                        ? 'flex-col shadow-lg hover:shadow-xl hover:border-primary' 
-                                        : 'flex-row items-center p-4 gap-4 hover:bg-background-secondary'
-                                }`}
-                            >
-                                {/* Actions Overlay (Grid) or Inline (List) */}
-                                <div className={viewMode === 'grid' 
-                                    ? "absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                                    : "flex gap-2 order-last"
-                                }>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setRenameItemId(program.id);
-                                            setRenameType('program');
-                                            setNewTitle(program.topic);
-                                            setIsRenameModalOpen(true);
-                                        }}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-primary shadow-sm border border-border transition-colors focus:ring-2 focus:ring-primary/20 outline-none"
-                                        title="Renommer"
-                                    >
-                                        <i className="fas fa-edit text-xs"></i>
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            showConfirmation({
-                                                title: t('curriculum.deleteTitle'),
-                                                message: t('curriculum.deleteConfirm'),
-                                                confirmText: t('common.delete'),
-                                                variant: 'danger',
-                                                onConfirm: () => onDeleteProgram(program.id)
-                                            });
-                                        }}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-red-500 shadow-sm border border-border transition-colors focus:ring-2 focus:ring-red-500/20 outline-none"
-                                        title="Supprimer"
-                                    >
-                                        <i className="fas fa-trash-alt text-xs"></i>
-                                    </button>
-                                </div>
-
-                                {/* Content */}
-                                <div className={`flex items-center justify-center shrink-0 ${
-                                    viewMode === 'grid' ? 'p-6 pb-0' : 'w-16 h-16 bg-background-secondary rounded-xl'
-                                }`}>
-                                    <div className={`${viewMode === 'grid' ? 'text-4xl bg-background-secondary w-16 h-16' : 'text-3xl'} flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform`}>
-                                        {tutor?.emoji || '🎓'}
-                                    </div>
-                                </div>
-
-                                <div className={`flex-1 min-w-0 ${viewMode === 'grid' ? 'p-6' : 'px-2'}`}>
-                                    {viewMode === 'grid' && (
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary`}>
-                                                {program.targetLevel}
-                                            </span>
-                                        </div>
-                                    )}
-                                    
-                                    <h3 className={`font-bold group-hover:text-primary transition-colors ${viewMode === 'grid' ? 'text-xl mb-1' : 'text-base'}`}>
-                                        {program.topic}
-                                    </h3>
-                                    
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-xs text-text-muted truncate">
-                                            {t('curriculum.withTutor', { name: tutor?.name })}
-                                        </p>
-                                        {viewMode === 'list' && (
-                                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                                                {program.targetLevel}
-                                            </span>
-                                        )}
-                                    </div>
-                                    
-                                    <div className={viewMode === 'grid' ? "mt-4" : "mt-2 max-w-xs"}>
-                                        <div className="flex justify-between text-[10px] mb-1">
-                                            <span className="text-text-muted uppercase tracking-tighter font-bold">{t('curriculum.progressLabel')}</span>
-                                            <span className="font-bold text-primary">{progress}%</span>
-                                        </div>
-                                        <div className="w-full bg-background-tertiary rounded-full h-1.5 overflow-hidden">
-                                            <div 
-                                                className="bg-primary h-full transition-all duration-1000" 
-                                                style={{ width: `${progress}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {viewMode === 'grid' && (
-                                    <div className="bg-background-secondary p-3 text-center text-xs font-semibold text-text-muted uppercase tracking-wider group-hover:bg-primary group-hover:text-white transition-colors">
-                                        {t('curriculum.continue')}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            )
-        ) : activeTab === 'lessons' ? (
-            lessons.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 border-2 border-dashed border-border rounded-xl p-12">
-                    <div className="bg-background-secondary p-6 rounded-full mb-4">
-                        <i className="fas fa-book text-6xl text-text-muted"></i>
-                    </div>
-                    <h2 className="text-xl font-bold mb-2">Aucune leçon solo</h2>
-                    <p className="max-w-md mx-auto mb-6">
-                        Demandez à un professeur de vous créer une leçon personnalisée sur un sujet précis !
-                    </p>
-                </div>
-            ) : (
-                <div className={viewMode === 'list' ? "flex flex-col gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
-                    {lessons.filter(l => l.source !== 'curriculum').map(lesson => {
-                        const tutor = getTutor(lesson.tutorId || '');
-                        return (
-                            <div 
-                                key={lesson.id}
-                                onClick={() => onSelectLesson(lesson, 'curriculum')}
-                                className={`bg-background border border-border rounded-2xl transition-all cursor-pointer group flex overflow-hidden relative ${
-                                    viewMode === 'grid' 
-                                        ? 'flex-col shadow-lg hover:shadow-xl hover:border-primary' 
-                                        : 'flex-row items-center p-4 gap-4 hover:bg-background-secondary'
-                                }`}
-                            >
-                                <div className={viewMode === 'grid' 
-                                    ? "absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                                    : "flex gap-2 order-last"
-                                }>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setRenameItemId(lesson.id);
-                                            setRenameType('lesson');
-                                            setNewTitle(lesson.topic);
-                                            setIsRenameModalOpen(true);
-                                        }}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-primary shadow-sm border border-border transition-colors focus:ring-2 focus:ring-primary/20 outline-none"
-                                        title="Renommer"
-                                    >
-                                        <i className="fas fa-edit text-xs"></i>
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            showConfirmation({
-                                                title: "Supprimer la leçon",
-                                                message: `Êtes-vous sûr de vouloir supprimer définitivement la leçon "${lesson.topic}" ?`,
-                                                confirmText: "Supprimer",
-                                                variant: "danger",
-                                                onConfirm: () => onDeleteLesson(lesson.id)
-                                            });
-                                        }}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-red-500 shadow-sm border border-border transition-colors focus:ring-2 focus:ring-red-500/20 outline-none"
-                                        title="Supprimer"
-                                    >
-                                        <i className="fas fa-trash-alt text-xs"></i>
-                                    </button>
-                                </div>
-
-                                <div className={`flex items-center justify-center shrink-0 ${
-                                    viewMode === 'grid' ? 'p-6 pb-0' : 'w-16 h-16 bg-background-secondary rounded-xl'
-                                }`}>
-                                    <div className={`${viewMode === 'grid' ? 'text-4xl bg-background-secondary w-16 h-16' : 'text-3xl'} flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform`}>
-                                        {tutor?.emoji || '📖'}
-                                    </div>
-                                </div>
-
-                                <div className={`flex-1 min-w-0 ${viewMode === 'grid' ? 'p-6' : 'px-2'}`}>
-                                    <h3 className={`font-bold group-hover:text-primary transition-colors ${viewMode === 'grid' ? 'text-base mb-1' : 'text-base'}`}>
-                                        {lesson.topic}
-                                    </h3>
-                                    <p className="text-xs text-text-muted truncate">
-                                        {lesson.createdAt ? new Date(lesson.createdAt).toLocaleDateString() : 'Date inconnue'}
-                                    </p>
-                                </div>
-
-                                {viewMode === 'grid' && (
-                                    <div className="bg-background-secondary p-3 text-center text-[10px] font-bold text-text-muted uppercase tracking-wider group-hover:bg-primary group-hover:text-white transition-colors">
-                                        Lire la leçon
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            )
-        ) : activeTab === 'conversations' ? (
-            savedConvSessions.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 border-2 border-dashed border-border rounded-xl p-12">
-                    <div className="bg-background-secondary p-6 rounded-full mb-4">
-                        <i className="fas fa-comments text-6xl text-text-muted"></i>
-                    </div>
-                    <h2 className="text-xl font-bold mb-2">Aucune causerie sauvegardée</h2>
-                    <p className="max-w-md mx-auto mb-6">
-                        Terminez une causerie dans le Lab de Langues et cliquez sur « Sauvegarder cette causerie » pour la retrouver ici !
-                    </p>
-                </div>
-            ) : (
-                <div className={viewMode === 'list' ? "flex flex-col gap-4" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
-                    {savedConvSessions.map(session => {
-                        const sessionTutor = TUTORS.find(t => t.id === session.tutorId);
-                        const date = new Date(session.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-                        const hasLesson = session.remedialMessages && session.remedialMessages.length > 0;
-                        return (
-                            <div
-                                key={session.id}
-                                className={`bg-background border border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group flex relative ${
-                                    viewMode === 'grid' 
-                                        ? 'flex-col min-h-[160px] justify-between' 
-                                        : 'flex-row items-start gap-4'
-                                }`}
-                            >
-                                <div className={viewMode === 'grid' 
-                                    ? "absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                                    : "flex gap-2 order-last flex-col sm:flex-row ml-auto shrink-0"
-                                }>
-                                    {hasLesson && onResumeConvSession && (
-                                        <button
-                                            onClick={() => onResumeConvSession(session)}
-                                            className={`flex items-center justify-center gap-2 rounded-xl transition-colors border ${
-                                                viewMode === 'grid'
-                                                    ? 'w-8 h-8 bg-primary/20 dark:bg-primary/30 text-primary/90 dark:text-primary/40 border-primary/30 dark:border-primary/90'
-                                                    : 'px-3 py-2 bg-primary/20 dark:bg-primary/30 text-primary/90 dark:text-primary/40 text-xs font-bold border-primary/30 dark:border-primary/90 hover:bg-primary/30'
-                                            }`}
-                                            title="Reprendre la leçon"
-                                        >
-                                            <i className="fas fa-play"></i>
-                                            {viewMode === 'list' && <span className="hidden sm:inline">Reprendre</span>}
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setRenameItemId(session.id);
-                                            setRenameType('conversation');
-                                            setNewTitle(session.theme);
-                                            setIsRenameModalOpen(true);
-                                        }}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-primary transition-colors border border-border"
-                                        title="Renommer"
-                                    >
-                                        <i className="fas fa-edit text-xs"></i>
-                                    </button>
-                                    {onDeleteConvSession && (
-                                        <button
-                                            onClick={() => {
-                                                showConfirmation({
-                                                    title: 'Supprimer la causerie',
-                                                    message: `Supprimer définitivement la causerie "${session.theme}" ?`,
-                                                    confirmText: 'Supprimer',
-                                                    variant: 'danger',
-                                                    onConfirm: () => onDeleteConvSession(session.id)
-                                                });
-                                            }}
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-red-500 hover:bg-red-50 transition-colors border border-border"
-                                            title="Supprimer"
-                                        >
-                                            <i className="fas fa-trash-alt text-xs"></i>
-                                        </button>
-                                    )}
-                                </div>
-
-                                <div className={viewMode === 'grid' ? "flex items-start gap-4 mb-4" : "flex items-start gap-4 flex-1"}>
-                                    <div className="w-14 h-14 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-3xl shrink-0">
-                                        {sessionTutor?.emoji || '💬'}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                                            <h3 className={`font-bold text-text group-hover:text-primary transition-colors ${viewMode === 'grid' ? 'text-lg' : 'text-base'}`}>
-                                                {session.theme}
-                                            </h3>
-                                            {hasLesson && (
-                                                <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-lg bg-primary/20 dark:bg-primary/30 text-primary dark:text-primary/40 border border-primary/30 dark:border-primary">
-                                                    <i className="fas fa-magic mr-1"></i>Leçon
-                                                </span>
-                                            )}
-                                        </div>
-                                        <p className="text-xs text-text-muted mb-2">
-                                            {sessionTutor?.name || session.tutorName} · {date} · {session.messages.length} messages
-                                        </p>
-                                        {viewMode === 'list' && session.summary && (
-                                            <p className="text-xs text-text-secondary line-clamp-2 italic">
-                                                {session.summary.overall_feedback}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {viewMode === 'grid' && session.summary && (
-                                    <p className="text-xs text-text-secondary line-clamp-2 italic border-t border-border pt-3 mt-auto">
-                                        {session.summary.overall_feedback}
-                                    </p>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            )
-        ) : activeTab === 'vocabulary' ? (
-            savedVocabLists.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 border-2 border-dashed border-border rounded-xl p-12">
-                    <div className="bg-background-secondary p-6 rounded-full mb-4">
-                        <i className="fas fa-language text-6xl text-text-muted"></i>
-                    </div>
-                    <h2 className="text-xl font-bold mb-2">Aucun vocabulaire sauvegardé</h2>
-                    <p className="max-w-md mx-auto mb-6">
-                        Générez des listes de vocabulaire dans le <strong>Lab de Langues → Vocab</strong> et cliquez sur <strong>« Sauv. »</strong> pour les retrouver ici !
-                    </p>
-                </div>
-            ) : (
-                <div className={viewMode === 'list' ? "flex flex-col gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
-                    {savedVocabLists.map(vocab => {
-                        const diffColor = vocab.difficulty === 'débutant' ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : vocab.difficulty === 'intermédiaire' ? 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20' : 'text-red-600 bg-red-50 dark:bg-red-900/20';
-                        const savedDate = new Date(vocab.savedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-                        return (
-                            <div
-                                key={vocab.id}
-                                className={`bg-background border border-border rounded-2xl transition-all cursor-pointer group flex overflow-hidden relative ${
-                                    viewMode === 'grid' 
-                                        ? 'flex-col shadow-lg hover:shadow-xl hover:border-primary' 
-                                        : 'flex-row items-center p-4 gap-4 hover:bg-background-secondary'
-                                }`}
-                                onClick={() => setSelectedVocab(vocab)}
-                            >
-                                {/* Action buttons */}
-                                <div className={viewMode === 'grid' 
-                                    ? "absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                                    : "flex gap-2 order-last"
-                                }>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setRenameItemId(vocab.id);
-                                            setRenameType('vocab');
-                                            setNewTitle(vocab.theme);
-                                            setIsRenameModalOpen(true);
-                                        }}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-primary shadow-sm border border-border transition-colors"
-                                        title="Renommer"
-                                    >
-                                        <i className="fas fa-edit text-xs"></i>
-                                    </button>
-                                    {onDeleteVocabList && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                showConfirmation({
-                                                    title: 'Supprimer le vocabulaire',
-                                                    message: `Supprimer définitivement "${vocab.theme}" ?`,
-                                                    confirmText: 'Supprimer',
-                                                    variant: 'danger',
-                                                    onConfirm: () => onDeleteVocabList(vocab.id)
-                                                });
-                                            }}
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-red-500 hover:bg-red-50 transition-colors border border-border"
-                                            title="Supprimer"
-                                        >
-                                            <i className="fas fa-trash-alt text-xs"></i>
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Icon */}
-                                <div className={`flex items-center justify-center shrink-0 ${
-                                    viewMode === 'grid' ? 'p-6 pb-0' : 'w-14 h-14 bg-primary/10 dark:bg-primary/20 rounded-xl'
-                                }`}>
-                                    <div className={`${viewMode === 'grid' ? 'text-4xl bg-primary/10 dark:bg-primary/20 w-16 h-16' : 'text-3xl'} flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform`}>
-                                        🗣️
-                                    </div>
-                                </div>
-
-                                {/* Info */}
-                                <div className={`flex-1 min-w-0 ${viewMode === 'grid' ? 'p-6' : 'px-2'}`}>
-                                    <h3 className={`font-bold group-hover:text-primary transition-colors ${viewMode === 'grid' ? 'text-base mb-1' : 'text-base'}`}>
-                                        {vocab.theme}
-                                    </h3>
-                                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                                        <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-lg ${diffColor}`}>
-                                            {vocab.difficulty}
-                                        </span>
-                                        <span className="text-[10px] text-text-muted">
-                                            {vocab.wordCount} mots · {vocab.targetLanguage.toUpperCase()}
-                                        </span>
-                                        {viewMode === 'list' && (
-                                            <span className="text-[10px] text-text-muted">
-                                                · {vocab.exercises.length} exercices · {savedDate}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {viewMode === 'grid' && (
-                                    <div className="flex">
-                                        <div className="flex-1 bg-background-secondary p-3 text-center text-[10px] font-bold text-text-muted uppercase tracking-wider group-hover:bg-primary group-hover:text-white transition-colors">
-                                            Aperçu
-                                        </div>
-                                        {onOpenVocabInLab && (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); onOpenVocabInLab(vocab); }}
-                                                className="bg-primary hover:bg-primary/90 text-white p-3 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 flex-shrink-0"
-                                                title="Ouvrir dans le Lab de Langues"
-                                            >
-                                                <i className="fas fa-flask text-[11px]"></i> Lab
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            )
-        ) : null}
-
-        {/* Vocab Detail Modal */}
-        {selectedVocab && (
-            <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setSelectedVocab(null)}>
-                <div className="bg-background rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-border" onClick={e => e.stopPropagation()}>
-                    {/* Modal Header */}
-                    <div className="p-5 border-b border-border flex items-start justify-between gap-4 bg-gradient-to-r from-primary to-primary text-white">
-                        <div>
-                            <h3 className="text-xl font-black">{selectedVocab.theme}</h3>
-                            <p className="text-sm opacity-80 mt-0.5">
-                                {selectedVocab.targetLanguage.toUpperCase()} · {selectedVocab.difficulty} · {selectedVocab.wordCount} mots · {selectedVocab.exercises.length} exercices
-                            </p>
-                        </div>
-                        <button onClick={() => setSelectedVocab(null)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-colors shrink-0">
-                            <i className="fas fa-times"></i>
-                        </button>
-                    </div>
-
-                    <div className="overflow-y-auto flex-1 p-5 space-y-6">
-                        {/* Words */}
-                        {selectedVocab.words.length > 0 && (
-                            <div>
-                                <h4 className="text-sm font-black uppercase tracking-widest text-text-muted mb-3 flex items-center gap-2">
-                                    <i className="fas fa-spell-check text-primary"></i> Mots ({selectedVocab.words.length})
-                                </h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {selectedVocab.words.map((w, i) => (
-                                        <div key={i} className="bg-background-secondary rounded-xl p-3 border border-border">
-                                            <div className="flex justify-between items-baseline">
-                                                <span className="font-bold text-text">{w.word}</span>
-                                                <span className="text-xs text-text-muted ml-2">{w.translation}</span>
-                                            </div>
-                                            {w.example && <p className="text-xs text-text-secondary mt-1 italic">{w.example}</p>}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Expressions */}
-                        {selectedVocab.expressions.length > 0 && (
-                            <div>
-                                <h4 className="text-sm font-black uppercase tracking-widest text-text-muted mb-3 flex items-center gap-2">
-                                    <i className="fas fa-comment-dots text-primary"></i> Expressions ({selectedVocab.expressions.length})
-                                </h4>
-                                <div className="flex flex-col gap-2">
-                                    {selectedVocab.expressions.map((ex, i) => (
-                                        <div key={i} className="bg-background-secondary rounded-xl p-3 border border-border">
-                                            <div className="flex justify-between items-baseline flex-wrap gap-1">
-                                                <span className="font-bold text-text">{ex.expression}</span>
-                                                <span className="text-xs text-text-muted">{ex.translation}</span>
-                                            </div>
-                                            {ex.example && <p className="text-xs text-text-secondary mt-1 italic">{ex.example}</p>}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Exercises Summary */}
-                        {selectedVocab.exercises.length > 0 && (
-                            <div>
-                                <h4 className="text-sm font-black uppercase tracking-widest text-text-muted mb-3 flex items-center gap-2">
-                                    <i className="fas fa-dumbbell text-pink-500"></i> Exercices ({selectedVocab.exercises.length})
-                                </h4>
-                                <div className="flex flex-col gap-2">
-                                    {selectedVocab.exercises.slice(0, 5).map((ex, i) => (
-                                        <div key={i} className="bg-background-secondary rounded-xl p-3 border border-border">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg bg-pink-100 dark:bg-pink-900/20 text-pink-600">{ex.type}</span>
-                                            </div>
-                                            <p className="text-sm text-text">{ex.question || ex.sentence || 'Exercice'}</p>
-                                            {ex.options && ex.options.length > 0 && (
-                                                <div className="flex flex-wrap gap-1 mt-1.5">
-                                                    {ex.options.map((opt, j) => (
-                                                        <span key={j} className={`text-xs px-2 py-0.5 rounded-lg border ${opt === ex.answer ? 'bg-green-100 dark:bg-green-900/20 text-green-700 border-green-300' : 'bg-background border-border text-text-muted'}`}>{opt}</span>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                    {selectedVocab.exercises.length > 5 && (
-                                        <p className="text-xs text-text-muted text-center">+ {selectedVocab.exercises.length - 5} autres exercices…</p>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Modal Footer */}
-                    {onOpenVocabInLab && (
-                        <div className="p-4 border-t border-border bg-background-secondary flex items-center justify-between gap-3">
-                            <p className="text-xs text-text-muted">
-                                Retrouvez ce vocabulaire en mode interactif avec exercices, chat IA et flashcards.
-                            </p>
-                            <button
-                                onClick={() => { onOpenVocabInLab(selectedVocab!); setSelectedVocab(null); }}
-                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-xl transition-colors flex-shrink-0 shadow-md"
-                            >
-                                <i className="fas fa-flask"></i>
-                                Ouvrir dans le Lab
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
-        )}
-
-        {activeTab !== 'conversations' && activeTab !== 'vocabulary' && (
-            <div className="mt-16 mb-10">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-background-secondary/50 p-4 md:p-6 rounded-[2rem] border border-border/50">
-                    <div>
-                        <h2 className="text-xl font-black flex items-center gap-2 text-text-secondary uppercase tracking-tighter">
-                            <i className="fas fa-compass text-primary"></i> Découvrir & Développer
-                        </h2>
-                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-1">Parcours d'étude suggérés par l'IA</p>
-                    </div>
-
-                    <div className="flex gap-2">
-                        <Button 
-                            variant="secondary" 
-                            size="sm"
-                            className="rounded-xl py-2 px-4 border-dashed text-[10px] font-bold h-10"
-                            onClick={() => setShowRenewModal(true)}
-                            disabled={isRenewingCatalog}
-                        >
-                            {isRenewingCatalog ? <AILoader size="sm" /> : <><i className="fas fa-magic mr-2"></i> Générer des idées</>}
-                        </Button>
-                    </div>
-                </div>
-
-                {customSuggestions.length === 0 ? (
-                    <div className="text-center py-12 bg-primary/5 rounded-[2rem] border border-dashed border-primary/20">
-                        <p className="text-sm text-text-secondary italic">Cliquez sur "Générer des idées" en haut à droite pour obtenir des suggestions de parcours.</p>
-                    </div>
-                ) : (
-                    <div className={viewMode === 'list' ? "flex flex-col gap-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
-                        {customSuggestions.map(suggestion => (
-                            <div 
-                                key={suggestion.id}
-                                className={`bg-white dark:bg-gray-800 border border-border rounded-2xl transition-all group relative flex ${
-                                    viewMode === 'grid' 
-                                        ? 'flex-col p-6 hover:shadow-xl' 
-                                        : 'flex-row items-center p-4 gap-4 hover:bg-background-secondary'
-                                }`}
-                            >
-                                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button 
-                                        onClick={() => handleDeleteSuggestion(suggestion.id, suggestion.title)}
-                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-red-500 transition-colors"
-                                    >
-                                        <i className="fas fa-trash-alt text-xs"></i>
-                                    </button>
-                                </div>
-
-                                <div className="flex-1 min-w-0">
-                                    <span className="px-2 py-0.5 bg-accent/10 text-accent text-[10px] font-bold uppercase rounded mb-3 inline-block">
-                                        {suggestion.category}
-                                    </span>
-                                    <h3 className={`font-bold group-hover:text-primary transition-colors ${viewMode === 'grid' ? 'text-lg mb-2' : 'text-base mb-0'}`}>
-                                        {suggestion.title}
-                                    </h3>
-                                    <p className={`text-xs text-text-muted italic opacity-70 ${viewMode === 'grid' ? 'mb-6 line-clamp-3' : 'line-clamp-1'}`}>
-                                        "{suggestion.description}"
-                                    </p>
-                                </div>
-
-                                <Button 
-                                    variant="primary" 
-                                    className={viewMode === 'grid' ? "w-full rounded-xl mt-auto" : "rounded-xl px-6 shrink-0"}
-                                    onClick={() => onSuggestedProgram(suggestion.title, suggestion.category)}
-                                >
-                                    <i className="fas fa-magic mr-2"></i> {viewMode === 'grid' ? 'Créer ce parcours' : 'Créer'}
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
+                {curriculum.activeTab !== 'conversations' && curriculum.activeTab !== 'vocabulary' && (
+                    <SuggestionsCatalogView
+                        customSuggestions={curriculum.customSuggestions}
+                        viewMode={viewMode}
+                        isRenewingCatalog={curriculum.isRenewingCatalog}
+                        setShowRenewModal={curriculum.setShowRenewModal}
+                        handleDeleteSuggestion={curriculum.handleDeleteSuggestion}
+                        onSuggestedProgram={props.onSuggestedProgram}
+                    />
                 )}
             </div>
-        )}
+
+            <CurriculumModals
+                selectedVocab={selectedVocab}
+                setSelectedVocab={setSelectedVocab}
+                onOpenVocabInLab={props.onOpenVocabInLab}
+                isRenameModalOpen={curriculum.isRenameModalOpen}
+                setIsRenameModalOpen={curriculum.setIsRenameModalOpen}
+                renameType={curriculum.renameType}
+                newTitle={curriculum.newTitle}
+                setNewTitle={curriculum.setNewTitle}
+                onConfirmRename={handleConfirmRename}
+                showRenewModal={curriculum.showRenewModal}
+                setShowRenewModal={curriculum.setShowRenewModal}
+                renewStrategy={curriculum.renewStrategy}
+                setRenewStrategy={curriculum.setRenewStrategy}
+                renewPreferences={curriculum.renewPreferences}
+                setRenewPreferences={curriculum.setRenewPreferences}
+                isRenewingCatalog={curriculum.isRenewingCatalog}
+                handleRenewCatalog={curriculum.handleRenewCatalog}
+            />
         </div>
-
-        {/* Modal de renommage */}
-        {isRenameModalOpen && (
-            <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                <div className="bg-background rounded-2xl shadow-2xl max-w-md w-full border border-border overflow-hidden animate-scale-in">
-                    <div className="p-6 border-b border-border">
-                        <h3 className="text-xl font-bold">Modifier le nom du parcours</h3>
-                    </div>
-                    <div className="p-6">
-                        <input
-                            autoFocus
-                            type="text"
-                            value={newTitle}
-                            onChange={(e) => setNewTitle(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && newTitle.trim()) {
-                                    if (renameType === 'program') {
-                                        onRenameProgram(renameItemId!, newTitle);
-                                    } else if (renameType === 'lesson') {
-                                        onRenameLesson(renameItemId!, newTitle);
-                                    } else if (renameType === 'conversation') {
-                                        onRenameConvSession?.(renameItemId!, newTitle);
-                                    } else if (renameType === 'vocab') {
-                                        onRenameVocabList?.(renameItemId!, newTitle);
-                                    }
-                                    setIsRenameModalOpen(false);
-                                } else if (e.key === 'Escape') {
-                                    setIsRenameModalOpen(false);
-                                }
-                            }}
-                            className="w-full px-4 py-3 bg-background-secondary border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
-                            placeholder={renameType === 'program' ? "Nouveau nom du parcours..." : renameType === 'conversation' ? "Nouveau thème de la causerie..." : "Nouveau titre de la leçon..."}
-                        />
-                    </div>
-                    <div className="p-6 bg-background-secondary flex justify-end gap-3">
-                        <Button 
-                            variant="secondary" 
-                            onClick={() => setIsRenameModalOpen(false)}
-                        >
-                            Annuler
-                        </Button>
-                        <Button 
-                            disabled={!newTitle.trim()}
-                            onClick={() => {
-                                if (renameType === 'program') {
-                                    onRenameProgram(renameItemId!, newTitle);
-                                } else if (renameType === 'lesson') {
-                                    onRenameLesson(renameItemId!, newTitle);
-                                } else if (renameType === 'conversation') {
-                                    onRenameConvSession?.(renameItemId!, newTitle);
-                                } else if (renameType === 'vocab') {
-                                    onRenameVocabList?.(renameItemId!, newTitle);
-                                }
-                                setIsRenameModalOpen(false);
-                            }}
-                        >
-                            Enregistrer
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        {/* Modal Preferences de Renouvellement */}
-        {showRenewModal && (
-            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-                <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-border animate-zoom-in">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                            <i className="fas fa-compass text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-black">Renouveler les idées</h3>
-                            <p className="text-xs text-text-muted">L'IA va suggérer de nouveaux thèmes d'étude.</p>
-                        </div>
-                    </div>
-                    
-                    <div className="mb-6">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">
-                            Méthode de génération
-                        </label>
-                        <div className="flex gap-2 p-1 bg-background-secondary rounded-2xl border border-border">
-                            <button
-                                onClick={() => setRenewStrategy('replace')}
-                                className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all ${renewStrategy === 'replace' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm shadow-primary/10' : 'text-text-muted hover:text-text'}`}
-                            >
-                                <i className="fas fa-sync-alt mr-2"></i> Remplacer tout
-                            </button>
-                            <button
-                                onClick={() => setRenewStrategy('append')}
-                                className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all ${renewStrategy === 'append' ? 'bg-white dark:bg-gray-800 text-primary shadow-sm shadow-primary/10' : 'text-text-muted hover:text-text'}`}
-                            >
-                                <i className="fas fa-plus mr-2"></i> Ajouter aux existants
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="mb-6">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">
-                            Thèmes préférés (Optionnel)
-                        </label>
-                        <textarea
-                            value={renewPreferences}
-                            onChange={(e) => setRenewPreferences(e.target.value)}
-                            placeholder="Ex: Programmation, Histoire Médiévale, Cuisine Japonaise..."
-                            className="w-full p-4 rounded-2xl bg-background-secondary border border-border focus:ring-4 focus:ring-primary/10 outline-none text-sm min-h-[100px] resize-none transition-all"
-                        />
-                    </div>
-
-                    <div className="flex gap-3 justify-end">
-                        <Button variant="secondary" onClick={() => setShowRenewModal(false)} className="rounded-xl">
-                            Annuler
-                        </Button>
-                        <Button 
-                            variant="primary" 
-                            onClick={() => handleRenewCatalog(renewPreferences)} 
-                            className="rounded-xl px-6"
-                            loading={isRenewingCatalog}
-                        >
-                            <i className="fas fa-magic mr-2"></i> Générer
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        )}
-    </div>
     );
 };

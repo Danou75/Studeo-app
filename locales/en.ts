@@ -62,7 +62,8 @@ export const en: typeof fr = {
         "importSuccess": "\"{name}\" imported successfully!",
         "cardsCount": "{count} cards",
         "noResults": "No results found...",
-        "importAction": "Import Set"
+        "importAction": "Import Set",
+        "allTeachers": "All teachers"
     },
     home: {
         title: "STUDEO",
@@ -827,13 +828,6 @@ export const en: typeof fr = {
         translatePlaceholder: "E.g. hello, thank you, how are you...",
         translate: "Translate",
         conjugateSubtitle: "Conjugate any verb instantly",
-        translateSubtitle: "Translate words, sentences, and expressions"
-    },
-    library: {
-        allTeachers: "All teachers",
-        importSuccess: "Collection \"{name}\" imported !",
-        searchPlaceholder: "Search for a set (e.g. Italian, Medicine...)",
-        cardsCount: "{count} cards"
     },
     curriculum: {
         title: "My Lessons & Programs",

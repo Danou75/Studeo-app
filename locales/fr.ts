@@ -60,7 +60,8 @@ export const fr = {
         importSuccess: "\"{name}\" importé avec succès !",
         cardsCount: "{count} fiches",
         noResults: "Aucun résultat trouvé...",
-        importAction: "Importer le set"
+        importAction: "Importer le set",
+        allTeachers: "Tous les professeurs"
     },
     home: {
         title: "STUDEO",
@@ -843,13 +844,6 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
         translatePlaceholder: "Ex: bonjour, merci, comment allez-vous...",
         translate: "Traduire",
         conjugateSubtitle: "Conjuguez n'importe quel verbe instantanément",
-        translateSubtitle: "Traduisez mots, phrases et expressions"
-    },
-    library: {
-        allTeachers: "Tous les professeurs",
-        importSuccess: "Collection \"{name}\" importée !",
-        searchPlaceholder: "Rechercher un set (ex: Italien, Médecine...)",
-        cardsCount: "{count} fiches"
     },
     curriculum: {
         title: "Mes Leçons & Programmes",

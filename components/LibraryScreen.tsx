@@ -580,7 +580,7 @@ Format JSON STRICT (tableau d'objets) :
                         <select
                             value={selectedTutorId || ''}
                             onChange={(e) => setSelectedTutorId(e.target.value || null)}
-                            className="appearance-none bg-background-secondary border border-border rounded-xl px-4 py-3.5 pr-10 text-sm font-medium text-text focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer hover:bg-background-tertiary w-full sm:w-auto min-w-[180px] max-w-[200px] sm:max-w-none text-ellipsis overflow-hidden whitespace-nowrap"
+                            className="appearance-none bg-background-secondary border border-border rounded-xl px-4 py-3.5 pr-10 text-sm font-medium text-text focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer hover:bg-background-tertiary w-fit sm:w-auto min-w-[150px]"
                         >
                             <option value="">👤 {t('library.allTeachers') || t('curriculum.allTeachers') || 'Tous les professeurs'}</option>
                             {tutorsWithContent.map(tutor => (

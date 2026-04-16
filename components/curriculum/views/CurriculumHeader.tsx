@@ -103,7 +103,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
             {/* Tutor Filter Dropdown */}
             {tutorsWithContent.length > 0 && (
                 <div className="relative z-20 mt-4 sm:mt-6 flex items-center gap-2 sm:gap-3">
-                    <div className="relative flex-1 max-w-[200px] sm:max-w-xs">
+                    <div className="relative w-fit sm:max-w-xs">
                         <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-70">
                             <i className="fas fa-filter text-xs"></i>
                         </div>

@@ -122,7 +122,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             </span>
                         )}
                     </div>
-                    <p className="text-[11px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 leading-snug line-clamp-2">{desc}</p>
+                    <p className="text-[11px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 leading-snug max-sm:line-clamp-none line-clamp-2">{desc}</p>
                 </div>
                 
                 <div className="group-hover:translate-x-1 transition-all flex-shrink-0 opacity-40 group-hover:opacity-100" style={{ color: themeColors.primary }}>

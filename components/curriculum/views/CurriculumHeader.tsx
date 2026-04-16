@@ -36,7 +36,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
             {onNavigateToSettings && (
                 <button 
                     onClick={onNavigateToSettings}
-                    className="absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
+                    className="hidden sm:block absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
                     title="Paramètres de l'IA"
                 >
                     <i className="fas fa-cog text-inherit"></i>
@@ -70,7 +70,7 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
                     </button>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                     {onNewProgram && (
                         <Button 
                             variant="secondary"
@@ -78,8 +78,17 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
                             size="sm" 
                             className={`transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm font-bold shadow-lg transform hover:scale-105 active:scale-95`}
                         >
-                            <i className="fas fa-plus mr-2"></i> {t('curriculum.new')}
+                            <i className="fas fa-plus mr-1 sm:mr-2"></i> <span className="hidden sm:inline">{t('curriculum.new')}</span><span className="inline sm:hidden">Nouveau</span>
                         </Button>
+                    )}
+                    {onNavigateToSettings && (
+                        <button 
+                            onClick={onNavigateToSettings}
+                            className={`sm:hidden p-2 rounded-xl transition-all active:scale-95 flex items-center justify-center w-8 h-8 ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white backdrop-blur-sm shadow-md'}`}
+                            title="Paramètres de l'IA"
+                        >
+                            <i className="fas fa-cog text-inherit"></i>
+                        </button>
                     )}
                 </div>
             </div>
@@ -93,8 +102,8 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
 
             {/* Tutor Filter Dropdown */}
             {tutorsWithContent.length > 0 && (
-                <div className="relative z-20 mt-6 flex items-center gap-3">
-                    <div className="relative flex-1 max-w-xs">
+                <div className="relative z-20 mt-4 sm:mt-6 flex items-center gap-2 sm:gap-3">
+                    <div className="relative flex-1 max-w-[200px] sm:max-w-xs">
                         <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-70">
                             <i className="fas fa-filter text-xs"></i>
                         </div>

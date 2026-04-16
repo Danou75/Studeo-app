@@ -494,7 +494,7 @@ Format JSON STRICT (tableau d'objets) :
                 {onNavigateToSettings && (
                     <button 
                         onClick={onNavigateToSettings}
-                        className="absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
+                        className="hidden sm:block absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
                         title="Paramètres de l'IA"
                     >
                         <i className="fas fa-cog text-inherit"></i>
@@ -529,19 +529,19 @@ Format JSON STRICT (tableau d'objets) :
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                         {onStartQuiz && (
                             <Button 
                                 variant="secondary" 
                                 onClick={onStartQuiz} 
-                                className={`transition-all border-transparent backdrop-blur-sm rounded-xl px-4 py-2 flex items-center gap-2 group ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80`}
+                                className={`transition-all border-transparent backdrop-blur-sm rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1 sm:gap-2 group ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80`}
                             >
-                                <i className="fas fa-play-circle text-lg md:mr-2 animate-pulse"></i>
-                                <span className="font-bold uppercase tracking-wider text-[10px] hidden sm:inline">Lecteur de Quiz</span>
+                                <i className="fas fa-play-circle text-base sm:text-lg animate-pulse"></i>
+                                <span className="font-bold uppercase tracking-wider text-[10px] hidden sm:inline">Lecteur</span>
                             </Button>
                         )}
-                        {!onNavigateToSettings && (
-                             <button onClick={onNavigateToSettings} className="p-2 rounded-full hover:bg-white/10 text-white transition-all">
+                        {onNavigateToSettings && (
+                             <button onClick={onNavigateToSettings} className={`sm:hidden w-8 h-8 flex items-center justify-center rounded-xl transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white backdrop-blur-sm shadow-md'}`}>
                                 <i className="fas fa-cog"></i>
                             </button>
                         )}
@@ -576,12 +576,11 @@ Format JSON STRICT (tableau d'objets) :
                         />
                     </div>
 
-                     {/* Teacher Filter Dropdown */}
                     <div className="relative group shrink-0" translate="no">
                         <select
                             value={selectedTutorId || ''}
                             onChange={(e) => setSelectedTutorId(e.target.value || null)}
-                            className="appearance-none bg-background-secondary border border-border rounded-xl px-4 py-3.5 pr-10 text-sm font-medium text-text focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer hover:bg-background-tertiary w-full sm:w-auto min-w-[180px]"
+                            className="appearance-none bg-background-secondary border border-border rounded-xl px-4 py-3.5 pr-10 text-sm font-medium text-text focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer hover:bg-background-tertiary w-full sm:w-auto min-w-[180px] max-w-[200px] sm:max-w-none text-ellipsis overflow-hidden whitespace-nowrap"
                         >
                             <option value="">👤 {t('library.allTeachers') || t('curriculum.allTeachers') || 'Tous les professeurs'}</option>
                             {tutorsWithContent.map(tutor => (

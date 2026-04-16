@@ -52,7 +52,7 @@ export const ConjugatorHeader: React.FC<ConjugatorHeaderProps> = ({
             {onNavigateToSettings && (
                 <button 
                     onClick={onNavigateToSettings}
-                    className="absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
+                    className="hidden sm:block absolute bottom-4 right-6 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300 p-2 hover:bg-white/10 rounded-xl"
                     title="Paramètres de l'IA"
                 >
                     <i className="fas fa-cog text-inherit"></i>
@@ -159,7 +159,7 @@ export const ConjugatorHeader: React.FC<ConjugatorHeaderProps> = ({
                     <div className="relative">
                         <button 
                             onClick={() => setShowVoiceSettings(!showVoiceSettings)}
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all backdrop-blur-sm border ${
+                            className={`w-10 h-10 rounded-xl inline-flex items-center justify-center transition-all backdrop-blur-sm border ${
                                 showVoiceSettings ? 'bg-white text-rose-600 border-white' : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
                             }`}
                             title={t('conjugator.voiceSettings')}
@@ -167,6 +167,16 @@ export const ConjugatorHeader: React.FC<ConjugatorHeaderProps> = ({
                             <i className="fas fa-sliders-h"></i>
                         </button>
 
+                        {onNavigateToSettings && (
+                            <button 
+                                onClick={onNavigateToSettings}
+                                className={`sm:hidden w-10 h-10 ml-2 rounded-xl inline-flex items-center justify-center transition-all backdrop-blur-sm border ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 hover:bg-black/10 text-primary border-black/10' : 'bg-white/10 hover:bg-white/20 text-white border-white/20'}`}
+                                title="Paramètres de l'IA"
+                            >
+                                <i className="fas fa-cog"></i>
+                            </button>
+                        )}
+                        
                         {showVoiceSettings && (
                             <div className="absolute top-12 right-0 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 w-72 overflow-hidden animate-fade-in-down origin-top-right">
                                 <div className="p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center text-gray-800 dark:text-gray-200">

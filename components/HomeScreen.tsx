@@ -320,7 +320,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
             
              <div className="text-center text-[10px] mt-4 pb-2 font-mono uppercase tracking-widest opacity-30" style={{ color: themeColors.text }}>
-                Studeo v3.2.0
+                {/* @ts-ignore */}
+                Studeo v{typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '3.2.0'}
             </div>
         </div>
     );

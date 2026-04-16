@@ -63,6 +63,7 @@ export const useUpdater = (
     // ── Stratégie Tauri natif ─────────────────────────────────────────────────
     const checkWithTauriUpdater = useCallback(async (silent: boolean): Promise<boolean> => {
         try {
+            const currentVersion = getCurrentVersion();
             // Tauri v1: checkUpdate() returns { shouldUpdate, manifest }
             const { checkUpdate } = await import('@tauri-apps/api/updater');
             const { shouldUpdate, manifest } = await checkUpdate();
@@ -79,6 +80,7 @@ export const useUpdater = (
                 }
             } else {
                 setUpdateStatus('up-to-date');
+                setLatestVersion(currentVersion);
                 if (!silent) onToast('Votre application est à jour ! 🎉', 'success');
             }
             return true;
@@ -101,9 +103,11 @@ export const useUpdater = (
                     if (version) {
                         setLatestVersion(version);
                         if (isNewerVersion(version, currentVersion)) {
+                            setLatestVersion(version);
                             setUpdateStatus('available');
                             if (!silent) onToast(`🚀 Studeo v${version} est disponible !`, 'info', 8000);
                         } else {
+                            setLatestVersion(currentVersion);
                             setUpdateStatus('up-to-date');
                             if (!silent) onToast('Application à jour ! 🎉', 'success');
                         }
@@ -126,9 +130,11 @@ export const useUpdater = (
                 setUpdateNotes(data.notes ?? null);
 
                 if (isNewerVersion(version, currentVersion)) {
+                    setLatestVersion(version);
                     setUpdateStatus('available');
                     if (!silent) onToast(`🚀 Studeo v${version} est disponible !`, 'info', 8000);
                 } else {
+                    setLatestVersion(currentVersion);
                     setUpdateStatus('up-to-date');
                     if (!silent) onToast('Application à jour ! 🎉', 'success');
                 }

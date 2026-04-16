@@ -153,11 +153,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     <p className="text-gray-500 dark:text-gray-400 text-[10px] sm:text-[10px] md:text-xs font-medium tracking-wide mt-0.5">
                         {themeStyle === 'french' && "L'outil pour tout apprendre"}
                         {themeStyle === 'english' && "The tool to learn everything"}
-                        {themeStyle === 'spanish' && "La herramienta para apprendre tout"}
+                        {themeStyle === 'spanish' && "La herramienta para aprender todo"}
                         {themeStyle === 'italian' && "Lo strumento per imparare tutto"}
                         {themeStyle === 'german' && "Das Werkzeug, um alles zu lernen"}
                         {themeStyle === 'russian' && "Инструмент, чтобы выучить все"}
-                        {themeStyle !== 'french' && themeStyle !== 'english' && themeStyle !== 'spanish' && themeStyle !== 'italian' && themeStyle !== 'german' && themeStyle !== 'russian' && "L'outil pour tout apprendre"}
+                        {themeStyle === 'portuguese' && "A ferramenta para aprender tudo"}
+                        {themeStyle === 'polish' && "Narzędzie do nauki wszystkiego"}
+                        {themeStyle !== 'french' && themeStyle !== 'english' && themeStyle !== 'spanish' && themeStyle !== 'italian' && themeStyle !== 'german' && themeStyle !== 'russian' && themeStyle !== 'portuguese' && themeStyle !== 'polish' && "L'outil pour tout apprendre"}
                     </p>
                 </div>
 

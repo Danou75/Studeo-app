@@ -71,7 +71,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
     const Section = ({ title, icon, children, color = themeColors.primary }: { title: string, icon: string, children: React.ReactNode, color?: string }) => (
         <div 
-            className={`flex flex-col gap-2 sm:gap-3 md:gap-5 flex-1 p-3 sm:p-4 md:p-6 rounded-2xl md:rounded-3xl border shadow-sm transition-all duration-300 ${themeStyle === 'apple' ? 'bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl' : 'bg-white dark:bg-gray-800'}`}
+            className={`flex flex-col gap-2 sm:gap-3 md:gap-5 flex-1 p-2 sm:p-4 md:p-6 rounded-2xl md:rounded-3xl border shadow-sm transition-all duration-300 ${themeStyle === 'apple' ? 'bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl' : 'bg-white dark:bg-gray-800'}`}
             style={{ 
                 borderColor: `${color}30`,
                 boxShadow: `0 4px 20px -8px ${color}20`
@@ -134,12 +134,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
     return (
         <div 
-            className="flex-1 min-h-0 overflow-y-auto pt-safe p-3 sm:p-4 pb-20 w-full mx-auto transition-colors duration-500"
+            className="flex-1 min-h-0 overflow-y-auto pt-safe px-1.5 py-3 sm:p-4 pb-20 w-full mx-auto transition-colors duration-500 max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
         >
             {/* Header / Top Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 sm:mb-6 md:mb-8 pt-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2 mb-4 sm:mb-6 md:mb-8 pt-1">
                 {/* Logo & Slogan */}
-                <div className="text-left w-full sm:flex-1 sm:min-w-0">
+                <div className="text-center sm:text-left w-full sm:flex-1 sm:min-w-0">
                     <h1 
                         className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter drop-shadow-sm filter bg-clip-text text-transparent"
                         style={{ 
@@ -162,7 +162,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
 
                 {/* Zone des Contrôles — ligne complète sur mobile, alignée à droite sur sm+ */}
-                <div className="flex items-center gap-1.5 flex-shrink-0 z-30 flex-wrap">
+                <div className="flex items-center justify-center sm:justify-end gap-1.5 sm:gap-1.5 flex-shrink-0 z-30 flex-wrap px-2 sm:px-0">
                     {/* Streak */}
                     <div 
                         className="flex items-center gap-1 px-2 py-1.5 text-white shadow-md rounded-xl text-[10px] font-black"
@@ -299,7 +299,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             {/* SECTION PLEINE LARGEUR — Carte du Savoir & Statistiques */}
             <div className="mt-3 sm:mt-4 md:mt-6 lg:mt-8">
                 <div
-                    className={`flex flex-col gap-2 sm:gap-3 md:gap-4 p-3 sm:p-4 md:p-6 rounded-2xl md:rounded-3xl border shadow-sm transition-all duration-300 ${themeStyle === 'apple' ? 'bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl' : 'bg-white dark:bg-gray-800'}`}
+                    className={`flex flex-col gap-2 sm:gap-3 md:gap-4 p-2 sm:p-4 md:p-6 rounded-2xl md:rounded-3xl border shadow-sm transition-all duration-300 ${themeStyle === 'apple' ? 'bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl' : 'bg-white dark:bg-gray-800'}`}
                     style={{ borderColor: `${themeColors.secondary || themeColors.primary}30`, boxShadow: `0 4px 20px -8px ${themeColors.secondary || themeColors.primary}20` }}
                 >
                     <h3 className="text-[10px] sm:text-xs font-black flex items-center gap-1.5 uppercase tracking-widest" style={{ color: themeColors.secondary || themeColors.primary }}>

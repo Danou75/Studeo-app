@@ -331,7 +331,7 @@ export const fr = {
         },
         header: {
             generateWithAI: "✨ Générer avec l'IA",
-            quizCreator: "🤖 Créateur de Quiz",
+            quizCreator: "🪄 Créateur de Quiz",
             curriculumCreation: "🗺️ Création de Programme",
             aiAssistant: "🤖 Assistant IA"
         },

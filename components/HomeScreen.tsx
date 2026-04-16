@@ -1,4 +1,4 @@
-import { THEMES } from '../constants/themes';
+import { THEMES, THEME_STYLES } from '../constants/themes';
 import { useTranslation } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useGamificationStore } from '../stores/useGamificationStore';
@@ -49,7 +49,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     user
 }) => {
     const { t, language, setLanguage } = useTranslation();
-    const { themeMode, themeStyle, setThemeMode } = useTheme();
+    const { themeMode, themeStyle, setThemeMode, setThemeStyle } = useTheme();
     const streak = useGamificationStore(s => s.gamificationData.streak.currentStreak);
     const coordinator = useAppCoordinator();
     const flashcardSets = useFlashcardStore(s => s.flashcardSets);
@@ -219,12 +219,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     </button>
 
                     {/* Theme Indicator */}
-                    <div 
-                        className="flex items-center gap-1 px-2 py-1.5 bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm border border-transparent cursor-help"
-                        title={`Thème actuel : ${activeTheme.name} (Cmd+Flèches pour changer)`}
+                    <button 
+                        onClick={() => {
+                            const currentIndex = THEME_STYLES.indexOf(themeStyle);
+                            const nextIndex = (currentIndex + 1) % THEME_STYLES.length;
+                            setThemeStyle(THEME_STYLES[nextIndex]);
+                        }}
+                        className="flex items-center gap-1 px-2 py-1.5 bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm border border-transparent hover:border-gray-300 dark:hover:border-gray-600 transition-all active:scale-95 cursor-pointer"
+                        title={`Thème actuel : ${activeTheme.name} (Cliquez ou Cmd+Flèches pour changer)`}
                     >
                         <span className="text-sm">{activeTheme.emoji}</span>
-                    </div>
+                    </button>
 
                     {/* Thème clair/sombre */}
                     <button 

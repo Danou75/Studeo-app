@@ -50,7 +50,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
     const flashcardSets = useFlashcardStore(s => s.flashcardSets);
     const flashcardSetName = useFlashcardStore(s => s.currentSetName);
     const setCurrentSetName = useFlashcardStore(s => s.setCurrentSetName);
-    const allFlashcards = Object.values(flashcardSets).flat();
+    // ⚠️ On ne prend QUE les fiches de la liste active — pas de toutes les listes
+    const allFlashcards = flashcardSets[flashcardSetName] ?? [];
     
     const allColumns = useColumns(allFlashcards);
     const { getDueCards } = useSRS();
@@ -219,10 +220,15 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
 
     const handleExport = async () => {
         try {
-            const dataStr = JSON.stringify(allFlashcards.map(c => {
-                const { id, ...rest } = c;
-                return rest;
-            }), null, 2);
+            // Export uniquement la liste active
+            const cardsToExport = flashcardSets[flashcardSetName] ?? [];
+            const dataStr = JSON.stringify({
+                title: flashcardSetName,
+                cards: cardsToExport.map(c => {
+                    const { id, ...rest } = c as any;
+                    return rest;
+                })
+            }, null, 2);
             const filePath = await save({
                 defaultPath: `${flashcardSetName.replace(/\s/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`,
                 filters: [{

@@ -398,25 +398,165 @@ Format JSON STRICT (tableau d'objets) :
         }
     };
 
+    /**
+     * Normalise une fiche brute (provenant d'un fichier JSON externe) vers
+     * le format interne Studeo (FlashcardClassic | FlashcardMCQ | FlashcardCloze).
+     * Gère les formats courants : Studeo, Quizlet, Anki, front/back, question/answer, etc.
+     */
+    const normalizeCard = (raw: any, idx: number): Flashcard | null => {
+        if (!raw || typeof raw !== 'object') return null;
+
+        // ── Déjà au format Studeo ──────────────────────────────────────────────
+        if (raw.type === 'classic' && raw.terms && typeof raw.terms === 'object') {
+            return { id: raw.id || uuidv4(), type: 'classic', terms: raw.terms, srsData: raw.srsData, mnemonic: raw.mnemonic };
+        }
+        if (raw.type === 'mcq' && raw.mcqData) {
+            return { id: raw.id || uuidv4(), type: 'mcq', mcqData: raw.mcqData, srsData: raw.srsData, mnemonic: raw.mnemonic };
+        }
+        if (raw.type === 'cloze' && raw.clozeData) {
+            return { id: raw.id || uuidv4(), type: 'cloze', clozeData: raw.clozeData, srsData: raw.srsData, mnemonic: raw.mnemonic };
+        }
+
+        // ── Format MCQ explicite ───────────────────────────────────────────────
+        if (raw.type === 'mcq' && raw.question && raw.answer) {
+            const q = typeof raw.question === 'string' ? { fr: raw.question } : raw.question;
+            const a = typeof raw.answer === 'string' ? { fr: raw.answer } : raw.answer;
+            const distractors = Array.isArray(raw.distractors)
+                ? raw.distractors.map((d: any) => typeof d === 'string' ? { fr: d } : d)
+                : Array.isArray(raw.options)
+                    ? raw.options.filter((o: any) => o !== (raw.answer || '')).map((o: any) => ({ fr: String(o) }))
+                    : undefined;
+            return { id: raw.id || uuidv4(), type: 'mcq', mcqData: { question: q, answer: a, distractors } };
+        }
+
+        // ── Format question / answer (MCQ si options présentes, sinon classic) ─
+        if (raw.question !== undefined && raw.answer !== undefined) {
+            // Si des options alternatives sont présentes → MCQ
+            if (Array.isArray(raw.options) && raw.options.length > 1) {
+                const q = { fr: String(raw.question) };
+                const a = { fr: String(raw.answer) };
+                const distractors = raw.options
+                    .filter((o: any) => String(o) !== String(raw.answer))
+                    .map((o: any) => ({ fr: String(o) }));
+                return { id: raw.id || uuidv4(), type: 'mcq', mcqData: { question: q, answer: a, distractors } };
+            }
+            // Sinon → classic (question = recto, answer = verso)
+            const terms: Record<string, string> = {};
+            if (raw.questionLang) terms[raw.questionLang] = String(raw.question);
+            else terms['recto'] = String(raw.question);
+            if (raw.answerLang) terms[raw.answerLang] = String(raw.answer);
+            else terms['verso'] = String(raw.answer);
+            return { id: raw.id || uuidv4(), type: 'classic', terms };
+        }
+
+        // ── Format front / back (Quizlet, Anki export…) ───────────────────────
+        if (raw.front !== undefined && raw.back !== undefined) {
+            return {
+                id: raw.id || uuidv4(),
+                type: 'classic',
+                terms: {
+                    recto: String(raw.front),
+                    verso: String(raw.back),
+                }
+            };
+        }
+
+        // ── Format term / definition ───────────────────────────────────────────
+        if (raw.term !== undefined && raw.definition !== undefined) {
+            return {
+                id: raw.id || uuidv4(),
+                type: 'classic',
+                terms: {
+                    terme: String(raw.term),
+                    définition: String(raw.definition),
+                }
+            };
+        }
+
+        // ── Format word / translation ──────────────────────────────────────────
+        if (raw.word !== undefined && raw.translation !== undefined) {
+            return {
+                id: raw.id || uuidv4(),
+                type: 'classic',
+                terms: {
+                    mot: String(raw.word),
+                    traduction: String(raw.translation),
+                }
+            };
+        }
+
+        // ── Format générique : premier champ string = recto, second = verso ───
+        const keys = Object.keys(raw).filter(k => k !== 'id' && typeof raw[k] === 'string');
+        if (keys.length >= 2) {
+            const terms: Record<string, string> = {};
+            keys.slice(0, 4).forEach(k => { terms[k] = String(raw[k]); });
+            return { id: raw.id || uuidv4(), type: 'classic', terms };
+        }
+
+        // ── Impossible à convertir ─────────────────────────────────────────────
+        console.warn(`[Import] Fiche #${idx + 1} ignorée (format non reconnu):`, raw);
+        return null;
+    };
+
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        // Réinitialise l'input pour permettre le réimport du même fichier
+        e.target.value = '';
 
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const content = JSON.parse(event.target?.result as string);
+
+                let rawCards: any[] = [];
+                let title = file.name.replace(/\.json$/i, '');
+
                 if (Array.isArray(content)) {
-                    onImport(file.name.replace('.json', ''), content);
-                    showToast("Fichier importé avec succès !", "success");
+                    // Format 1 : tableau direct
+                    rawCards = content;
                 } else if (content.cards && Array.isArray(content.cards)) {
-                    onImport(content.title || file.name, content.cards);
-                    showToast("Collection importée avec succès !", "success");
+                    // Format 2 : { title?, cards[] }
+                    rawCards = content.cards;
+                    if (content.title) title = content.title;
+                } else if (content.name && content.terms && Array.isArray(content.terms)) {
+                    // Format 3 : export Quizlet { name, terms[] }
+                    rawCards = content.terms;
+                    title = content.name;
+                } else if (content.deck && Array.isArray(content.deck)) {
+                    // Format 4 : { deck[] }
+                    rawCards = content.deck;
+                    if (content.deckName || content.name) title = content.deckName || content.name;
                 } else {
-                    throw new Error("Format invalide");
+                    throw new Error("Format JSON non reconnu. Attendu : tableau de fiches ou objet { cards: [...] }");
                 }
-            } catch (err) {
-                showToast("Erreur lors de la lecture du fichier JSON", "error");
+
+                if (rawCards.length === 0) {
+                    showToast("Le fichier ne contient aucune fiche.", "error");
+                    return;
+                }
+
+                // Normalisation de chaque fiche
+                const normalized: Flashcard[] = rawCards
+                    .map((raw, idx) => normalizeCard(raw, idx))
+                    .filter((c): c is Flashcard => c !== null);
+
+                if (normalized.length === 0) {
+                    showToast("Aucune fiche n'a pu être lue. Vérifiez le format du fichier.", "error");
+                    return;
+                }
+
+                const skipped = rawCards.length - normalized.length;
+                onImport(title, normalized);
+                showToast(
+                    skipped > 0
+                        ? `${normalized.length} fiche(s) importée(s) (${skipped} ignorée(s) — format non reconnu).`
+                        : `${normalized.length} fiche(s) importée(s) avec succès !`,
+                    skipped > 0 ? 'info' : 'success'
+                );
+            } catch (err: any) {
+                console.error("[Import JSON] Erreur :", err);
+                showToast(err?.message || "Erreur lors de la lecture du fichier JSON", "error");
             }
         };
         reader.readAsText(file);

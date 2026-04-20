@@ -38,6 +38,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     const [showSidebar, setShowSidebar] = useState(false);
     const [isGeneratingCards, setIsGeneratingCards] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [sidebarFilter, setSidebarFilter] = useState<string>(''); // '' = tous les profs
     const hasAutoLoaded = useRef(false);
 
     // Setup form
@@ -576,13 +577,35 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                                 </button>
                             </div>
                         </div>
+
+                        {/* Filtre par tuteur — liste déroulante */}
+                        {(() => {
+                            const uniqueTutors = Array.from(new Set(allSessions.map(s => s.tutorName))).sort();
+                            if (uniqueTutors.length < 2) return null;
+                            return (
+                                <div className="px-3 py-2 border-b border-border/50">
+                                    <select
+                                        value={sidebarFilter}
+                                        onChange={e => setSidebarFilter(e.target.value)}
+                                        className="w-full bg-background border border-border rounded-lg px-3 py-1.5 text-xs font-semibold text-text-secondary hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer transition-all"
+                                    >
+                                        <option value="">🧑‍🏫 Tous les professeurs</option>
+                                        {uniqueTutors.map(name => (
+                                            <option key={name} value={name}>{name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            );
+                        })()}
                         <div className="flex-1 overflow-y-auto p-3 space-y-2">
                             {allSessions.length === 0 ? (
                                 <div className="text-center py-8 text-text-secondary text-sm italic">
                                     Aucun historique
                                 </div>
                             ) : (
-                                allSessions.map(session => (
+                                allSessions
+                                    .filter(s => !sidebarFilter || s.tutorName === sidebarFilter)
+                                    .map(session => (
                                     <div
                                         key={session.id}
                                         className={`p-3 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
@@ -654,6 +677,28 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                             title="Nouvelle conversation"
                         >
                             <i className="fas fa-plus-circle text-base"></i>
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                if (!currentSession) return;
+                                if (confirm(`Supprimer la conversation avec ${currentSession.tutorName} ?\nCette action est irréversible.`)) {
+                                    // Supprimer la session courante
+                                    ChatService.deleteSession(currentSession.id);
+                                    setAllSessions(prev => prev.filter(s => s.id !== currentSession.id));
+                                    // Créer une nouvelle session avec le même tuteur → on reste sur l'écran chat
+                                    const newSession = ChatService.createSession(
+                                        currentSession.tutorName,
+                                        currentSession.tutorSubject
+                                    );
+                                    setCurrentSession(newSession);
+                                    showToast('Conversation effacée — nouvelle discussion démarrée', 'success');
+                                }
+                            }}
+                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-red-400 hover:text-red-600"
+                            title="Effacer cette conversation"
+                        >
+                            <i className="fas fa-minus-circle text-base"></i>
                         </button>
                     </div>
                     

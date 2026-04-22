@@ -387,6 +387,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     vocabLabCache={vocabLabCache}
                     onSetVocabLabCache={onSetVocabLabCache}
                     tutorId={tutor.id}
+                    onLaunchQuiz={onStartFlashcardQuiz}
                 />
             )}
 

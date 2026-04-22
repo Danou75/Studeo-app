@@ -14,6 +14,8 @@ export interface AIConfig {
   anthropicModel?: string;
   mistralApiKey?: string;
   mistralModel?: string;
+  openrouterApiKey?: string;
+  openrouterModel?: string;
   deviceName?: string;
   selectedTutor?: Tutor | null;
 }
@@ -30,6 +32,8 @@ const defaultConfig: AIConfig = {
   anthropicApiKey: '',
   mistralModel: 'mistral-large-latest',
   mistralApiKey: '',
+  openrouterModel: 'openai/gpt-4o',
+  openrouterApiKey: '',
 };
 
 interface AIConfigState {

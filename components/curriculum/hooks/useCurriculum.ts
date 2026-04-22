@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { StudyProgram, StudyModule, SavedVocabList, Lesson, ConversationSession } from '../../../types';
+import { StudyProgram, StudyModule, SavedVocabList, Lesson, ConversationSession, SavedShadowingSession } from '../../../types';
 import { TUTORS } from '../../../constants';
 import { useToast } from '../../../contexts/ToastContext';
 import { useConfirmation } from '../../../contexts/ConfirmationContext';
@@ -24,6 +24,7 @@ export interface UseCurriculumOptions {
     lessons?: Lesson[];
     savedConvSessions?: ConversationSession[];
     savedVocabLists?: SavedVocabList[];
+    savedShadowingSessions?: SavedShadowingSession[];
     customSuggestions?: any[];
     setCustomSuggestions?: (suggestions: any[] | ((prev: any[]) => any[])) => void;
     onGenerateContent: (program: StudyProgram, module: StudyModule) => Promise<StudyProgram | undefined>;
@@ -35,6 +36,7 @@ export const useCurriculum = ({
     lessons = [],
     savedConvSessions = [],
     savedVocabLists = [],
+    savedShadowingSessions = [],
     customSuggestions: propsCustomSuggestions,
     setCustomSuggestions: propsSetCustomSuggestions,
     onGenerateContent,
@@ -48,7 +50,7 @@ export const useCurriculum = ({
     const [loadingModuleId, setLoadingModuleId] = useState<string | null>(null);
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
     const [renameItemId, setRenameItemId] = useState<string | null>(null);
-    const [renameType, setRenameType] = useState<'program' | 'lesson' | 'conversation' | 'vocab'>('program');
+    const [renameType, setRenameType] = useState<'program' | 'lesson' | 'conversation' | 'vocab' | 'shadowing'>('program');
     const [newTitle, setNewTitle] = useState('');
     
     // Renew Preferences
@@ -58,7 +60,7 @@ export const useCurriculum = ({
     const [renewStrategy, setRenewStrategy] = useState<'replace' | 'append'>('replace');
     
     const [viewMode, setViewMode] = useLocalStorage<'grid' | 'list'>('curriculum_view_mode', 'grid');
-    const [activeTab, setActiveTab] = useLocalStorage<'programs' | 'lessons' | 'conversations' | 'vocabulary'>('curriculum_active_tab', 'programs');
+    const [activeTab, setActiveTab] = useLocalStorage<'programs' | 'lessons' | 'conversations' | 'vocabulary' | 'shadowing'>('curriculum_active_tab', 'programs');
     const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
     const [selectedVocab, setSelectedVocab] = useState<SavedVocabList | null>(null);
     const [isExporting, setIsExporting] = useState(false);
@@ -308,11 +310,13 @@ Format JSON STRICT (tableau d'objets) :
                     return savedConvSessions.some(s => s.tutorId === tutor.id);
                 case 'vocabulary':
                     return savedVocabLists.some(v => v.tutorId === tutor.id);
+                case 'shadowing':
+                    return savedShadowingSessions.some(s => s.tutorId === tutor.id);
                 default:
                     return false;
             }
         });
-    }, [programs, lessons, savedConvSessions, savedVocabLists, activeTab]);
+    }, [programs, lessons, savedConvSessions, savedVocabLists, savedShadowingSessions, activeTab]);
 
     // Intelligent Filter Reactivity: Reset if selected tutor is no longer available
     useEffect(() => {
@@ -339,7 +343,11 @@ Format JSON STRICT (tableau d'objets) :
         selectedTutorId ? savedVocabLists.filter(v => v.tutorId === selectedTutorId) : savedVocabLists
     , [savedVocabLists, selectedTutorId]);
 
-    const openRenameModal = (type: 'program' | 'lesson' | 'conversation' | 'vocab', id: string, currentTitle: string) => {
+    const filteredSavedShadowingSessions = useMemo(() =>
+        selectedTutorId ? savedShadowingSessions.filter(s => s.tutorId === selectedTutorId) : savedShadowingSessions
+    , [savedShadowingSessions, selectedTutorId]);
+
+    const openRenameModal = (type: 'program' | 'lesson' | 'conversation' | 'vocab' | 'shadowing', id: string, currentTitle: string) => {
         setRenameItemId(id);
         setRenameType(type);
         setNewTitle(currentTitle);
@@ -363,6 +371,7 @@ Format JSON STRICT (tableau d'objets) :
         filteredLessons,
         filteredSavedConvSessions,
         filteredSavedVocabLists,
+        filteredSavedShadowingSessions,
         selectedVocab,
         setSelectedVocab,
         isExporting,

@@ -242,6 +242,29 @@ const buildRequest = ({
             };
         }
 
+        case 'openrouter': {
+            if (!apiKey) throw new Error('Clé API OpenRouter manquante.');
+            return {
+                url:     'https://openrouter.ai/api/v1/chat/completions',
+                headers: {
+                    'Content-Type':   'application/json',
+                    'Authorization':  `Bearer ${apiKey}`,
+                    'HTTP-Referer':   'https://studeo.app',
+                    'X-Title':        'Studeo',
+                },
+                body: {
+                    model:      modelName,
+                    messages:   [
+                        { role: 'system', content: 'You are a helpful assistant that outputs JSON only.' },
+                        { role: 'user',   content: prompt },
+                    ],
+                    temperature,
+                    max_tokens: maxTokens,
+                    ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+                },
+            };
+        }
+
         case 'local': {
             const endpoint = normalizeLocalApiUrl(apiUrl || '');
             if (!endpoint) throw new Error('URL de l\'API locale manquante.');
@@ -269,10 +292,11 @@ const buildRequest = ({
 
 const defaultModel = (provider: AIProvider): string => {
     switch (provider) {
-        case 'gemini':    return 'gemini-2.5-flash';
-        case 'openai':    return 'gpt-4o';
-        case 'anthropic': return 'claude-3-5-sonnet-20240620';
-        case 'mistral':   return 'mistral-large-latest';
-        case 'local':     return 'local-model';
+        case 'gemini':      return 'gemini-2.5-flash';
+        case 'openai':      return 'gpt-4o';
+        case 'anthropic':   return 'claude-3-5-sonnet-20240620';
+        case 'mistral':     return 'mistral-large-latest';
+        case 'openrouter':  return 'openai/gpt-4o';
+        case 'local':       return 'local-model';
     }
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StudyProgram, ConversationSession, SavedVocabList } from '../../../types';
+import { StudyProgram, ConversationSession, SavedVocabList, SavedShadowingSession } from '../../../types';
 import { Lesson } from '../../../types';
 import { TUTORS } from '../../../constants';
 import { useTranslation } from '../../../contexts/LanguageContext';
@@ -7,22 +7,25 @@ import { useConfirmation } from '../../../contexts/ConfirmationContext';
 
 interface CurriculumTabsViewProps {
     viewMode: 'grid' | 'list';
-    activeTab: 'programs' | 'lessons' | 'conversations' | 'vocabulary';
-    setActiveTab: (tab: 'programs' | 'lessons' | 'conversations' | 'vocabulary') => void;
+    activeTab: 'programs' | 'lessons' | 'conversations' | 'vocabulary' | 'shadowing';
+    setActiveTab: (tab: 'programs' | 'lessons' | 'conversations' | 'vocabulary' | 'shadowing') => void;
     programs: StudyProgram[];
     lessons: Lesson[];
     savedConvSessions: ConversationSession[];
     savedVocabLists: SavedVocabList[];
+    savedShadowingSessions: SavedShadowingSession[];
     onSelectProgram: (program: StudyProgram) => void;
     onSelectLesson: (lesson: Lesson, source?: 'curriculum' | 'generator') => void;
     onDeleteProgram: (id: string) => void;
     onDeleteLesson: (id: string) => void;
     onDeleteConvSession?: (id: string) => void;
     onDeleteVocabList?: (id: string) => void;
+    onDeleteShadowingSession?: (id: string) => void;
     onResumeConvSession?: (session: ConversationSession) => void;
     onOpenVocabInLab?: (vocab: SavedVocabList) => void;
+    onOpenShadowingInLab?: (session: SavedShadowingSession) => void;
     setSelectedVocab: (vocab: SavedVocabList | null) => void;
-    openRenameModal: (type: 'program' | 'lesson' | 'conversation' | 'vocab', id: string, currentTitle: string) => void;
+    openRenameModal: (type: 'program' | 'lesson' | 'conversation' | 'vocab' | 'shadowing', id: string, currentTitle: string) => void;
 }
 
 export const CurriculumTabsView: React.FC<CurriculumTabsViewProps> = ({
@@ -33,14 +36,17 @@ export const CurriculumTabsView: React.FC<CurriculumTabsViewProps> = ({
     lessons,
     savedConvSessions,
     savedVocabLists,
+    savedShadowingSessions,
     onSelectProgram,
     onSelectLesson,
     onDeleteProgram,
     onDeleteLesson,
     onDeleteConvSession,
     onDeleteVocabList,
+    onDeleteShadowingSession,
     onResumeConvSession,
     onOpenVocabInLab,
+    onOpenShadowingInLab,
     setSelectedVocab,
     openRenameModal
 }) => {
@@ -53,6 +59,7 @@ export const CurriculumTabsView: React.FC<CurriculumTabsViewProps> = ({
     const filteredLessons = lessons;
     const filteredConvSessions = savedConvSessions;
     const filteredVocabLists = savedVocabLists;
+    const filteredShadowingSessions = savedShadowingSessions;
 
     return (
         <>
@@ -86,7 +93,15 @@ export const CurriculumTabsView: React.FC<CurriculumTabsViewProps> = ({
                     <i className="fas fa-language mr-2"></i> {t('curriculum.tabs.vocab')} ({filteredVocabLists.length})
                     {activeTab === 'vocabulary' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full"></div>}
                 </button>
+                <button
+                    onClick={() => setActiveTab('shadowing')}
+                    className={`pb-4 px-2 text-sm font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'shadowing' ? 'text-primary' : 'text-text-muted hover:text-text'}`}
+                >
+                    <i className="fas fa-microphone mr-2" /> Shadowing ({filteredShadowingSessions.length})
+                    {activeTab === 'shadowing' && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary rounded-t-full" />}
+                </button>
             </div>
+
 
             {/* TAB CONTENT */}
             {activeTab === 'programs' && (
@@ -404,7 +419,7 @@ export const CurriculumTabsView: React.FC<CurriculumTabsViewProps> = ({
                 filteredVocabLists.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 border-2 border-dashed border-border rounded-xl p-12">
                         <div className="bg-background-secondary p-6 rounded-full mb-4">
-                            <i className="fas fa-language text-6xl text-text-muted"></i>
+                            <i className="fas fa-language text-6xl text-text-muted" />
                         </div>
                         <h2 className="text-xl font-bold mb-2">Aucun vocabulaire sauvegardé</h2>
                         <p className="max-w-md mx-auto mb-6">
@@ -438,7 +453,7 @@ export const CurriculumTabsView: React.FC<CurriculumTabsViewProps> = ({
                                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-primary shadow-sm border border-border transition-colors"
                                             title="Renommer"
                                         >
-                                            <i className="fas fa-edit text-xs"></i>
+                                            <i className="fas fa-edit text-xs" />
                                         </button>
                                         {onDeleteVocabList && (
                                             <button
@@ -455,7 +470,7 @@ export const CurriculumTabsView: React.FC<CurriculumTabsViewProps> = ({
                                                 className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-red-500 hover:bg-red-50 transition-colors border border-border"
                                                 title="Supprimer"
                                             >
-                                                <i className="fas fa-trash-alt text-xs"></i>
+                                                <i className="fas fa-trash-alt text-xs" />
                                             </button>
                                         )}
                                     </div>
@@ -498,7 +513,120 @@ export const CurriculumTabsView: React.FC<CurriculumTabsViewProps> = ({
                                                     className="bg-primary hover:bg-primary/90 text-white p-3 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 flex-shrink-0"
                                                     title="Ouvrir dans le Lab de Langues"
                                                 >
-                                                    <i className="fas fa-flask text-[11px]"></i> Lab
+                                                    <i className="fas fa-flask text-[11px]" /> Lab
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )
+            )}
+
+            {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ SHADOWING TAB ━ */}
+            {activeTab === 'shadowing' && (
+                filteredShadowingSessions.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 border-2 border-dashed border-border rounded-xl p-12">
+                        <div className="bg-background-secondary p-6 rounded-full mb-4">
+                            <i className="fas fa-microphone text-6xl text-text-muted" />
+                        </div>
+                        <h2 className="text-xl font-bold mb-2">Aucune session de shadowing sauvegardée</h2>
+                        <p className="max-w-md mx-auto mb-6">
+                            Terminez une session dans le <strong>Labo Shadowing</strong> et cliquez sur <strong>« 💾 Sauvegarder »</strong> pour la retrouver ici !
+                        </p>
+                    </div>
+                ) : (
+                    <div className={viewMode === 'list' ? "flex flex-col gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
+                        {filteredShadowingSessions.map(session => {
+                            const levelColor = session.level === 'débutant'
+                                ? 'text-green-600 bg-green-50 dark:bg-green-900/20'
+                                : session.level === 'intermédiaire'
+                                ? 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20'
+                                : 'text-red-600 bg-red-50 dark:bg-red-900/20';
+                            const savedDate = new Date(session.savedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                            return (
+                                <div
+                                    key={session.id}
+                                    className={`bg-background border border-border rounded-2xl transition-all cursor-pointer group flex overflow-hidden relative ${
+                                        viewMode === 'grid'
+                                            ? 'flex-col shadow-lg hover:shadow-xl hover:border-primary'
+                                            : 'flex-row items-center p-4 gap-4 hover:bg-background-secondary'
+                                    }`}
+                                    onClick={() => onOpenShadowingInLab?.(session)}
+                                >
+                                    {/* Actions */}
+                                    <div className={viewMode === 'grid'
+                                        ? 'absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20'
+                                        : 'flex gap-2 order-last'
+                                    }>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); openRenameModal('shadowing', session.id, session.theme); }}
+                                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-primary shadow-sm border border-border transition-colors"
+                                            title="Renommer"
+                                        >
+                                            <i className="fas fa-edit text-xs" />
+                                        </button>
+                                        {onDeleteShadowingSession && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    showConfirmation({
+                                                        title: 'Supprimer la session',
+                                                        message: `Supprimer définitivement "${session.theme}" ?`,
+                                                        confirmText: 'Supprimer',
+                                                        variant: 'danger',
+                                                        onConfirm: () => onDeleteShadowingSession(session.id)
+                                                    });
+                                                }}
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-background-secondary text-text-muted hover:text-red-500 hover:bg-red-50 transition-colors border border-border"
+                                                title="Supprimer"
+                                            >
+                                                <i className="fas fa-trash-alt text-xs" />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Icon */}
+                                    <div className={`flex items-center justify-center shrink-0 ${
+                                        viewMode === 'grid' ? 'p-6 pb-0' : 'w-14 h-14 bg-primary/10 dark:bg-primary/20 rounded-xl'
+                                    }`}>
+                                        <div className={`${viewMode === 'grid' ? 'text-4xl bg-primary/10 dark:bg-primary/20 w-16 h-16' : 'text-3xl'} flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform`}>
+                                            🎙️
+                                        </div>
+                                    </div>
+
+                                    {/* Info */}
+                                    <div className={`flex-1 min-w-0 ${viewMode === 'grid' ? 'p-6' : 'px-2'}`}>
+                                        <h3 className={`font-bold group-hover:text-primary transition-colors ${viewMode === 'grid' ? 'text-base mb-1' : 'text-base'}`}>
+                                            {session.theme}
+                                        </h3>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                            <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-lg ${levelColor}`}>
+                                                {session.level}
+                                            </span>
+                                            <span className="text-[10px] text-text-muted">
+                                                {session.phraseCount} expressions · {session.targetLanguage.toUpperCase()}
+                                            </span>
+                                            {viewMode === 'list' && (
+                                                <span className="text-[10px] text-text-muted">· {savedDate}</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Grid CTA */}
+                                    {viewMode === 'grid' && (
+                                        <div className="flex">
+                                            <div className="flex-1 bg-background-secondary p-3 text-center text-[10px] font-bold text-text-muted uppercase tracking-wider group-hover:bg-primary group-hover:text-white transition-colors">
+                                                Relancer
+                                            </div>
+                                            {onOpenShadowingInLab && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); onOpenShadowingInLab(session); }}
+                                                    className="bg-primary hover:bg-primary/90 text-white p-3 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 flex-shrink-0"
+                                                >
+                                                    <i className="fas fa-microphone text-[11px]" /> Lab
                                                 </button>
                                             )}
                                         </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StudyProgram, StudyModule, ConversationSession, SavedVocabList, Lesson } from '../types';
+import { StudyProgram, StudyModule, ConversationSession, SavedVocabList, Lesson, SavedShadowingSession } from '../types';
 import { useStudyContentStore } from '../stores/useStudyContentStore';
 import { useCurriculum } from './curriculum/hooks/useCurriculum';
 import { CurriculumHeader } from './curriculum/views/CurriculumHeader';
@@ -28,6 +28,9 @@ interface CurriculumScreenProps {
     onDeleteVocabList?: (id: string) => void;
     onRenameVocabList?: (id: string, newTheme: string) => void;
     onOpenVocabInLab?: (vocab: SavedVocabList) => void;
+    onDeleteShadowingSession?: (id: string) => void;
+    onRenameShadowingSession?: (id: string, newTheme: string) => void;
+    onOpenShadowingInLab?: (session: SavedShadowingSession) => void;
     onNavigateToSettings?: () => void;
 }
 
@@ -38,12 +41,14 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = (props) => {
     const setCustomSuggestions = useStudyContentStore(s => s.setCurriculumSuggestions);
     const savedConvSessions = useStudyContentStore(s => s.savedConvSessions);
     const savedVocabLists = useStudyContentStore(s => s.savedVocabLists);
+    const savedShadowingSessions = useStudyContentStore(s => s.savedShadowingSessions);
 
     const curriculum = useCurriculum({
         programs,
         lessons: lessons || [],
         savedConvSessions: savedConvSessions || [],
         savedVocabLists: savedVocabLists || [],
+        savedShadowingSessions: savedShadowingSessions || [],
         customSuggestions,
         setCustomSuggestions,
         onGenerateContent: props.onGenerateContent,
@@ -60,6 +65,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = (props) => {
         filteredLessons,
         filteredSavedConvSessions,
         filteredSavedVocabLists,
+        filteredSavedShadowingSessions,
         setSelectedVocab,
         selectedVocab,
     } = curriculum;
@@ -72,6 +78,8 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = (props) => {
             props.onRenameConvSession?.(curriculum.renameItemId!, curriculum.newTitle);
         } else if (curriculum.renameType === 'vocab') {
             props.onRenameVocabList?.(curriculum.renameItemId!, curriculum.newTitle);
+        } else if (curriculum.renameType === 'shadowing') {
+            props.onRenameShadowingSession?.(curriculum.renameItemId!, curriculum.newTitle);
         }
         curriculum.setIsRenameModalOpen(false);
     };
@@ -125,20 +133,22 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = (props) => {
                     lessons={filteredLessons}
                     savedConvSessions={filteredSavedConvSessions}
                     savedVocabLists={filteredSavedVocabLists}
+                    savedShadowingSessions={filteredSavedShadowingSessions}
                     onSelectProgram={curriculum.setSelectedProgram}
                     onSelectLesson={props.onSelectLesson}
                     onDeleteProgram={props.onDeleteProgram}
                     onDeleteLesson={props.onDeleteLesson}
                     onDeleteConvSession={props.onDeleteConvSession}
                     onDeleteVocabList={props.onDeleteVocabList}
+                    onDeleteShadowingSession={props.onDeleteShadowingSession}
                     onResumeConvSession={props.onResumeConvSession}
                     onOpenVocabInLab={props.onOpenVocabInLab}
+                    onOpenShadowingInLab={props.onOpenShadowingInLab}
                     setSelectedVocab={setSelectedVocab}
                     openRenameModal={curriculum.openRenameModal}
-
                 />
 
-                {curriculum.activeTab !== 'conversations' && curriculum.activeTab !== 'vocabulary' && (
+                {curriculum.activeTab !== 'conversations' && curriculum.activeTab !== 'vocabulary' && curriculum.activeTab !== 'shadowing' && (
                     <SuggestionsCatalogView
                         customSuggestions={curriculum.customSuggestions}
                         viewMode={viewMode}

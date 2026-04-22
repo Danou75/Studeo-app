@@ -7,7 +7,7 @@ import { useAppCoordinator } from '../hooks/useAppCoordinator';
 import { useAIConfig } from '../contexts/AIConfigContext';
 import { useTutorStore } from '../stores/useTutorStore';
 import { TUTORS } from '../constants';
-import { ConversationSession, SavedVocabList } from '../types';
+import { ConversationSession, SavedVocabList, SavedShadowingSession } from '../types';
 
 const LanguageLabScreen = lazy(() =>
     import('../components/LanguageLabScreen').then(m => ({ default: m.LanguageLabScreen }))
@@ -29,10 +29,12 @@ export default function LanguageLabRoute() {
     const routeState = location.state as {
         session?: ConversationSession;
         vocab?:   SavedVocabList;
+        shadowingSession?: SavedShadowingSession;
     } | null;
 
-    const initialSession   = routeState?.session;
-    const initialVocabList = routeState?.vocab;
+    const initialSession          = routeState?.session;
+    const initialVocabList        = routeState?.vocab;
+    const initialShadowingSession = routeState?.shadowingSession;
 
     // ── Résolution du tuteur : priorité à la session enregistrée
     const resolvedTutor = React.useMemo(() => {
@@ -85,6 +87,8 @@ export default function LanguageLabRoute() {
                     flashcards.setCurrentSetName(setName);
                     navigate('/setup');
                 }}
+                onSaveShadowingSession={coordinator.handleSaveShadowingSession}
+                initialShadowingSession={initialShadowingSession}
             />
         </Suspense>
     );

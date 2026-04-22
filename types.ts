@@ -277,7 +277,7 @@ export type AnalyticsData = {
 
 export type AIGenerationLevel = "beginner" | "intermediate" | "advanced" | "university";
 
-export type AIProvider = 'gemini' | 'local' | 'openai' | 'anthropic' | 'mistral';
+export type AIProvider = 'gemini' | 'local' | 'openai' | 'anthropic' | 'mistral' | 'openrouter';
 
 export type AIGenerationConfig = {
   topic: string;              // Sujet des flashcards
@@ -471,4 +471,24 @@ export interface SavedVocabList {
   wordCount: number;
   tutorId?: string;
   chatHistory?: { role: 'system' | 'user' | 'assistant'; content: string }[];
+}
+
+export interface SavedShadowingPhrase {
+  text: string;
+  translation: string;
+  phonetic?: string;
+  priority: boolean;
+}
+
+export interface SavedShadowingSession {
+  id: string;
+  theme: string;
+  targetLanguage: string;
+  level: 'débutant' | 'intermédiaire' | 'avancé';
+  phrases: SavedShadowingPhrase[];
+  phraseCount: number;
+  savedAt: string;
+  tutorId?: string;
+  /** 'theme' | 'file' | 'transcript' | 'json' — trace the origin of the session content */
+  sourceMode?: string;
 }

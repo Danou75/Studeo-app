@@ -786,21 +786,37 @@ Réponds toujours en français avec les mots en ${targetLangName} en gras (**mot
                     {/* Custom theme */}
                     <div>
                         <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 flex items-center gap-2">
-                            <i className="fas fa-pen"></i> Thème personnalisé
+                            <i className="fas fa-pen"></i> <span>Thème personnalisé</span>
                         </h3>
-                        <div className="relative">
-                            <input
-                                type="text"
+                        <div className="space-y-2">
+                            <textarea
                                 value={customTheme}
                                 onChange={e => { setCustomTheme(e.target.value); setSelectedTheme(''); }}
-                                onKeyDown={e => e.key === 'Enter' && generate()}
+                                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && generate()}
                                 placeholder="Ex: La météo, Les animaux, Le sport..."
-                                className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:border-primary text-gray-800 dark:text-gray-100 ${
+                                rows={customTheme.length > 50 ? 3 : 1}
+                                className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:border-primary text-gray-800 dark:text-gray-100 resize-none ${
                                     customTheme && scopedCache[customTheme]
                                         ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20'
                                         : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'
                                 }`}
                             />
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const text = await navigator.clipboard.readText();
+                                        if (text) {
+                                            setCustomTheme(text);
+                                            setSelectedTheme('');
+                                        }
+                                    } catch (err) {
+                                        console.error('Erreur lecture presse-papier', err);
+                                    }
+                                }}
+                                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700"
+                            >
+                                <i className="fas fa-clipboard" /> <span>Coller depuis le presse-papier</span>
+                            </button>
                         </div>
 
                         {/* Cached custom themes chips */}
@@ -864,7 +880,7 @@ Réponds toujours en français avec les mots en ${targetLangName} en gras (**mot
                         {isGenerating ? (
                             <>
                                 <i className="fas fa-circle-notch fa-spin"></i>
-                                Génération en cours…
+                                <span>Génération en cours…</span>
                             </>
                         ) : (
                             <>

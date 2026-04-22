@@ -224,6 +224,48 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   };
 
+  /* --- OPENROUTER LOGIC --- */
+  const DEFAULT_OPENROUTER_MODELS = [
+    { id: 'openai/gpt-4o', name: 'GPT-4o (OpenAI)' },
+    { id: 'openai/gpt-4-turbo', name: 'GPT-4 Turbo (OpenAI)' },
+    { id: 'anthropic/claude-3-5-sonnet', name: 'Claude 3.5 Sonnet (Anthropic)' },
+    { id: 'anthropic/claude-3-opus', name: 'Claude 3 Opus (Anthropic)' },
+    { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash (Google)' },
+    { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B (Meta)' },
+    { id: 'mistralai/mistral-large', name: 'Mistral Large' },
+  ];
+  const [openrouterModelsList, setOpenrouterModelsList] = useState(() =>
+    getInitialModels('studeo_openrouter_models', DEFAULT_OPENROUTER_MODELS, config.openrouterModel)
+  );
+
+  const checkOpenRouterModels = async () => {
+    if (!config.openrouterApiKey) {
+        showToast(t('settings.ai.noApiKey', { name: 'OpenRouter' }), 'warning');
+        return;
+    }
+    setIsFetchingModels(true);
+    try {
+        const response = await fetch('https://openrouter.ai/api/v1/models', {
+            headers: { 'Authorization': `Bearer ${config.openrouterApiKey}` }
+        });
+        if (!response.ok) throw new Error('Erreur OpenRouter: ' + response.statusText);
+        const data = await response.json();
+        const models = data.data
+          .map((m: any) => ({ id: m.id, name: m.name ? `${m.name} (${m.id})` : m.id }))
+          .sort((a: any, b: any) => a.id.localeCompare(b.id));
+
+        if (models.length > 0) {
+            setOpenrouterModelsList(models);
+            localStorage.setItem('studeo_openrouter_models', JSON.stringify(models));
+        } else throw new Error('Aucun modèle OpenRouter trouvé');
+
+    } catch (e: any) {
+        showToast(t('settings.ai.errorModels', { error: e.message }), 'error', 5000);
+    } finally {
+        setIsFetchingModels(false);
+    }
+  };
+
   /* --- LOCAL LOGIC --- */
   const [localModelsList, setLocalModelsList] = useState<{id: string, name: string}[]>([
     { id: config.localModelName || 'local-model', name: config.localModelName || t('settings.ai.currentModel') }
@@ -621,12 +663,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
             <div>
               <label className="block text-sm font-medium mb-3 text-text-secondary">{t('settings.ai.activeProvider')}</label>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3">
                 {[
                     { id: 'gemini', name: 'Gemini', icon: 'fa-google', sub: 'Google' },
                     { id: 'openai', name: 'OpenAI', icon: 'fa-microchip', sub: 'GPT-4' },
                     { id: 'anthropic', name: 'Claude', icon: 'fa-brain', sub: 'Anthropic' },
                     { id: 'mistral', name: 'Mistral', icon: 'fa-wind', sub: 'Mistral AI' },
+                    { id: 'openrouter', name: 'OpenRouter', icon: 'fa-route', sub: 'Multi-LLM' },
                     { id: 'local', name: 'Local', icon: 'fa-server', sub: 'Ollama/LM' },
                 ].map((p) => (
                     <button
@@ -761,6 +804,66 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   <select value={config.mistralModel || 'mistral-large-latest'} onChange={(e) => updateConfig({ mistralModel: e.target.value })} className="w-full p-3 rounded-lg bg-background-secondary border border-border outline-none text-text">
                     {mistralModelsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                   </select>
+                </div>
+              </div>
+            )}
+
+            {config.provider === 'openrouter' && (
+              <div className="space-y-4 animate-fade-in p-4 bg-background rounded-lg border border-border/50">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <i className="fas fa-route text-purple-500"></i>
+                  Configuration OpenRouter
+                </h3>
+                <p className="text-xs text-text-muted">
+                  OpenRouter vous donne accès à des centaines de modèles via une seule clé API.
+                  <a
+                    href="https://openrouter.ai/keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 text-purple-500 hover:underline font-medium"
+                  >
+                    Obtenir une clé API OpenRouter →
+                  </a>
+                </p>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-text-secondary">
+                    {t('settings.ai.apiKey', { name: 'OpenRouter' })}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type={showApiKey ? 'text' : 'password'}
+                      value={config.openrouterApiKey || ''}
+                      onChange={(e) => updateConfig({ openrouterApiKey: e.target.value })}
+                      placeholder="sk-or-..."
+                      className="flex-1 p-3 rounded-lg bg-background-secondary border border-border focus:border-primary outline-none"
+                    />
+                    <button onClick={() => setShowApiKey(!showApiKey)} className="px-4 border border-border rounded-lg text-text">
+                      <i className={`fas fa-eye${showApiKey ? '-slash' : ''}`}></i>
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-text-secondary">{t('settings.ai.model')}</label>
+                    <button
+                      onClick={checkOpenRouterModels}
+                      disabled={isFetchingModels}
+                      className="text-xs text-primary hover:text-primary-dark underline flex items-center gap-1"
+                    >
+                      {isFetchingModels ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-sync-alt"></i>}
+                      {t('settings.ai.refresh')}
+                    </button>
+                  </div>
+                  <select
+                    value={config.openrouterModel || 'openai/gpt-4o'}
+                    onChange={(e) => updateConfig({ openrouterModel: e.target.value })}
+                    className="w-full p-3 rounded-lg bg-background-secondary border border-border outline-none text-text"
+                  >
+                    {openrouterModelsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                  <p className="text-xs text-text-muted mt-2">
+                    Cliquez sur "Actualiser" pour charger tous les modèles disponibles depuis OpenRouter.
+                  </p>
                 </div>
               </div>
             )}

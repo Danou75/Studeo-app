@@ -44,14 +44,24 @@ export const CurriculumHeader: React.FC<CurriculumHeaderProps> = ({
             )}
             
             <div className="relative z-20 flex justify-between items-center mb-6">
-                <Button 
-                    variant="secondary" 
-                    onClick={onBack} 
-                    size="sm" 
-                    className={`transition-all w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
-                >
-                    <i className="fas fa-home mr-2 text-inherit"></i> Accueil
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button 
+                        variant="secondary" 
+                        onClick={onBack} 
+                        size="sm" 
+                        className={`transition-all w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
+                    >
+                        <i className="fas fa-chevron-left mr-1 sm:mr-2 text-inherit"></i> <span className="hidden sm:inline">Retour</span>
+                    </Button>
+                    <Button 
+                        variant="secondary" 
+                        onClick={() => window.location.hash = '#/'} 
+                        size="sm" 
+                        className={`transition-all w-fit hidden sm:flex ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
+                    >
+                        <i className="fas fa-home mr-2 text-inherit"></i> Accueil
+                    </Button>
+                </div>
 
                 <div className="flex items-center gap-1.5 p-1 bg-black/10 dark:bg-white/5 rounded-xl backdrop-blur-sm border border-white/10 shrink-0">
                     <button

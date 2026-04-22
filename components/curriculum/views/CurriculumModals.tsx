@@ -11,7 +11,7 @@ interface CurriculumModalsProps {
     // Rename Modal
     isRenameModalOpen: boolean;
     setIsRenameModalOpen: (isOpen: boolean) => void;
-    renameType: 'program' | 'lesson' | 'conversation' | 'vocab';
+    renameType: 'program' | 'lesson' | 'conversation' | 'vocab' | 'shadowing';
     newTitle: string;
     setNewTitle: (title: string) => void;
     onConfirmRename: () => void;
@@ -48,6 +48,47 @@ export const CurriculumModals: React.FC<CurriculumModalsProps> = ({
     isRenewingCatalog,
     handleRenewCatalog
 }) => {
+    /** Generate and download a Shadowing-ready .md file from the current vocab list */
+    const handleExportMd = () => {
+        if (!selectedVocab) return;
+        const v = selectedVocab;
+        const lines: string[] = [
+            `# ${v.theme}`,
+            ``,
+            `> **Langue** : ${v.targetLanguage} · **Niveau** : ${v.difficulty}`,
+            ``,
+        ];
+
+        if (v.words.length > 0) {
+            lines.push(`## Mots & Vocabulaire`, ``);
+            v.words.forEach(w => {
+                lines.push(`- **${w.word}** — ${w.translation}`);
+                if (w.example) lines.push(`  *${w.example}*`);
+            });
+            lines.push(``);
+        }
+
+        if (v.expressions.length > 0) {
+            lines.push(`## Expressions`, ``);
+            v.expressions.forEach(ex => {
+                lines.push(`- **${ex.expression}** — ${ex.translation}`);
+                if (ex.example) lines.push(`  *${ex.example}*`);
+            });
+            lines.push(``);
+        }
+
+        const content = lines.join('\n');
+        const blob    = new Blob([content], { type: 'text/markdown' });
+        const url     = URL.createObjectURL(blob);
+        const a       = document.createElement('a');
+        a.href        = url;
+        a.download    = `${v.theme.replace(/[^a-z0-9]/gi, '_')}_shadowing.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <>
             {/* Vocab Detail Modal */}
@@ -139,18 +180,32 @@ export const CurriculumModals: React.FC<CurriculumModalsProps> = ({
                                 <p className="text-xs text-text-muted">
                                     Retrouvez ce vocabulaire en mode interactif avec exercices, chat IA et flashcards.
                                 </p>
-                                <button
-                                    onClick={() => { onOpenVocabInLab(selectedVocab!); setSelectedVocab(null); }}
-                                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-xl transition-colors flex-shrink-0 shadow-md"
-                                >
-                                    <i className="fas fa-flask"></i>
-                                    Ouvrir dans le Lab
-                                </button>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    {/* Export .md for Shadowing */}
+                                    {(selectedVocab!.words.length > 0 || selectedVocab!.expressions.length > 0) && (
+                                        <button
+                                            onClick={handleExportMd}
+                                            title="Exporter mots & expressions en .md pour le Labo Shadowing"
+                                            className="flex items-center gap-1.5 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
+                                        >
+                                            <i className="fas fa-microphone" />
+                                            <span className="hidden sm:inline">Shadowing .md</span>
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => { onOpenVocabInLab(selectedVocab!); setSelectedVocab(null); }}
+                                        className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-xl transition-colors shadow-md"
+                                    >
+                                        <i className="fas fa-flask" />
+                                        Ouvrir dans le Lab
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
                 </div>
             )}
+
 
             {/* Modal de renommage */}
             {isRenameModalOpen && (

@@ -36,6 +36,11 @@ export default function CurriculumRoute() {
                 onOpenVocabInLab={(vocab) =>
                     navigate('/language-lab', { state: { vocab } })
                 }
+                onDeleteShadowingSession={coordinator.handleDeleteShadowingSession}
+                onRenameShadowingSession={coordinator.handleRenameShadowingSession}
+                onOpenShadowingInLab={(session) =>
+                    navigate('/language-lab', { state: { shadowingSession: session } })
+                }
             />
         </Suspense>
     );

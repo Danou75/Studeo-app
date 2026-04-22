@@ -730,6 +730,10 @@ export const useAppCoordinator = () => {
         handleSaveVocabList: studyContent.handleSaveVocabList,
         handleDeleteVocabList: studyContent.handleDeleteVocabList,
         handleRenameVocabList: studyContent.handleRenameVocabList,
+        savedShadowingSessions: studyContent.savedShadowingSessions,
+        handleSaveShadowingSession: studyContent.handleSaveShadowingSession,
+        handleDeleteShadowingSession: studyContent.handleDeleteShadowingSession,
+        handleRenameShadowingSession: studyContent.handleRenameShadowingSession,
         
         aiModalInitialTopic, aiModalInitialMode, aiModalInitialContext,
         setAiModalInitialContext,

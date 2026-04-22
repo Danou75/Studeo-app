@@ -11,6 +11,7 @@ import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { getLanguageCode } from '../utils/languageDetection';
 import { VocabularyLabTab } from './VocabularyLabTab';
+import { ShadowingLabTab } from './ShadowingLabTab';
 
 // Views
 import { ChatModeView } from './language-lab/ChatModeView';
@@ -45,6 +46,8 @@ interface LanguageLabScreenProps {
     onSetVocabLabCache?: React.Dispatch<React.SetStateAction<Record<string, any>>>;
     onNavigateToCurriculum?: () => void;
     onStartFlashcardQuiz?: (setName: string) => void;
+    onSaveShadowingSession?: (session: import('../types').SavedShadowingSession) => void;
+    initialShadowingSession?: import('../types').SavedShadowingSession;
 }
 
 export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
@@ -62,7 +65,11 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     onSaveVocabList,
     initialVocabList,
     vocabLabCache,
-    onSetVocabLabCache
+    onSetVocabLabCache,
+    onNavigateToCurriculum,
+    onStartFlashcardQuiz,
+    onSaveShadowingSession,
+    initialShadowingSession,
 }) => {
     const { config } = useAIConfig();
     const { showToast } = useToast();
@@ -70,7 +77,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     const { themeMode, themeStyle } = useTheme();
     const [targetLang, setTargetLang] = useState(getLanguageCode(tutor));
     const [activeLang, setActiveLang] = useState(targetLang);
-    const [labMode, setLabMode] = useState<'chat' | 'scenario_list' | 'scenario_play' | 'study' | 'pronunciation' | 'conversation_select' | 'conversation_active' | 'conversation_summary' | 'vocabulary'>('chat');
+    const [labMode, setLabMode] = useState<'chat' | 'scenario_list' | 'scenario_play' | 'study' | 'pronunciation' | 'conversation_select' | 'conversation_active' | 'conversation_summary' | 'vocabulary' | 'shadowing'>('chat');
 
     // Chat Mode Stats
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -114,6 +121,12 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
             setLabMode('vocabulary');
         }
     }, [initialVocabList?.id]);
+
+    useEffect(() => {
+        if (initialShadowingSession) {
+            setLabMode('shadowing');
+        }
+    }, [initialShadowingSession?.id]);
 
     useEffect(() => {
         if (!initialSession && !initialVocabList && vocabLabCache && vocabLabCache['__active_theme__']) {
@@ -202,13 +215,20 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                             <i className="fas fa-robot opacity-70"></i> {tutor.name}
                         </p>
                     </div>
-                    {onNavigateToSettings ? (
-                        <button onClick={onNavigateToSettings} className={`w-10 h-10 ${isLightHeader ? 'bg-black/5 hover:bg-black/10' : 'bg-white/20 hover:bg-white/30'} backdrop-blur-md rounded-full flex items-center justify-center transition-colors`}>
-                            <i className="fas fa-cog" />
-                        </button>
-                    ) : (
-                        <div className="w-10 h-10" />
-                    )}
+                    <div className="flex items-center gap-2">
+                        {(labMode === 'vocabulary' || labMode === 'shadowing') && onNavigateToCurriculum ? (
+                            <button onClick={onNavigateToCurriculum} title="Mes Leçons & Programmes" className={`w-10 h-10 ${isLightHeader ? 'bg-black/5 hover:bg-black/10' : 'bg-white/20 hover:bg-white/30'} backdrop-blur-md rounded-full flex items-center justify-center transition-colors`}>
+                                <i className="fas fa-book-open" />
+                            </button>
+                        ) : null}
+                        {onNavigateToSettings ? (
+                            <button onClick={onNavigateToSettings} className={`w-10 h-10 ${isLightHeader ? 'bg-black/5 hover:bg-black/10' : 'bg-white/20 hover:bg-white/30'} backdrop-blur-md rounded-full flex items-center justify-center transition-colors`}>
+                                <i className="fas fa-cog" />
+                            </button>
+                        ) : (
+                            <div className="w-10 h-10" />
+                        )}
+                    </div>
                 </div>
 
                 {/* Tabs */}
@@ -219,7 +239,8 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                         { id: 'scenario_list', icon: 'theater-masks', label: t('lab.tabs.scenarios') },
                         { id: 'study', icon: 'book-open', label: t('lab.tabs.study') },
                         { id: 'pronunciation', icon: 'bullhorn', label: t('lab.tabs.prononciation') },
-                        { id: 'vocabulary', icon: 'spell-check', label: t('lab.tabs.vocab') }
+                        { id: 'vocabulary', icon: 'spell-check', label: t('lab.tabs.vocab') },
+                        { id: 'shadowing', icon: 'wave-square', label: 'Shadowing' }
                     ].map(tab => (
                         <button
                             key={tab.id}
@@ -366,6 +387,16 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     vocabLabCache={vocabLabCache}
                     onSetVocabLabCache={onSetVocabLabCache}
                     tutorId={tutor.id}
+                />
+            )}
+
+            {labMode === 'shadowing' && (
+                <ShadowingLabTab
+                    config={config}
+                    activeLang={activeLang}
+                    tutor={tutor}
+                    onSaveSession={onSaveShadowingSession}
+                    initialSession={initialShadowingSession}
                 />
             )}
         </div>

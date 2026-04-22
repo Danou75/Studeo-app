@@ -22,6 +22,8 @@ export interface AIConfigContext {
     anthropicModel?: string;
     mistralApiKey?: string;
     mistralModel?: string;
+    openrouterApiKey?: string;
+    openrouterModel?: string;
     localApiUrl: string;
     localModelName: string;
 }
@@ -75,6 +77,14 @@ export function getAIClientConfig(config: AIConfigContext): AIClientConfig {
             modelName = config.localModelName;
             if (!apiUrl?.trim()) {
                 throw new Error('URL de l\'API locale manquante. Veuillez configurer l\'URL dans les paramètres (ex: http://localhost:11434/v1/chat/completions).');
+            }
+            break;
+
+        case 'openrouter':
+            apiKey = config.openrouterApiKey;
+            modelName = config.openrouterModel || 'openai/gpt-4o';
+            if (!apiKey?.trim()) {
+                throw new Error('Clé API OpenRouter manquante. Veuillez configurer votre clé dans les paramètres.');
             }
             break;
 

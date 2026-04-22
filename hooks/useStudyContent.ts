@@ -1,6 +1,6 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { Lesson, StudyProgram, Screen, ConversationSession, SavedVocabList } from '../types';
+import { Lesson, StudyProgram, Screen, ConversationSession, SavedVocabList, SavedShadowingSession } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useStudyContentStore } from '../stores/useStudyContentStore';
 
@@ -13,7 +13,8 @@ export const useStudyContent = () => {
         curriculumSuggestions, setCurriculumSuggestions,
         librarySuggestions, setLibrarySuggestions,
         savedConvSessions, setSavedConvSessions,
-        savedVocabLists, setSavedVocabLists
+        savedVocabLists, setSavedVocabLists,
+        savedShadowingSessions, setSavedShadowingSessions,
     } = useStudyContentStore();
 
 
@@ -207,6 +208,23 @@ export const useStudyContent = () => {
         ));
     };
 
+    const handleSaveShadowingSession = (session: SavedShadowingSession) => {
+        setSavedShadowingSessions(prev => {
+            const filtered = prev.filter((s: SavedShadowingSession) => s.id !== session.id);
+            return [session, ...filtered].slice(0, 100);
+        });
+    };
+
+    const handleDeleteShadowingSession = (id: string) => {
+        setSavedShadowingSessions(prev => prev.filter((s: SavedShadowingSession) => s.id !== id));
+    };
+
+    const handleRenameShadowingSession = (id: string, newTheme: string) => {
+        setSavedShadowingSessions(prev => prev.map((s: SavedShadowingSession) =>
+            s.id === id ? { ...s, theme: newTheme } : s
+        ));
+    };
+
     return {
         currentLesson,
         setCurrentLesson,
@@ -226,6 +244,10 @@ export const useStudyContent = () => {
         handleSaveVocabList,
         handleDeleteVocabList,
         handleRenameVocabList,
+        savedShadowingSessions,
+        handleSaveShadowingSession,
+        handleDeleteShadowingSession,
+        handleRenameShadowingSession,
         handleLessonGenerated,
         handleCurriculumGenerated,
         handleSaveLesson,

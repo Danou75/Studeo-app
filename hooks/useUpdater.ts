@@ -26,7 +26,7 @@ const VERSION_JSON_URL = 'https://raw.githubusercontent.com/Danou75/Studeo-app/m
 // ── Récupération de la version courante injectée par Vite ─────────────────────
 const getCurrentVersion = (): string => {
     // @ts-ignore — __APP_VERSION__ est défini dans vite.config.ts via define
-    return typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '3.2.0';
+    return typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '3.3.0';
 };
 
 // ── Comparaison sémantique (x.y.z) ────────────────────────────────────────────

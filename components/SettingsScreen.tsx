@@ -56,8 +56,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const DEFAULT_GEMINI_MODELS = [
     { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Recommandé ✨)' },
-    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Stable & Performant ✅)' },
-    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Classique)' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Stable ✅)' },
     { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Haute Précision)' },
   ];
 

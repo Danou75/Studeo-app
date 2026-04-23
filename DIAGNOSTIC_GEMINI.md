@@ -26,11 +26,11 @@ https://generativelanguage.googleapis.com/v1/models/{model}:generateContent
 
 Les modèles actuellement proposés :
 
-- `gemini-2.0-flash-exp` (Experimental - peut ne pas être disponible)
+- `gemini-2.5-flash-exp` (Experimental - peut ne pas être disponible)
 - `gemini-1.5-flash`
 - `gemini-1.5-pro`
 
-**Problème** : Le modèle par défaut `gemini-2.0-flash-exp` est expérimental et peut ne pas être accessible avec toutes les clés API.
+**Problème** : Le modèle par défaut `gemini-2.5-flash-exp` est expérimental et peut ne pas être accessible avec toutes les clés API.
 
 **Solution** : Utiliser `gemini-1.5-flash` ou `gemini-1.5-pro` comme modèle par défaut.
 
@@ -68,7 +68,7 @@ Modifier `src-tauri/src/main.rs` ligne 209 :
 
 ```rust
 // AVANT
-let model = model_name.unwrap_or_else(|| "gemini-2.0-flash-exp".to_string());
+let model = model_name.unwrap_or_else(|| "gemini-2.5-flash-exp".to_string());
 
 // APRÈS
 let model = model_name.unwrap_or_else(|| "gemini-1.5-flash".to_string());
@@ -78,7 +78,7 @@ Et dans `components/AIGeneratorModal.tsx` ligne 34 :
 
 ```typescript
 // AVANT
-const [modelName, setModelName] = useState("gemini-2.0-flash-exp");
+const [modelName, setModelName] = useState("gemini-2.5-flash-exp");
 
 // APRÈS
 const [modelName, setModelName] = useState("gemini-1.5-flash");

@@ -335,26 +335,13 @@ const useNativeSpeechRecognition = (language: string = 'fr-FR') => {
 export const useSpeechRecognition = (language: string = 'fr-FR') => {
   // Les deux hooks sont TOUJOURS appelés (règle des hooks React),
   // mais seul l'un des deux est actif selon le contexte détecté.
-  //
-  // On utilise le fallback MediaRecorder+Gemini sur TOUS les appareils iOS
-  // (iPad/iPhone en Safari normal, Chrome iOS, ou PWA standalone) car
-  // webkitSpeechRecognition est instable sur iOS :
-  //   • mode `continuous` se coupe sans déclencher onresult
-  //   • langues non-françaises échouent silencieusement
-  //   • comportement erratique sur iPad Pro M4 / iPadOS 17+
+  
+  // Rule of Hooks: hooks must be called at the top level
+  const { config } = useAIConfig();
+  const apiKey = config?.geminiApiKey || '';
+
   const isIOSFallback = typeof window !== 'undefined' && isIOSDevice();
-
   const nativeRecognition = useNativeSpeechRecognition(language);
-
-  // Tentative de récupération de la clé API si disponible dans le contexte (pour bypass limiter)
-  let apiKey = '';
-  try {
-    const { config } = useAIConfig();
-    if (config?.geminiApiKey) apiKey = config.geminiApiKey;
-  } catch (e) {
-    // Si hors contexte, utiliser le fallback système
-  }
-
   const pwaFallback = useMediaRecorderTranscribe({ language, apiKey });
 
   if (isIOSFallback) {

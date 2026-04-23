@@ -23,10 +23,10 @@ L'erreur était claire :
 
 ```
 Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count
-limit: 0, model: gemini-2.0-flash-exp
+limit: 0, model: gemini-2.5-flash-exp
 ```
 
-**Cause** : Le modèle `gemini-2.0-flash-exp` n'est **PAS disponible** pour les clés API gratuites.
+**Cause** : Le modèle `gemini-2.5-flash-exp` n'est **PAS disponible** pour les clés API gratuites.
 
 ### Solutions Appliquées
 
@@ -40,7 +40,7 @@ https://generativelanguage.googleapis.com/v1/models/{model}:generateContent
 #### b) Modèle par Défaut
 
 ```typescript
-// Changé de gemini-2.0-flash-exp à gemini-1.5-flash
+// Changé de gemini-2.5-flash-exp à gemini-1.5-flash
 const [modelName, setModelName] = useState("gemini-1.5-flash");
 ```
 
@@ -48,7 +48,7 @@ const [modelName, setModelName] = useState("gemini-1.5-flash");
 
 **AVANT** :
 
-- gemini-2.0-flash-exp (Experimental) ❌ Quota = 0
+- gemini-2.5-flash-exp (Experimental) ❌ Quota = 0
 - gemini-1.5-flash
 - gemini-1.5-pro
 
@@ -56,7 +56,7 @@ const [modelName, setModelName] = useState("gemini-1.5-flash");
 
 - gemini-1.5-flash (Rapide, Recommandé) ✅
 - gemini-1.5-pro (Plus puissant) ✅
-- ~~gemini-2.0-flash-exp~~ **RETIRÉ** (non disponible pour clés gratuites)
+- ~~gemini-2.5-flash-exp~~ **RETIRÉ** (non disponible pour clés gratuites)
 
 ## 3. Test de l'IA
 

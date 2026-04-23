@@ -205,11 +205,11 @@ export const ScenarioModeView: React.FC<ScenarioModeViewProps> = ({
                     {/* ── Response footer (only when waiting for user) ── */}
                     {!isGeneratingScenario && activeScenario[scenarioStepIndex] && scenarioFeedback !== 'success' && (
                         <div className="p-3 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex items-end gap-2 relative z-20">
-                            {/* Listening pulse */}
-                            {listeningStatus === 'listening' && (
-                                <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow border border-red-100 dark:border-red-900/30 flex items-center gap-2 text-xs font-bold text-red-500 uppercase tracking-wider">
-                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
-                                    J'écoute…
+                            {/* Listening/Processing pulse */}
+                            {(listeningStatus === 'listening' || listeningStatus === 'processing') && (
+                                <div className={`absolute -top-9 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow border flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${listeningStatus === 'listening' ? 'border-red-100 dark:border-red-900/30 text-red-500' : 'border-amber-100 dark:border-amber-900/30 text-amber-500'}`}>
+                                    <div className={`w-1.5 h-1.5 rounded-full ${listeningStatus === 'listening' ? 'bg-red-500 animate-ping' : 'bg-amber-500 animate-bounce'}`} />
+                                    {listeningStatus === 'listening' ? 'J\'écoute…' : 'Transcription…'}
                                 </div>
                             )}
 
@@ -218,24 +218,29 @@ export const ScenarioModeView: React.FC<ScenarioModeViewProps> = ({
                                     bg-gray-50 dark:bg-gray-700/50 text-gray-800 dark:text-white placeholder-gray-400
                                     ${listeningStatus === 'listening'
                                         ? 'border-red-300 dark:border-red-500/50 ring-2 ring-red-100 dark:ring-red-900/20'
+                                        : listeningStatus === 'processing'
+                                        ? 'border-amber-300 dark:border-amber-500/50 ring-2 ring-amber-100 dark:ring-amber-900/20'
                                         : 'border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-primary/30'}`}
-                                placeholder="Tapez ou parlez votre réponse…"
-                                value={listeningStatus === 'listening' ? draftMessage : undefined}
-                                defaultValue={listeningStatus !== 'listening' ? draftMessage : undefined}
-                                readOnly={listeningStatus === 'listening'}
+                                placeholder={listeningStatus === 'listening' ? 'J\'écoute…' : listeningStatus === 'processing' ? 'Transcription…' : 'Tapez ou parlez votre réponse…'}
+                                value={listeningStatus === 'listening' || listeningStatus === 'processing' ? draftMessage : undefined}
+                                defaultValue={listeningStatus !== 'listening' && listeningStatus !== 'processing' ? draftMessage : undefined}
+                                readOnly={listeningStatus === 'listening' || listeningStatus === 'processing'}
                                 id="scenario-response-input"
                             />
 
                             {/* Mic */}
                             <button
-                                onClick={listeningStatus === 'listening' ? stopListening : startListening}
+                                onClick={listeningStatus === 'listening' ? stopListening : (listeningStatus === 'processing' ? undefined : startListening)}
+                                disabled={listeningStatus === 'processing'}
                                 className={`w-11 h-11 flex-shrink-0 rounded-full flex items-center justify-center transition-all shadow
                                     ${listeningStatus === 'listening'
                                         ? 'bg-red-500 text-white animate-pulse'
+                                        : listeningStatus === 'processing'
+                                        ? 'bg-amber-500 text-white cursor-wait'
                                         : 'bg-primary text-white hover:bg-primary-dark active:scale-95'}`}
-                                title={listeningStatus === 'listening' ? 'Arrêter' : 'Parler'}
+                                title={listeningStatus === 'listening' ? 'Arrêter' : listeningStatus === 'processing' ? 'Transcription...' : 'Parler'}
                             >
-                                <i className={`fas fa-${listeningStatus === 'listening' ? 'stop' : 'microphone'} text-base`} />
+                                <i className={`fas fa-${listeningStatus === 'listening' ? 'stop' : listeningStatus === 'processing' ? 'spinner fa-spin' : 'microphone'} text-base`} />
                             </button>
 
                             {/* Send / Validate */}
@@ -245,9 +250,9 @@ export const ScenarioModeView: React.FC<ScenarioModeViewProps> = ({
                                     const text = (el?.value || draftMessage).trim();
                                     if (text) handleScenarioUserResponse(text);
                                 }}
-                                disabled={!draftMessage.trim() && listeningStatus !== 'listening'}
+                                disabled={(!draftMessage.trim() && listeningStatus !== 'listening') || listeningStatus === 'processing'}
                                 className={`w-11 h-11 flex-shrink-0 rounded-full flex items-center justify-center transition-all shadow active:scale-95
-                                    ${(!draftMessage.trim() && listeningStatus !== 'listening')
+                                    ${((!draftMessage.trim() && listeningStatus !== 'listening') || listeningStatus === 'processing')
                                         ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
                                         : 'bg-green-500 text-white hover:bg-green-600'}`}
                                 title="Valider ma réponse"

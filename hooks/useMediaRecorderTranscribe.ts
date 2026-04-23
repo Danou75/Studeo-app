@@ -3,15 +3,30 @@ import { SpeechRecognitionStatus } from '../types';
 
 /**
  * Détecte si l'app tourne en mode PWA standalone sur iOS (iPad/iPhone).
- * En mode PWA, webkitSpeechRecognition est bloqué sur iPadOS ≤ 16 (iPad Air 2, etc.)
- * et lève une erreur "service-not-allowed" même si la Dictée est activée.
+ * En mode PWA, webkitSpeechRecognition est bloqué sur iPadOS ≤ 16.
  */
 export function isIOSStandalonePWA(): boolean {
-  // navigator.standalone = true uniquement sur iOS en mode PWA ajouté à l'écran d'accueil
   const isStandalone = (navigator as any).standalone === true;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   return isIOS && isStandalone;
+}
+
+/**
+ * Détecte tout appareil iOS/iPadOS (Safari, Chrome iOS, mode standalone ou non).
+ * webkitSpeechRecognition est instable sur iOS :
+ *  - mode `continuous` se coupe prématurément sans déclencher onresult
+ *  - langues non-françaises échouent silencieusement
+ *  - comportement différent selon le modèle d'iPad et la version d'iPadOS
+ * On utilise systématiquement le fallback MediaRecorder+Gemini sur iOS.
+ */
+export function isIOSDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    // iPad Pro M4 / modern iPads report 'MacIntel' with touch
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
 }
 
 /**

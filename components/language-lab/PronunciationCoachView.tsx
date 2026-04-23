@@ -274,17 +274,20 @@ export const PronunciationCoachView: React.FC<PronunciationCoachViewProps> = ({
                         ) : (
                             <div className="flex flex-col items-center">
                                 <button
-                                    onClick={listeningStatus === 'listening' ? stopListening : startListening}
+                                    onClick={listeningStatus === 'listening' ? stopListening : (listeningStatus === 'processing' ? undefined : startListening)}
+                                    disabled={listeningStatus === 'processing'}
                                     className={`w-24 h-24 rounded-full shadow-2xl flex items-center justify-center transition-all transform hover:scale-105 mb-4 ${
                                         listeningStatus === 'listening' 
                                             ? 'bg-red-500 text-white animate-pulse ring-4 ring-red-200'
+                                        : listeningStatus === 'processing'
+                                            ? 'bg-amber-500 text-white cursor-wait ring-4 ring-amber-200'
                                         : 'bg-primary text-white'
                                     }`}
                                 >
-                                    <i className={`fas fa-${listeningStatus === 'listening' ? 'stop' : 'microphone'} text-4xl`}></i>
+                                    <i className={`fas fa-${listeningStatus === 'listening' ? 'stop' : listeningStatus === 'processing' ? 'spinner fa-spin' : 'microphone'} text-4xl`}></i>
                                 </button>
-                                <p className="text-gray-500 text-sm animate-pulse">
-                                    {listeningStatus === 'listening' ? "J'écoute..." : "Appuyez pour parler"}
+                                <p className={`text-sm animate-pulse ${listeningStatus === 'listening' ? 'text-red-500 font-bold' : listeningStatus === 'processing' ? 'text-amber-500 font-bold' : 'text-gray-500'}`}>
+                                    {listeningStatus === 'listening' ? "J'écoute..." : listeningStatus === 'processing' ? "Analyse en cours..." : "Appuyez pour parler"}
                                 </p>
                                 {transcript && <p className="mt-4 text-gray-400 text-sm italic max-w-md text-center">"{transcript}"</p>}
                             </div>

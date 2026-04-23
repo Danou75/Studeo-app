@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { SpeechRecognitionStatus, DictationResult } from '../types';
 import { isAnswerAcceptable, calculateSimilarity } from '../utils/phonetic';
-import { isIOSStandalonePWA, useMediaRecorderTranscribe } from './useMediaRecorderTranscribe';
+import { isIOSDevice, useMediaRecorderTranscribe } from './useMediaRecorderTranscribe';
 import { useAIConfig } from '../contexts/AIConfigContext';
 
 // Définition de l'interface pour l'API Web Speech (non standard en TS par défaut)
@@ -335,7 +335,14 @@ const useNativeSpeechRecognition = (language: string = 'fr-FR') => {
 export const useSpeechRecognition = (language: string = 'fr-FR') => {
   // Les deux hooks sont TOUJOURS appelés (règle des hooks React),
   // mais seul l'un des deux est actif selon le contexte détecté.
-  const isPWAFallback = typeof window !== 'undefined' && isIOSStandalonePWA();
+  //
+  // On utilise le fallback MediaRecorder+Gemini sur TOUS les appareils iOS
+  // (iPad/iPhone en Safari normal, Chrome iOS, ou PWA standalone) car
+  // webkitSpeechRecognition est instable sur iOS :
+  //   • mode `continuous` se coupe sans déclencher onresult
+  //   • langues non-françaises échouent silencieusement
+  //   • comportement erratique sur iPad Pro M4 / iPadOS 17+
+  const isIOSFallback = typeof window !== 'undefined' && isIOSDevice();
 
   const nativeRecognition = useNativeSpeechRecognition(language);
 
@@ -350,9 +357,9 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
 
   const pwaFallback = useMediaRecorderTranscribe({ language, apiKey });
 
-  if (isPWAFallback) {
-    // iOS PWA standalone → MediaRecorder + Gemini
-    console.log('📱 iOS PWA mode: using MediaRecorder fallback for speech recognition');
+  if (isIOSFallback) {
+    // iOS (tout contexte) → MediaRecorder + Gemini
+    console.log('📱 iOS detected: using MediaRecorder fallback for speech recognition');
     return {
       ...pwaFallback,
       validateAnswer: (correctAnswer: string): DictationResult => {

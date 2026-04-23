@@ -350,19 +350,21 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     />
                     {/* Controls Footer */}
                     <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 pb-8 flex items-end gap-2 relative z-20">
-                        {listeningStatus === 'listening' && (
-                            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg border border-red-100 dark:border-red-900/30 flex items-center gap-3 animate-fade-in-up">
+                        {(listeningStatus === 'listening' || listeningStatus === 'processing') && (
+                            <div className={`absolute -top-12 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg border flex items-center gap-3 animate-fade-in-up ${listeningStatus === 'listening' ? 'border-red-100 dark:border-red-900/30' : 'border-amber-100 dark:border-amber-900/30'}`}>
                                 <div className="flex gap-1">
-                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-bounce"></div>
-                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-bounce delay-75"></div>
-                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-bounce delay-150"></div>
+                                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce ${listeningStatus === 'listening' ? 'bg-red-500' : 'bg-amber-500'}`}></div>
+                                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-75 ${listeningStatus === 'listening' ? 'bg-red-500' : 'bg-amber-500'}`}></div>
+                                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-150 ${listeningStatus === 'listening' ? 'bg-red-500' : 'bg-amber-500'}`}></div>
                                 </div>
-                                <span className="text-xs font-bold text-red-500 uppercase tracking-widest">{t('lab.chat.listening')}</span>
+                                <span className={`text-xs font-bold uppercase tracking-widest ${listeningStatus === 'listening' ? 'text-red-500' : 'text-amber-500'}`}>
+                                    {listeningStatus === 'listening' ? t('lab.chat.listening') : t('lab.chat.processing')}
+                                </span>
                             </div>
                         )}
                         <textarea
-                            className={`flex-[3] max-h-32 min-h-[50px] p-3 rounded-2xl border transition-all resize-none shadow-inner text-sm focus:outline-none ${isDark ? 'bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-primary/50' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-primary/20 focus:border-primary/30'} ${listeningStatus === 'listening' ? 'border-red-300 dark:border-red-500/50 ring-4 ring-red-50 dark:ring-red-900/20' : ''}`}
-                            placeholder={listeningStatus === 'listening' ? t('lab.chat.listening') : t('lab.chat.inputPlaceholder')}
+                            className={`flex-[3] max-h-32 min-h-[50px] p-3 rounded-2xl border transition-all resize-none shadow-inner text-sm focus:outline-none ${isDark ? 'bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-primary/50' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-primary/20 focus:border-primary/30'} ${listeningStatus === 'listening' ? 'border-red-300 dark:border-red-500/50 ring-4 ring-red-50 dark:ring-red-900/20' : listeningStatus === 'processing' ? 'border-amber-300 dark:border-amber-500/50 ring-4 ring-amber-50 dark:ring-amber-900/20' : ''}`}
+                            placeholder={listeningStatus === 'listening' ? t('lab.chat.listening') : listeningStatus === 'processing' ? t('lab.chat.processing') : t('lab.chat.inputPlaceholder')}
                             value={draftMessage}
                             onChange={(e) => setDraftMessage(e.target.value)}
                             onKeyDown={(e) => {
@@ -374,11 +376,16 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                             disabled={isProcessing}
                         />
                         <button
-                            onClick={listeningStatus === 'listening' ? stopListening : startListening}
-                            className={`w-12 h-12 rounded-full flex flex-col items-center justify-center transition-all flex-shrink-0 shadow-sm ${listeningStatus === 'listening' ? 'bg-red-500 text-white animate-pulse' : 'bg-primary text-white hover:bg-primary-dark active:scale-95'}`}
-                            title={listeningStatus === 'listening' ? "Arrêter d'écouter" : "Parler"}
+                            onClick={listeningStatus === 'listening' ? stopListening : (listeningStatus === 'processing' ? undefined : startListening)}
+                            disabled={listeningStatus === 'processing'}
+                            className={`w-12 h-12 rounded-full flex flex-col items-center justify-center transition-all flex-shrink-0 shadow-sm ${
+                                listeningStatus === 'listening' ? 'bg-red-500 text-white animate-pulse' : 
+                                listeningStatus === 'processing' ? 'bg-amber-500 text-white cursor-wait' : 
+                                'bg-primary text-white hover:bg-primary-dark active:scale-95'
+                            }`}
+                            title={listeningStatus === 'listening' ? "Arrêter d'écouter" : listeningStatus === 'processing' ? "Transcription en cours..." : "Parler"}
                         >
-                            <i className={`fas fa-${listeningStatus === 'listening' ? 'stop' : 'microphone'} text-lg`} />
+                            <i className={`fas fa-${listeningStatus === 'listening' ? 'stop' : listeningStatus === 'processing' ? 'spinner fa-spin' : 'microphone'} text-lg`} />
                         </button>
                         <button
                             onClick={() => handleSendMessage(draftMessage)}

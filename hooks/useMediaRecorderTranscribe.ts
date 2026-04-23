@@ -135,14 +135,16 @@ export function useMediaRecorderTranscribe({
           const actualMimeType = mimeType || 'audio/mp4';
           const audioBlob = new Blob(chunksRef.current, { type: actualMimeType });
 
-          // Convertir en base64 pour l'envoi à l'API
-          const arrayBuffer = await audioBlob.arrayBuffer();
-          const uint8 = new Uint8Array(arrayBuffer);
-          let binary = '';
-          for (let i = 0; i < uint8.length; i++) {
-            binary += String.fromCharCode(uint8[i]);
-          }
-          const audioBase64 = btoa(binary);
+          // Convertir en base64 pour l'envoi à l'API via FileReader (plus robuste sur mobile)
+          const audioBase64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const base64 = (reader.result as string).split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(audioBlob);
+          });
 
           console.log(`[MediaRecorder Fallback] Sending ${(audioBlob.size / 1024).toFixed(1)}KB to /api/gemini/transcribe`);
 

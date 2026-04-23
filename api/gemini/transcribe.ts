@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { checkRateLimit } from '../_rateLimit';
 
 const BACKEND_API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_API_KEY;
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-1.5-flash';
 
 /**
  * /api/gemini/transcribe
@@ -46,7 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'audioBase64 is required' });
   }
 
-  const audioMimeType = mimeType || 'audio/webm';
+  const audioMimeType = mimeType === 'audio/mp4' ? 'audio/aac' : (mimeType || 'audio/webm');
   const lang = language || 'fr-FR';
 
   // Construire le prompt pour guider Gemini à transcrire
@@ -84,9 +84,15 @@ Si rien n'est audible ou le silence est total, retourne une chaîne vide.`;
         },
       ],
       generationConfig: {
-        temperature: 0,       // On veut une transcription fidèle, pas créative
-        maxOutputTokens: 500, // Une réponse courte suffit
+        temperature: 0,
+        maxOutputTokens: 1000,
       },
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+      ],
     };
 
     const response = await fetch(url, {

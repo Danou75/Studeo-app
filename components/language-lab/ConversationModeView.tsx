@@ -69,6 +69,8 @@ export interface ConversationModeViewProps {
     draftMessage:               string;
     setDraftMessage:            (msg: string) => void;
     listeningStatus:            string;
+    startListening:             () => void;
+    stopListening:              () => void;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -112,6 +114,8 @@ export const ConversationModeView: React.FC<ConversationModeViewProps> = (props)
                 handlePinMessage={props.handlePinMessage}
                 handleSendConvMessage={props.handleSendConvMessage}
                 handleEndConversation={props.handleEndConversation}
+                startListening={props.startListening}
+                stopListening={props.stopListening}
             />
         );
     }

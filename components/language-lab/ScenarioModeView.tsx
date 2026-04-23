@@ -27,6 +27,11 @@ export interface ScenarioModeViewProps {
     setLabMode: (mode: any) => void;
     showScenarioEndPrompt: boolean;
     setShowScenarioEndPrompt: (show: boolean) => void;
+    // Response interface
+    handleScenarioUserResponse: (text: string) => void;
+    startListening: () => void;
+    stopListening: () => void;
+    listeningStatus: string;
 }
 
 export const ScenarioModeView: React.FC<ScenarioModeViewProps> = ({
@@ -44,7 +49,11 @@ export const ScenarioModeView: React.FC<ScenarioModeViewProps> = ({
     draftMessage,
     setLabMode,
     showScenarioEndPrompt,
-    setShowScenarioEndPrompt
+    setShowScenarioEndPrompt,
+    handleScenarioUserResponse,
+    startListening,
+    stopListening,
+    listeningStatus,
 }) => {
     const [showCustomScenarioModal, setShowCustomScenarioModal] = useState(false);
     const [customTopic, setCustomTopic] = useState('');
@@ -90,9 +99,10 @@ export const ScenarioModeView: React.FC<ScenarioModeViewProps> = ({
                 </div>
             )}
 
-            {/* 3. SCENARIO PLAY MODE */}
+            {/* SCENARIO PLAY MODE */}
             {labMode === 'scenario_play' && (
-                <div className="flex-1 flex flex-col items-center justify-start p-6 bg-gray-50 dark:bg-gray-900 text-center overflow-y-auto pb-32">
+                <div className="flex-1 flex flex-col min-h-0">
+                    <div className="flex-1 overflow-y-auto flex flex-col items-center justify-start p-6 bg-gray-50 dark:bg-gray-900 text-center pb-4">
                     {isGeneratingScenario ? (
                             <div className="flex flex-col items-center justify-center animate-fade-in space-y-6 opacity-80">
                             <div className="relative">
@@ -176,17 +186,74 @@ export const ScenarioModeView: React.FC<ScenarioModeViewProps> = ({
                                 )}
                             </div>
 
-                            {/* DRAFT PREVIEW IN SCENARIO MODE */}
-                            {draftMessage && (
-                                    <div className="text-lg font-medium text-gray-500 min-h-[30px] animate-pulse">
-                                    "{draftMessage}..."
-                                    </div>
+                            {/* Draft live preview while recording */}
+                            {draftMessage && listeningStatus === 'listening' && (
+                                <div className="text-lg font-medium text-primary min-h-[30px] animate-pulse flex items-center gap-2 justify-center">
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                                    "{draftMessage}…"
+                                </div>
                             )}
                         </div>
                     ) : (
                         <div className="text-center">
                             <h3 className="text-xl font-bold mb-4">{t('lab.scenarios.finished')}</h3>
                             <button onClick={() => setLabMode('scenario_list')} className="bg-primary text-white px-6 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition-transform">{t('lab.scenarios.chooseAnother')}</button>
+                        </div>
+                    )}
+                    </div>
+
+                    {/* ── Response footer (only when waiting for user) ── */}
+                    {!isGeneratingScenario && activeScenario[scenarioStepIndex] && scenarioFeedback !== 'success' && (
+                        <div className="p-3 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex items-end gap-2 relative z-20">
+                            {/* Listening pulse */}
+                            {listeningStatus === 'listening' && (
+                                <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow border border-red-100 dark:border-red-900/30 flex items-center gap-2 text-xs font-bold text-red-500 uppercase tracking-wider">
+                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
+                                    J'écoute…
+                                </div>
+                            )}
+
+                            <textarea
+                                className={`flex-1 max-h-24 min-h-[44px] p-3 rounded-2xl border resize-none text-sm focus:outline-none transition-all
+                                    bg-gray-50 dark:bg-gray-700/50 text-gray-800 dark:text-white placeholder-gray-400
+                                    ${listeningStatus === 'listening'
+                                        ? 'border-red-300 dark:border-red-500/50 ring-2 ring-red-100 dark:ring-red-900/20'
+                                        : 'border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-primary/30'}`}
+                                placeholder="Tapez ou parlez votre réponse…"
+                                value={listeningStatus === 'listening' ? draftMessage : undefined}
+                                defaultValue={listeningStatus !== 'listening' ? draftMessage : undefined}
+                                readOnly={listeningStatus === 'listening'}
+                                id="scenario-response-input"
+                            />
+
+                            {/* Mic */}
+                            <button
+                                onClick={listeningStatus === 'listening' ? stopListening : startListening}
+                                className={`w-11 h-11 flex-shrink-0 rounded-full flex items-center justify-center transition-all shadow
+                                    ${listeningStatus === 'listening'
+                                        ? 'bg-red-500 text-white animate-pulse'
+                                        : 'bg-primary text-white hover:bg-primary-dark active:scale-95'}`}
+                                title={listeningStatus === 'listening' ? 'Arrêter' : 'Parler'}
+                            >
+                                <i className={`fas fa-${listeningStatus === 'listening' ? 'stop' : 'microphone'} text-base`} />
+                            </button>
+
+                            {/* Send / Validate */}
+                            <button
+                                onClick={() => {
+                                    const el = document.getElementById('scenario-response-input') as HTMLTextAreaElement | null;
+                                    const text = (el?.value || draftMessage).trim();
+                                    if (text) handleScenarioUserResponse(text);
+                                }}
+                                disabled={!draftMessage.trim() && listeningStatus !== 'listening'}
+                                className={`w-11 h-11 flex-shrink-0 rounded-full flex items-center justify-center transition-all shadow active:scale-95
+                                    ${(!draftMessage.trim() && listeningStatus !== 'listening')
+                                        ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                                        : 'bg-green-500 text-white hover:bg-green-600'}`}
+                                title="Valider ma réponse"
+                            >
+                                <i className="fas fa-check text-base" />
+                            </button>
                         </div>
                     )}
                 </div>

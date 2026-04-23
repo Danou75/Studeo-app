@@ -114,22 +114,33 @@ export const useTTS = (langCode: string = 'fr-FR', tutorId?: string | null) => {
         cleanText = cleanText.replace(/[*_#`~]/g, '');
 
         // Remove emojis and other non-verbal symbols 
-        // (Extended_Pictographic catches almost all emojis, \u200D is Zero Width Joiner, \uFE0F is variation selector)
         try {
             const emojiRegex = new RegExp('[\\p{Extended_Pictographic}\\u200D\\uFE0F]', 'gu');
             cleanText = cleanText.replace(emojiRegex, '');
         } catch (e) {
-            // Fallback for older browsers not supporting \p{}
             cleanText = cleanText.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu, '');
         }
         
-        // Final trim
         cleanText = cleanText.trim();
         
         const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.lang = langCode;
         
-        const voiceToUse = voice || selectedVoice;
+        // Priority: explicit arg > state > dynamic lookup (handles async voice loading race)
+        const voiceToUse = voice ?? selectedVoice ?? (() => {
+            const docLang = langCode.substring(0, 2).toLowerCase();
+            const qualityKeywords = ['premium', 'enhanced', 'google', 'siri', 'natural', 'neural'];
+            return (
+                window.speechSynthesis.getVoices()
+                    .filter(v => v.lang.replace('_', '-').toLowerCase().startsWith(docLang))
+                    .sort((a, b) => {
+                        const aQ = qualityKeywords.some(k => a.name.toLowerCase().includes(k)) ? 1 : 0;
+                        const bQ = qualityKeywords.some(k => b.name.toLowerCase().includes(k)) ? 1 : 0;
+                        return bQ - aQ;
+                    })[0] ?? null
+            );
+        })();
+
         if (voiceToUse) {
             utterance.voice = voiceToUse;
         }

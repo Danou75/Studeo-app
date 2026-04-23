@@ -91,8 +91,9 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
         setActiveLang(lang);
     }, [tutor]);
 
-    // TTS & Speech
-    const { speak } = useTTS(activeLang);
+    // TTS & Speech — pass tutor.id so each professor keeps its own voice preference
+    const { speak, availableVoices, selectedVoice, setSelectedVoice } = useTTS(activeLang, tutor?.id);
+    const [showVoicePanel, setShowVoicePanel] = useState(false);
     
     // We only need speech recognition for the active screen
     const { 
@@ -103,12 +104,26 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
         resetTranscript 
     } = useSpeechRecognition(activeLang);
 
-    // Link transcript to draft message
+    // Link transcript to draft message — fire on ANY transcript change
+    // (covers both native webkitSpeechRecognition and iOS PWA MediaRecorder fallback
+    // where the transcript is set async after status already returned to 'idle').
     useEffect(() => {
-        if (listeningStatus === 'listening' || listeningStatus === 'processing') {
-            setDraftMessage(transcript);
+        if (transcript) setDraftMessage(transcript);
+    }, [transcript]);
+
+    // Auto-verify pronunciation when the mic stops and a transcript is ready.
+    const prevListeningStatusRef = useRef(listeningStatus);
+    useEffect(() => {
+        const wasActive =
+            prevListeningStatusRef.current === 'listening' ||
+            prevListeningStatusRef.current === 'processing';
+        const isNowIdle = listeningStatus === 'idle';
+        if (wasActive && isNowIdle && transcript && labMode === 'pronunciation') {
+            pronunModeProps.verifyPronunciation(transcript);
         }
-    }, [transcript, listeningStatus]);
+        prevListeningStatusRef.current = listeningStatus;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [listeningStatus]);
 
     // Cleanup TTS on unmount or tutor change
     useEffect(() => { 
@@ -221,6 +236,57 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                                 <i className="fas fa-book-open" />
                             </button>
                         ) : null}
+
+                        {/* Voice selector — for all AI-speaking modes except shadowing (which has its own) */}
+                        {labMode !== 'vocabulary' && labMode !== 'shadowing' && availableVoices.length > 0 && (
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowVoicePanel(v => !v)}
+                                    title="Voix du professeur"
+                                    className={`h-10 px-3 rounded-full flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                                        isLightHeader ? 'bg-black/5 hover:bg-black/10 text-gray-800' : 'bg-white/20 hover:bg-white/30 text-white'
+                                    }`}
+                                >
+                                    <i className="fas fa-volume-up text-sm" />
+                                    <span className="max-w-[70px] truncate hidden sm:inline">{selectedVoice?.name.split(' ')[0] ?? '…'}</span>
+                                    <i className="fas fa-chevron-down text-[9px] opacity-70" />
+                                </button>
+
+                                {showVoicePanel && (
+                                    <>
+                                        {/* Backdrop */}
+                                        <div className="fixed inset-0 z-40" onClick={() => setShowVoicePanel(false)} />
+                                        {/* Panel */}
+                                        <div className="absolute top-12 right-0 w-60 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl shadow-2xl overflow-hidden">
+                                            <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                                                <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Voix ({activeLang.toUpperCase()})</span>
+                                                <button onClick={() => setShowVoicePanel(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 w-6 h-6 flex items-center justify-center">
+                                                    <i className="fas fa-times text-xs" />
+                                                </button>
+                                            </div>
+                                            <div className="max-h-52 overflow-y-auto">
+                                                {availableVoices.map(v => (
+                                                    <button
+                                                        key={v.name}
+                                                        onClick={() => { setSelectedVoice(v); setShowVoicePanel(false); }}
+                                                        className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-xs transition-all hover:bg-gray-50 dark:hover:bg-gray-700/60 ${
+                                                            selectedVoice?.name === v.name
+                                                                ? 'bg-primary/5 dark:bg-primary/10 text-primary font-semibold'
+                                                                : 'text-gray-700 dark:text-gray-300'
+                                                        }`}
+                                                    >
+                                                        <i className={`fas fa-${selectedVoice?.name === v.name ? 'check-circle text-primary' : 'circle text-gray-200 dark:text-gray-600'} text-[11px] flex-shrink-0`} />
+                                                        <span className="truncate flex-1">{v.name}</span>
+                                                        {v.localService && <span className="text-[9px] text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full">local</span>}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
                         {onNavigateToSettings ? (
                             <button onClick={onNavigateToSettings} className={`w-10 h-10 ${isLightHeader ? 'bg-black/5 hover:bg-black/10' : 'bg-white/20 hover:bg-white/30'} backdrop-blur-md rounded-full flex items-center justify-center transition-colors`}>
                                 <i className="fas fa-cog" />
@@ -331,6 +397,8 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     tutor={tutor as any}
                     activeLang={activeLang}
                     listeningStatus={listeningStatus}
+                    startListening={startListening}
+                    stopListening={stopListening}
                     draftMessage={draftMessage}
                     setDraftMessage={setDraftMessage}
                     speak={speak}
@@ -354,6 +422,9 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     handleExport={() => {}}
                     draftMessage={draftMessage}
                     setLabMode={setLabMode}
+                    listeningStatus={listeningStatus}
+                    startListening={startListening}
+                    stopListening={stopListening}
                     t={t as any}
                     {...scenarioModeProps}
                 />

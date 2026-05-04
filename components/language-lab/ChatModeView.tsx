@@ -53,11 +53,11 @@ export const ChatModeView: React.FC<ChatModeViewProps> = ({
             {/* Draft / Transcript Ghost Message */}
             {draftMessage && (
                 <div className="flex w-full justify-end animate-fade-in-up">
-                    <div className={`max-w-[85%] rounded-2xl rounded-br-none px-4 py-3 shadow-sm ${listeningStatus === 'listening' ? 'bg-primary/5 border border-primary/30 text-primary' : listeningStatus === 'processing' ? 'bg-amber-500/10 border border-amber-500/30 text-amber-600' : 'bg-primary text-white flex flex-col min-w-[12rem] sm:min-w-[16rem]'}`}>
+                    <div className={`max-w-[85%] rounded-2xl rounded-br-none px-4 py-3 shadow-sm ${listeningStatus === 'listening' ? 'bg-primary/5 border border-primary/30 text-primary' : listeningStatus === 'processing' ? 'bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500' : 'bg-primary text-white flex flex-col min-w-[12rem] sm:min-w-[16rem]'}`}>
                         {listeningStatus === 'listening'
                             ? <div className="flex items-center gap-2"><span className="animate-pulse w-2 h-2 rounded-full bg-red-500"></span><span>{draftMessage}</span></div>
                             : listeningStatus === 'processing'
-                            ? <div className="flex items-center gap-2"><span className="animate-spin w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full"></span><span className="italic">{draftMessage || 'Transcription...'}</span></div>
+                            ? <div className="flex items-center gap-2"><span className="animate-spin w-3 h-3 border-2 border-primary border-t-transparent rounded-full"></span><span className="italic">{draftMessage || '...'}</span></div>
                             : (
                                 <>
                                     <textarea 

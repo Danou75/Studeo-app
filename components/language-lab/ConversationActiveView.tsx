@@ -5,6 +5,7 @@
 import React from 'react';
 import { ChatMessage } from '../../services/conversationService';
 import { LabMessageBubble } from './LabMessageBubble';
+import { isIOSDevice } from '../../hooks/useMediaRecorderTranscribe';
 
 export interface ConversationActiveViewProps {
     convThemeLabel:        string;
@@ -113,25 +114,30 @@ export const ConversationActiveView: React.FC<ConversationActiveViewProps> = ({
                 <div ref={convMessagesEndRef} />
             </div>
 
-            {/* ── Input footer ── */}
             <div className="p-3 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 pb-safe flex items-end gap-2 relative z-20">
-                {/* Listening/Processing animation */}
-                {(isListening || isProcessing) && (
-                    <div className={`absolute -top-10 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 px-4 py-1.5 rounded-full shadow-lg border flex items-center gap-2 animate-fade-in-up text-xs font-bold uppercase tracking-widest ${isListening ? 'border-red-100 dark:border-red-900/30 text-red-500' : 'border-amber-100 dark:border-amber-900/30 text-amber-500'}`}>
+                {/* Listening animation */}
+                {isListening && (
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 px-4 py-1.5 rounded-full shadow-lg border border-red-100 dark:border-red-900/30 text-red-500 flex items-center gap-2 animate-fade-in-up text-xs font-bold uppercase tracking-widest">
                         <div className="flex gap-1">
-                            <div className={`w-1.5 h-1.5 rounded-full animate-bounce ${isListening ? 'bg-red-500' : 'bg-amber-500'}`} />
-                            <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-75 ${isListening ? 'bg-red-500' : 'bg-amber-500'}`} />
-                            <div className={`w-1.5 h-1.5 rounded-full animate-bounce delay-150 ${isListening ? 'bg-red-500' : 'bg-amber-500'}`} />
+                            <div className="w-1.5 h-1.5 rounded-full animate-bounce bg-red-500" />
+                            <div className="w-1.5 h-1.5 rounded-full animate-bounce delay-75 bg-red-500" />
+                            <div className="w-1.5 h-1.5 rounded-full animate-bounce delay-150 bg-red-500" />
                         </div>
-                        {isListening ? 'J\'écoute…' : 'Transcription…'}
+                        J'écoute…
                     </div>
                 )}
-
+                {/* Hint iOS : appuyer sur Stop pour transcrire */}
+                {isListening && typeof window !== 'undefined' && isIOSDevice() && (
+                    <div className="absolute -top-20 left-1/2 -translate-x-1/2 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 text-[11px] font-semibold px-3 py-1.5 rounded-full shadow whitespace-nowrap">
+                        📱 Appuyez sur ⏹ pour transcrire
+                    </div>
+                )}
+ 
                 <textarea
                     className={`flex-1 max-h-28 min-h-[44px] p-3 rounded-2xl border resize-none text-sm focus:outline-none transition-all shadow-inner
                         bg-gray-50 dark:bg-gray-700/50 text-gray-800 dark:text-white placeholder-gray-400
-                        ${isListening ? 'border-red-300 dark:border-red-500/50 ring-2 ring-red-100 dark:ring-red-900/20' : isProcessing ? 'border-amber-300 dark:border-amber-500/50 ring-2 ring-amber-100 dark:ring-amber-900/20' : 'border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-primary/30 focus:border-primary/40'}`}
-                    placeholder={isListening ? 'J\'écoute…' : isProcessing ? 'Transcription…' : 'Répondez en ' + convThemeLabel.split(' ')[0] + '…'}
+                        ${isListening ? 'border-red-300 dark:border-red-500/50 ring-2 ring-red-100 dark:ring-red-900/20' : 'border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-primary/30 focus:border-primary/40'}`}
+                    placeholder={isListening ? 'J\'écoute…' : 'Répondez en ' + convThemeLabel.split(' ')[0] + '…'}
                     value={draftMessage}
                     onChange={e => setDraftMessage(e.target.value)}
                     onKeyDown={e => {
@@ -142,18 +148,18 @@ export const ConversationActiveView: React.FC<ConversationActiveViewProps> = ({
                     }}
                     rows={1}
                 />
-
+ 
                 {/* Mic button */}
                 <button
                     onClick={isListening ? stopListening : (isProcessing ? undefined : startListening)}
                     disabled={isProcessing}
                     className={`w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center transition-all shadow-sm
-                        ${isListening ? 'bg-red-500 text-white animate-pulse' : isProcessing ? 'bg-amber-500 text-white cursor-wait' : 'bg-primary text-white hover:bg-primary-dark active:scale-95'}`}
+                        ${isListening ? 'bg-red-500 text-white animate-pulse' : isProcessing ? 'bg-gray-400 text-white cursor-wait' : 'bg-primary text-white hover:bg-primary-dark active:scale-95'}`}
                     title={isListening ? 'Arrêter' : isProcessing ? 'Transcription en cours...' : 'Parler'}
                 >
                     <i className={`fas fa-${isListening ? 'stop' : isProcessing ? 'spinner fa-spin' : 'microphone'} text-base`} />
                 </button>
-
+ 
                 {/* Send button */}
                 <button
                     onClick={handleSend}

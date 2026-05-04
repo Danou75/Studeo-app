@@ -326,29 +326,74 @@ const useNativeSpeechRecognition = (language: string = 'fr-FR') => {
 /**
  * Hook public — Speech Recognition avec fallback automatique pour iOS PWA.
  *
- * Sur iPad Air 2 / anciens iPads en mode "Ajouté à l'écran d'accueil" (standalone PWA),
- * webkitSpeechRecognition lève "service-not-allowed" même si la Dictée est activée.
- * → On bascule automatiquement sur MediaRecorder + Gemini AI dans ce contexte.
+ * Sur iPad (tout contexte) : webkitSpeechRecognition est instable (mode continu se coupe
+ * prématurément, langues non-françaises échouent silencieusement).
+ * → On bascule sur MediaRecorder + Gemini AI, avec notifications d'erreur visibles.
  *
- * En Safari/Chrome normal et sur tous les autres appareils → comportement inchangé.
+ * En Safari/Chrome normal sur Mac/Android → comportement natif inchangé.
  */
 export const useSpeechRecognition = (language: string = 'fr-FR') => {
-  // Les deux hooks sont TOUJOURS appelés (règle des hooks React),
-  // mais seul l'un des deux est actif selon le contexte détecté.
-  
   // Rule of Hooks: hooks must be called at the top level
   const { config } = useAIConfig();
+  const { showToast } = useToast();
   const apiKey = config?.geminiApiKey || '';
 
   const isIOSFallback = typeof window !== 'undefined' && isIOSDevice();
   const nativeRecognition = useNativeSpeechRecognition(language);
-  const pwaFallback = useMediaRecorderTranscribe({ language, apiKey });
+
+  // Callback d'erreur visible — affiché comme toast sur l'écran
+  const handleTranscriptionError = useCallback((err: string) => {
+    console.error('[Speech] Transcription error:', err);
+
+    // Message adapté selon la cause probable
+    if (err.includes('API Key') || err.includes('500') || err.includes('Server configuration')) {
+      showToast(
+        '🎤 Clé API Gemini requise pour la transcription sur iPad. Configurez-la dans les Réglages ⚙️.',
+        'error',
+        10000
+      );
+    } else if (err.includes('refusé') || err.includes('NotAllowed') || err.includes('Permission')) {
+      showToast(
+        '🎤 Accès au microphone refusé. Allez dans Réglages iOS > Safari > Microphone.',
+        'error',
+        8000
+      );
+    } else if (err.includes('Aucun audio')) {
+      showToast(
+        '🎤 Aucun audio détecté. Appuyez sur ⏹ après avoir parlé.',
+        'warning',
+        5000
+      );
+    } else {
+      showToast(`🎤 Transcription échouée : ${err}`, 'error', 6000);
+    }
+  }, [showToast]);
+
+  const pwaFallback = useMediaRecorderTranscribe({
+    language,
+    apiKey,
+    onError: handleTranscriptionError,
+  });
+
+  // Wrap startListening pour iOS : vérifier la clé avant d'enregistrer
+  const iosStartListening = useCallback(async () => {
+    if (!apiKey) {
+      showToast(
+        '🎤 Transcription vocale sur iPad nécessite une clé API Gemini. Configurez-la dans les Réglages ⚙️.',
+        'warning',
+        8000
+      );
+      // On tente quand même — le serveur Vercel a peut-être une clé de secours
+    }
+    return pwaFallback.startListening();
+  }, [apiKey, pwaFallback, showToast]);
 
   if (isIOSFallback) {
     // iOS (tout contexte) → MediaRecorder + Gemini
     console.log('📱 iOS detected: using MediaRecorder fallback for speech recognition');
     return {
       ...pwaFallback,
+      startListening: iosStartListening,
       validateAnswer: (correctAnswer: string): DictationResult => {
         const similarity = calculateSimilarity(pwaFallback.transcript, correctAnswer);
         const isCorrect = isAnswerAcceptable(pwaFallback.transcript, correctAnswer);

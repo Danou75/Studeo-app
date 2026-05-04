@@ -2,20 +2,21 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { checkRateLimit } from '../_rateLimit';
 
 const BACKEND_API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_API_KEY;
-const GEMINI_MODEL = 'gemini-2.5-flash';
+// gemini-1.5-flash = stable, multimodal audio support garanti
+const GEMINI_MODEL = 'gemini-1.5-flash';
 
 /**
  * /api/gemini/transcribe
  *
  * Transcrit un fichier audio en texte via l'API Gemini multimodale.
- * Utilisé comme fallback pour iOS PWA (iPad Air 2) où webkitSpeechRecognition
- * est bloqué en mode standalone (service-not-allowed).
+ * Utilisé comme fallback pour iOS PWA (iPad) où webkitSpeechRecognition
+ * est instable ou bloqué.
  *
  * Body attendu : { audioBase64: string, mimeType: string, language: string, apiKey?: string }
  * Réponse : { transcript: string }
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS
+  // ── CORS ──────────────────────────────────────────────────────────────────
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -29,45 +30,72 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  // Rate limiting
-  const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown';
-  if (!checkRateLimit(clientIp)) {
-    return res.status(429).json({ error: 'Too many requests. Please wait before retrying.' });
-  }
+  // ── Wrapper global pour garantir une réponse JSON même si tout plante ────
+  try {
+    // Rate limiting
+    const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown';
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({ error: 'Too many requests. Please wait before retrying.' });
+    }
 
-  const { audioBase64, mimeType, language, apiKey: requestApiKey } = req.body;
-  const API_KEY = requestApiKey || BACKEND_API_KEY;
+    // ── Validation du body ────────────────────────────────────────────────
+    if (!req.body || typeof req.body !== 'object') {
+      console.error('[Transcribe] req.body is null or not an object:', typeof req.body);
+      return res.status(400).json({
+        error: 'Request body is missing or invalid. The audio may be too large (>4MB). Try a shorter recording.',
+      });
+    }
 
-  if (!API_KEY) {
-    return res.status(500).json({ error: 'Server configuration error: API Key missing' });
-  }
+    const { audioBase64, mimeType, language, apiKey: requestApiKey } = req.body as {
+      audioBase64?: string;
+      mimeType?: string;
+      language?: string;
+      apiKey?: string;
+    };
 
-  if (!audioBase64) {
-    return res.status(400).json({ error: 'audioBase64 is required' });
-  }
+    const API_KEY = requestApiKey || BACKEND_API_KEY;
 
-  const audioMimeType = mimeType === 'audio/mp4' ? 'audio/aac' : (mimeType || 'audio/webm');
-  const lang = language || 'fr-FR';
+    if (!API_KEY) {
+      console.error('[Transcribe] No API key available. requestApiKey:', !!requestApiKey, 'BACKEND:', !!BACKEND_API_KEY);
+      return res.status(500).json({ error: 'Server configuration error: API Key missing' });
+    }
 
-  // Construire le prompt pour guider Gemini à transcrire
-  const languageHint = lang.startsWith('fr') ? 'français' :
-                       lang.startsWith('en') ? 'English' :
-                       lang.startsWith('es') ? 'español' :
-                       lang.startsWith('de') ? 'Deutsch' :
-                       lang.startsWith('it') ? 'italiano' :
-                       lang.startsWith('pt') ? 'português' :
-                       lang.startsWith('zh') ? 'Chinese' :
-                       lang.startsWith('ja') ? 'Japanese' :
-                       lang.startsWith('ar') ? 'Arabic' : lang;
+    if (!audioBase64) {
+      return res.status(400).json({ error: 'audioBase64 is required' });
+    }
 
-  const prompt = `Transcris exactement ce qui est dit dans cet enregistrement audio en ${languageHint}. 
+    // ── Vérification taille (base64 ~= 4/3 * taille originale) ───────────
+    const estimatedSizeKB = (audioBase64.length * 0.75) / 1024;
+    console.log(`[Transcribe] Audio size estimate: ${estimatedSizeKB.toFixed(0)} KB, mimeType: ${mimeType}, lang: ${language}`);
+
+    if (estimatedSizeKB > 10 * 1024) {
+      return res.status(413).json({ error: 'Audio too large (>10MB). Please make a shorter recording.' });
+    }
+
+    // Safari/iOS envoie audio/mp4 → Gemini attend audio/aac ou audio/mp4
+    // On garde audio/mp4 car Gemini 1.5 Flash le supporte directement
+    const audioMimeType = mimeType || 'audio/mp4';
+    const lang = language || 'fr-FR';
+
+    // ── Prompt de transcription ───────────────────────────────────────────
+    const languageHint = lang.startsWith('fr') ? 'français' :
+                         lang.startsWith('en') ? 'English' :
+                         lang.startsWith('es') ? 'español' :
+                         lang.startsWith('de') ? 'Deutsch' :
+                         lang.startsWith('it') ? 'italiano' :
+                         lang.startsWith('pt') ? 'português' :
+                         lang.startsWith('zh') ? 'Chinese' :
+                         lang.startsWith('ja') ? 'Japanese' :
+                         lang.startsWith('ar') ? 'Arabic' : lang;
+
+    const prompt = `Transcris exactement ce qui est dit dans cet enregistrement audio en ${languageHint}. 
 Retourne UNIQUEMENT la transcription, sans ponctuation superflue, sans explication, sans guillemets. 
 Si rien n'est audible ou le silence est total, retourne une chaîne vide.`;
 
-  try {
+    // ── Appel Gemini REST API ─────────────────────────────────────────────
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`;
 
-    const body = {
+    const geminiBody = {
       contents: [
         {
           parts: [
@@ -77,9 +105,7 @@ Si rien n'est audible ou le silence est total, retourne une chaîne vide.`;
                 data: audioBase64,
               },
             },
-            {
-              text: prompt,
-            },
+            { text: prompt },
           ],
         },
       ],
@@ -88,33 +114,37 @@ Si rien n'est audible ou le silence est total, retourne une chaîne vide.`;
         maxOutputTokens: 1000,
       },
       safetySettings: [
-        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
       ],
     };
 
-    const response = await fetch(url, {
+    const geminiResponse = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify(geminiBody),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[Transcribe] Gemini API error:', errorText);
-      return res.status(502).json({ error: `Gemini API error: ${response.status}`, details: errorText });
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      console.error('[Transcribe] Gemini API error:', geminiResponse.status, errorText.slice(0, 500));
+      return res.status(502).json({
+        error: `Gemini API error ${geminiResponse.status}`,
+        details: errorText.slice(0, 300),
+      });
     }
 
-    const data = await response.json();
+    const data = await geminiResponse.json();
     const transcript = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
 
-    console.log(`[Transcribe] Success — lang: ${lang}, transcript: "${transcript}"`);
+    console.log(`[Transcribe] Success — lang: ${lang}, transcript: "${transcript.slice(0, 100)}"`);
     return res.status(200).json({ transcript });
 
   } catch (err: any) {
-    console.error('[Transcribe] Internal error:', err.message);
-    return res.status(500).json({ error: err.message || 'Internal Server Error' });
+    // Catch-all : garantit toujours une réponse JSON même pour les erreurs inattendues
+    console.error('[Transcribe] Unhandled error:', err?.message || err);
+    return res.status(500).json({ error: err?.message || 'Internal Server Error' });
   }
 }

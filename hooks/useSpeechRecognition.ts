@@ -337,7 +337,9 @@ const useNativeSpeechRecognition = (language: string = 'fr-FR') => {
 
   const resetTranscript = useCallback(() => {
     setTranscript('');
+    finalTranscriptRef.current = ''; // Reset aussi le texte finalisé (crucial en mode Scénario/Conversation)
   }, []);
+
 
   return {
     status,

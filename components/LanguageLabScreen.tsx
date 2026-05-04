@@ -89,6 +89,11 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     // Vocab session active (communiqué par VocabularyLabTab via onSessionActive)
     const [isVocabSessionActive, setIsVocabSessionActive] = useState(false);
 
+    // Affichage temporaire du header pendant un exercice (bouton flottant)
+    const [showHeaderOverride, setShowHeaderOverride] = useState(false);
+    // Réinitialise l'override quand l'utilisateur navigue vers un autre onglet
+    useEffect(() => { setShowHeaderOverride(false); }, [labMode]);
+
     useEffect(() => {
         const lang = getLanguageCode(tutor);
         setTargetLang(lang);
@@ -230,25 +235,25 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     return (
         <div className={`h-full flex flex-col ${isDark ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-800'}`}>
 
-            {/* Bouton retour flottant — visible uniquement quand le header est masqué */}
+            {/* Bouton flottant — affiche/masque les onglets pendant un exercice */}
             {isExerciseActive && (
                 <button
-                    onClick={onBack}
+                    onClick={() => setShowHeaderOverride(v => !v)}
                     style={{ top: 'env(safe-area-inset-top, 12px)', marginTop: '4px' }}
                     className={`absolute left-4 z-50 w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
                         isDark
                             ? 'bg-gray-800/80 text-gray-200 border border-gray-700'
                             : 'bg-white/80 text-gray-700 border border-gray-200'
                     } backdrop-blur-md`}
-                    title="Retour"
+                    title={showHeaderOverride ? 'Masquer les onglets' : 'Afficher les onglets'}
                 >
-                    <i className="fas fa-chevron-left text-sm" />
+                    <i className={`fas fa-${showHeaderOverride ? 'times' : 'th'} text-sm`} />
                 </button>
             )}
 
-            {/* Header principal — masqué pendant un exercice */}
+            {/* Header principal — masqué pendant un exercice, révélé via le bouton flottant */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                isExerciseActive ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-52 opacity-100'
+                isExerciseActive && !showHeaderOverride ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-52 opacity-100'
             }`}>
             <div 
                 className={`pt-12 pb-4 px-6 ${isLightHeader ? 'text-gray-900' : 'text-white'} shadow-md relative z-10 rounded-b-3xl`}

@@ -214,9 +214,37 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     const isDark = themeMode === 'dark';
     const isLightHeader = !isDark && themeStyle === 'apple';
 
+    // Masquer le header pendant les exercices actifs pour gagner de l'espace sur petit écran
+    const isExerciseActive =
+        labMode === 'chat' ||
+        labMode === 'scenario_play' ||
+        labMode === 'conversation_active' ||
+        labMode === 'shadowing' ||
+        (labMode === 'pronunciation' && pronunModeProps.pronunciationChallenges.length > 0);
+
     return (
         <div className={`h-full flex flex-col ${isDark ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-800'}`}>
-            {/* Header */}
+
+            {/* Bouton retour flottant — visible uniquement quand le header est masqué */}
+            {isExerciseActive && (
+                <button
+                    onClick={onBack}
+                    style={{ top: 'env(safe-area-inset-top, 12px)', marginTop: '4px' }}
+                    className={`absolute left-4 z-50 w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
+                        isDark
+                            ? 'bg-gray-800/80 text-gray-200 border border-gray-700'
+                            : 'bg-white/80 text-gray-700 border border-gray-200'
+                    } backdrop-blur-md`}
+                    title="Retour"
+                >
+                    <i className="fas fa-chevron-left text-sm" />
+                </button>
+            )}
+
+            {/* Header principal — masqué pendant un exercice */}
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                isExerciseActive ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-52 opacity-100'
+            }`}>
             <div 
                 className={`pt-12 pb-4 px-6 ${isLightHeader ? 'text-gray-900' : 'text-white'} shadow-md relative z-10 rounded-b-3xl`}
                 style={{ background: bgGradient }}
@@ -331,6 +359,8 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                         </button>
                     ))}
                 </div>
+            </div>
+            {/* Fin header principal */}
             </div>
 
             {/* Content Area */}

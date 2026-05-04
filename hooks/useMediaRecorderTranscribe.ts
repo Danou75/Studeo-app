@@ -225,7 +225,7 @@ export function useMediaRecorderTranscribe({
 
         } catch (transcribeErr: any) {
           console.error('[MediaRecorder Fallback] Transcription failed:', transcribeErr);
-          handleTranscriptionError(transcribeErr.message || 'Erreur inconnue');
+          handleError(transcribeErr.message || 'Erreur inconnue');
         }
       };
 

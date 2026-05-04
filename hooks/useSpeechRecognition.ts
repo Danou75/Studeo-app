@@ -345,14 +345,7 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
   const handleTranscriptionError = useCallback((err: string) => {
     console.error('[Speech] Transcription error:', err);
 
-    // Message adapté selon la cause probable
-    if (err.includes('API Key') || err.includes('500') || err.includes('Server configuration')) {
-      showToast(
-        '🎤 Clé API Gemini requise pour la transcription sur iPad. Configurez-la dans les Réglages ⚙️.',
-        'error',
-        10000
-      );
-    } else if (err.includes('refusé') || err.includes('NotAllowed') || err.includes('Permission')) {
+    if (err.includes('refusé') || err.includes('NotAllowed') || err.includes('Permission')) {
       showToast(
         '🎤 Accès au microphone refusé. Allez dans Réglages iOS > Safari > Microphone.',
         'error',
@@ -360,12 +353,13 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
       );
     } else if (err.includes('Aucun audio')) {
       showToast(
-        '🎤 Aucun audio détecté. Appuyez sur ⏹ après avoir parlé.',
+        '🎤 Aucun audio capturé. Parlez puis appuyez sur ⏹.',
         'warning',
         5000
       );
     } else {
-      showToast(`🎤 Transcription échouée : ${err}`, 'error', 6000);
+      // Afficher le message réel retourné par le serveur
+      showToast(`🎤 Transcription échouée : ${err}`, 'error', 7000);
     }
   }, [showToast]);
 
@@ -375,18 +369,11 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
     onError: handleTranscriptionError,
   });
 
-  // Wrap startListening pour iOS : vérifier la clé avant d'enregistrer
+  // startListening iOS — tenter directement (le serveur Vercel a VITE_GEMINI_API_KEY en secours)
   const iosStartListening = useCallback(async () => {
-    if (!apiKey) {
-      showToast(
-        '🎤 Transcription vocale sur iPad nécessite une clé API Gemini. Configurez-la dans les Réglages ⚙️.',
-        'warning',
-        8000
-      );
-      // On tente quand même — le serveur Vercel a peut-être une clé de secours
-    }
     return pwaFallback.startListening();
-  }, [apiKey, pwaFallback, showToast]);
+  }, [pwaFallback]);
+
 
   if (isIOSFallback) {
     // iOS (tout contexte) → MediaRecorder + Gemini

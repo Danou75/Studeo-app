@@ -81,6 +81,11 @@ export function useMediaRecorderTranscribe({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  // Ref pour toujours lire la valeur COURANTE de apiKey dans le handler onstop
+  // (useCallback mémorise la closure — sans ref, apiKey serait stale si la config
+  //  se charge de façon asynchrone après le premier render du hook).
+  const apiKeyRef = useRef<string>(apiKey || '');
+  apiKeyRef.current = apiKey || ''; // Mise à jour à chaque render
 
   const updateStatus = useCallback((s: SpeechRecognitionStatus) => {
     setStatus(s);
@@ -155,7 +160,7 @@ export function useMediaRecorderTranscribe({
               audioBase64,
               mimeType: actualMimeType,
               language,
-              apiKey,
+              apiKey: apiKeyRef.current,  // Toujours la valeur courante (jamais stale)
             }),
           });
 

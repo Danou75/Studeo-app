@@ -25,6 +25,9 @@ const useNativeSpeechRecognition = (language: string = 'fr-FR') => {
   const recognitionRef = useRef<any>(null);
   const isListeningRef = useRef<boolean>(false);
   const retryRef = useRef<number>(0);
+  // Accumule le texte FINALISÉ pour éviter la duplication sur Android Chrome
+  // (chaque slot de event.results peut contenir du texte cumulatif en mode continu)
+  const finalTranscriptRef = useRef<string>('');
 
   useEffect(() => {
     const { webkitSpeechRecognition, SpeechRecognition } = window as unknown as IWindow;
@@ -73,15 +76,23 @@ const useNativeSpeechRecognition = (language: string = 'fr-FR') => {
     };
 
     recognitionRef.current.onresult = (event: any) => {
-      let fullTranscript = '';
-      
-      // On boucle sur l'intégralité des résultats fournis par l'API pour reconstruire la phrase complète
-      for (let i = 0; i < event.results.length; ++i) {
-        fullTranscript += event.results[i][0].transcript;
+      // Traiter uniquement les NOUVEAUX résultats (depuis event.resultIndex)
+      // Pas de boucle depuis i=0 : sur Android Chrome, chaque slot contient
+      // le texte cumulatif depuis le début → provoquerait "CiaoCiao comeCiao come stai"
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscriptRef.current += event.results[i][0].transcript;
+        }
       }
-      
-      console.log('📝 Full Transcript:', fullTranscript, '(lang:', language, ')');
-      setTranscript(fullTranscript);
+
+      // Résultat intermédiaire courant (le dernier slot s'il n'est pas final)
+      const lastResult = event.results[event.results.length - 1];
+      const interim = !lastResult.isFinal ? lastResult[0].transcript : '';
+
+      // Affichage : texte finalisé + intermédiaire en cours
+      const display = (finalTranscriptRef.current + ' ' + interim).trim();
+      console.log('📝 Transcript:', display, '(lang:', language, ')');
+      setTranscript(display);
     };
 
     recognitionRef.current.onerror = async (event: any) => {
@@ -255,7 +266,9 @@ const useNativeSpeechRecognition = (language: string = 'fr-FR') => {
     try {
       setTranscript('');
       setError(null);
+      finalTranscriptRef.current = ''; // Reset texte finalisé pour nouvelle session
       recognitionRef.current.start();
+
       console.log('✅ Recognition start() called');
     } catch (e: any) {
       console.error('❌ Failed to start recognition:', e);

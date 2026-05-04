@@ -76,22 +76,28 @@ const useNativeSpeechRecognition = (language: string = 'fr-FR') => {
     };
 
     recognitionRef.current.onresult = (event: any) => {
-      // Traiter uniquement les NOUVEAUX résultats (depuis event.resultIndex)
+      // Normalise pour comparaison : minuscules + sans ponctuation + espaces unifiés
+      const norm = (s: string) =>
+        s.toLowerCase().replace(/[.,!?;:'"«»\-]/g, '').replace(/\s+/g, ' ').trim();
+
       for (let i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
           const newText = event.results[i][0].transcript;
           const current = finalTranscriptRef.current;
 
-          // Android Chrome envoie du texte CUMULATIF dans chaque slot final
-          // (results[1]="Ciao come" inclut déjà results[0]="Ciao").
-          // Si newText commence par ce qu'on a déjà → cumulatif → remplacer.
+          // Android Chrome envoie du texte CUMULATIF dans chaque slot final.
+          // Détection robuste (insensible casse/ponctuation) :
+          // Si newText contient déjà tout le texte accumulé → cumulatif → remplacer.
           // Sinon → incrémental (Chrome Desktop) → concaténer.
-          if (newText.startsWith(current)) {
-            finalTranscriptRef.current = newText;
+          const currentNorm = norm(current.trimEnd());
+          const newNorm = norm(newText);
+
+          if (currentNorm === '' || newNorm.startsWith(currentNorm)) {
+            finalTranscriptRef.current = newText;           // cumulatif : remplacer
           } else {
             finalTranscriptRef.current = current
               ? current.trimEnd() + ' ' + newText.trimStart()
-              : newText;
+              : newText;                                    // incrémental : concaténer
           }
         }
       }
@@ -101,14 +107,18 @@ const useNativeSpeechRecognition = (language: string = 'fr-FR') => {
       let interim = !lastResult.isFinal ? lastResult[0].transcript : '';
 
       // Sur Android cumulatif, l'interim inclut aussi le préfixe finalisé → le retirer
-      if (interim && finalTranscriptRef.current && interim.startsWith(finalTranscriptRef.current.trimEnd())) {
-        interim = interim.slice(finalTranscriptRef.current.trimEnd().length).trimStart();
+      const finalNorm = norm(finalTranscriptRef.current.trimEnd());
+      if (interim && finalNorm && norm(interim).startsWith(finalNorm)) {
+        // Trouver approximativement où commence la partie nouvelle
+        const words = finalTranscriptRef.current.trimEnd().split(/\s+/).length;
+        interim = interim.split(/\s+/).slice(words).join(' ').trimStart();
       }
 
       const display = (finalTranscriptRef.current + (interim ? ' ' + interim : '')).trim();
       console.log('📝 Transcript:', display, '(lang:', language, ')');
       setTranscript(display);
     };
+
 
     recognitionRef.current.onerror = async (event: any) => {
       console.error('❌ Speech recognition error:', event.error);

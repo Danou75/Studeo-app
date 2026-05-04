@@ -154,7 +154,7 @@ export const PronunciationCoachView: React.FC<PronunciationCoachViewProps> = ({
                     </div>
 
                     {/* CARD */}
-                    <div className={`bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl w-full border border-gray-100 dark:border-gray-700 relative overflow-hidden transition-all ${pronunciationResult?.score && pronunciationResult.score > 80 ? 'ring-2 ring-green-400' : ''}`}>
+                    <div className={`bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl w-full border border-gray-100 dark:border-gray-700 relative transition-all ${pronunciationResult?.score && pronunciationResult.score > 80 ? 'ring-2 ring-green-400' : ''}`}>
                         {pronunciationType === 'challenges' && (
                             <div className={`absolute top-0 right-0 px-4 py-2 rounded-bl-2xl text-xs font-bold uppercase tracking-wider ${
                                 pronunciationChallenges[currentChallengeIndex].difficulty === 'easy' ? 'bg-green-100 text-green-700' :
@@ -179,7 +179,11 @@ export const PronunciationCoachView: React.FC<PronunciationCoachViewProps> = ({
                                   <p className="text-center text-xs text-primary mb-2 uppercase tracking-widest"><i className="fas fa-microphone mr-1"></i> À votre tour</p>
                             )}
 
-                            <h3 className={`text-3xl font-bold text-center mb-4 leading-tight py-2 ${pronunciationType === 'dialogue' && pronunciationChallenges[currentChallengeIndex].role === 'ai' ? 'text-gray-500 italic' : 'text-text dark:text-gray-100'}`}>
+                            <h3 className={`font-bold text-center mb-4 leading-snug py-2 break-words hyphens-auto ${
+                                pronunciationChallenges[currentChallengeIndex].text.length > 80 ? 'text-lg' :
+                                pronunciationChallenges[currentChallengeIndex].text.length > 50 ? 'text-xl' :
+                                pronunciationChallenges[currentChallengeIndex].text.length > 30 ? 'text-2xl' : 'text-3xl'
+                            } ${pronunciationType === 'dialogue' && pronunciationChallenges[currentChallengeIndex].role === 'ai' ? 'text-gray-500 italic' : 'text-text dark:text-gray-100'}`}>
                                 {pronunciationChallenges[currentChallengeIndex].text}
                             </h3>
                             

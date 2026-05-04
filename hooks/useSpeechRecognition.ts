@@ -345,7 +345,13 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
   const handleTranscriptionError = useCallback((err: string) => {
     console.error('[Speech] Transcription error:', err);
 
-    if (err.includes('refusé') || err.includes('NotAllowed') || err.includes('Permission')) {
+    if (err.includes('429') || err.toLowerCase().includes('quota')) {
+      showToast(
+        '⏳ Quota Gemini dépassé. Attendez 1 minute puis réessayez.',
+        'warning',
+        10000
+      );
+    } else if (err.includes('refusé') || err.includes('NotAllowed') || err.includes('Permission')) {
       showToast(
         '🎤 Accès au microphone refusé. Allez dans Réglages iOS > Safari > Microphone.',
         'error',
@@ -358,10 +364,10 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
         5000
       );
     } else {
-      // Afficher le message réel retourné par le serveur
       showToast(`🎤 Transcription échouée : ${err}`, 'error', 7000);
     }
   }, [showToast]);
+
 
   const pwaFallback = useMediaRecorderTranscribe({
     language,

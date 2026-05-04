@@ -151,28 +151,74 @@ export function useMediaRecorderTranscribe({
             reader.readAsDataURL(audioBlob);
           });
 
-          console.log(`[MediaRecorder Fallback] Sending ${(audioBlob.size / 1024).toFixed(1)}KB to /api/gemini/transcribe`);
+          const sizeKB = (audioBlob.size / 1024).toFixed(1);
+          const currentApiKey = apiKeyRef.current;
 
-          const response = await fetch('/api/gemini/transcribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              audioBase64,
-              mimeType: actualMimeType,
-              language,
-              apiKey: apiKeyRef.current,  // Toujours la valeur courante (jamais stale)
-            }),
-          });
+          let result = '';
 
-          if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || `Erreur serveur ${response.status}`);
+          if (currentApiKey) {
+            // ── Appel direct Gemini depuis le browser (plus fiable, pas de limite Vercel) ──
+            console.log(`[MediaRecorder] Direct Gemini call — ${sizeKB}KB, mimeType: ${actualMimeType}`);
+
+            const langHint = language?.startsWith('fr') ? 'français' :
+                             language?.startsWith('en') ? 'English' :
+                             language?.startsWith('es') ? 'español' :
+                             language?.startsWith('de') ? 'Deutsch' :
+                             language?.startsWith('it') ? 'italiano' :
+                             language?.startsWith('pt') ? 'português' : (language || 'fr-FR');
+
+            const prompt = `Transcris exactement ce qui est dit dans cet enregistrement audio en ${langHint}. ` +
+              `Retourne UNIQUEMENT la transcription, sans explication, sans guillemets. ` +
+              `Si rien n'est audible, retourne une chaîne vide.`;
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentApiKey}`;
+            const geminiRes = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [
+                    { inline_data: { mime_type: actualMimeType, data: audioBase64 } },
+                    { text: prompt },
+                  ],
+                }],
+                generationConfig: { temperature: 0, maxOutputTokens: 1000 },
+              }),
+            });
+
+            if (!geminiRes.ok) {
+              const errText = await geminiRes.text().catch(() => '');
+              throw new Error(`Gemini API ${geminiRes.status}: ${errText.slice(0, 200)}`);
+            }
+
+            const geminiData = await geminiRes.json();
+            result = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+
+          } else {
+            // ── Fallback serveur (utilise VITE_GEMINI_API_KEY côté Vercel) ──
+            console.log(`[MediaRecorder] Server fallback — ${sizeKB}KB`);
+
+            const serverRes = await fetch('/api/gemini/transcribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                audioBase64,
+                mimeType: actualMimeType,
+                language,
+                apiKey: '',  // Pas de clé client → serveur utilise la sienne
+              }),
+            });
+
+            if (!serverRes.ok) {
+              const errData = await serverRes.json().catch(() => ({}));
+              throw new Error(errData.error || `Erreur serveur ${serverRes.status}`);
+            }
+
+            const serverData = await serverRes.json();
+            result = (serverData.transcript || '').trim();
           }
 
-          const data = await response.json();
-          const result = (data.transcript || '').trim();
-
-          console.log('[MediaRecorder Fallback] Transcript:', result);
+          console.log('[MediaRecorder] Transcript:', result.slice(0, 100));
           setTranscript(result);
           onTranscript?.(result);
           updateStatus('idle');
@@ -180,6 +226,7 @@ export function useMediaRecorderTranscribe({
         } catch (transcribeErr: any) {
           console.error('[MediaRecorder Fallback] Transcription failed:', transcribeErr);
           handleError(`Transcription échouée : ${transcribeErr.message}`);
+
         }
       };
 

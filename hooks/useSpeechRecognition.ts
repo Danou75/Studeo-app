@@ -77,20 +77,35 @@ const useNativeSpeechRecognition = (language: string = 'fr-FR') => {
 
     recognitionRef.current.onresult = (event: any) => {
       // Traiter uniquement les NOUVEAUX résultats (depuis event.resultIndex)
-      // Pas de boucle depuis i=0 : sur Android Chrome, chaque slot contient
-      // le texte cumulatif depuis le début → provoquerait "CiaoCiao comeCiao come stai"
       for (let i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
-          finalTranscriptRef.current += event.results[i][0].transcript;
+          const newText = event.results[i][0].transcript;
+          const current = finalTranscriptRef.current;
+
+          // Android Chrome envoie du texte CUMULATIF dans chaque slot final
+          // (results[1]="Ciao come" inclut déjà results[0]="Ciao").
+          // Si newText commence par ce qu'on a déjà → cumulatif → remplacer.
+          // Sinon → incrémental (Chrome Desktop) → concaténer.
+          if (newText.startsWith(current)) {
+            finalTranscriptRef.current = newText;
+          } else {
+            finalTranscriptRef.current = current
+              ? current.trimEnd() + ' ' + newText.trimStart()
+              : newText;
+          }
         }
       }
 
-      // Résultat intermédiaire courant (le dernier slot s'il n'est pas final)
+      // Résultat intermédiaire courant
       const lastResult = event.results[event.results.length - 1];
-      const interim = !lastResult.isFinal ? lastResult[0].transcript : '';
+      let interim = !lastResult.isFinal ? lastResult[0].transcript : '';
 
-      // Affichage : texte finalisé + intermédiaire en cours
-      const display = (finalTranscriptRef.current + ' ' + interim).trim();
+      // Sur Android cumulatif, l'interim inclut aussi le préfixe finalisé → le retirer
+      if (interim && finalTranscriptRef.current && interim.startsWith(finalTranscriptRef.current.trimEnd())) {
+        interim = interim.slice(finalTranscriptRef.current.trimEnd().length).trimStart();
+      }
+
+      const display = (finalTranscriptRef.current + (interim ? ' ' + interim : '')).trim();
       console.log('📝 Transcript:', display, '(lang:', language, ')');
       setTranscript(display);
     };

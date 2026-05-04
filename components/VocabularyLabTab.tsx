@@ -356,9 +356,11 @@ interface VocabularyLabTabProps {
     onSetVocabLabCache?: React.Dispatch<React.SetStateAction<Record<string, any>>>;
     onLaunchQuiz?: (setName: string) => void;
     tutorId?: string;
+    /** Appelé avec true quand une liste est chargée, false quand on revient au menu */
+    onSessionActive?: (active: boolean) => void;
 }
 
-export const VocabularyLabTab: React.FC<VocabularyLabTabProps> = ({ config, activeLang, onAddCards, onSaveVocabList, initialVocab, vocabLabCache, onSetVocabLabCache, onLaunchQuiz, tutorId }) => {
+export const VocabularyLabTab: React.FC<VocabularyLabTabProps> = ({ config, activeLang, onAddCards, onSaveVocabList, initialVocab, vocabLabCache, onSetVocabLabCache, onLaunchQuiz, tutorId, onSessionActive }) => {
     const { showToast } = useToast();
     const [selectedTheme, setSelectedTheme] = useState<string>('');
     const [customTheme, setCustomTheme] = useState('');
@@ -462,7 +464,9 @@ export const VocabularyLabTab: React.FC<VocabularyLabTabProps> = ({ config, acti
                 '__active_theme__': vocabData.theme
             }));
         }
-    }, [vocabData, chatHistory, showChatPanel, setScopedCache]);
+        // Signaler au parent si une session est active
+        onSessionActive?.(!!vocabData);
+    }, [vocabData, chatHistory, showChatPanel, setScopedCache, onSessionActive]);
 
     const targetLangName = (() => {
         const map: Record<string, string> = { en: 'anglais', it: 'italien', es: 'espagnol', pt: 'portugais', de: 'allemand', tr: 'turc', fr: 'français' };

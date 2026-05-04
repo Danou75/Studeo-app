@@ -86,6 +86,9 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     const [isProcessing, setIsProcessing] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // Vocab session active (communiqué par VocabularyLabTab via onSessionActive)
+    const [isVocabSessionActive, setIsVocabSessionActive] = useState(false);
+
     useEffect(() => {
         const lang = getLanguageCode(tutor);
         setTargetLang(lang);
@@ -221,7 +224,8 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
         labMode === 'scenario_play' ||
         labMode === 'conversation_active' ||
         labMode === 'shadowing' ||
-        (labMode === 'pronunciation' && pronunModeProps.pronunciationChallenges.length > 0);
+        labMode === 'pronunciation' ||
+        (labMode === 'vocabulary' && isVocabSessionActive);
 
     return (
         <div className={`h-full flex flex-col ${isDark ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-800'}`}>
@@ -504,6 +508,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     onSetVocabLabCache={onSetVocabLabCache}
                     tutorId={tutor.id}
                     onLaunchQuiz={onStartFlashcardQuiz}
+                    onSessionActive={setIsVocabSessionActive}
                 />
             )}
 

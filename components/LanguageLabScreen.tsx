@@ -214,9 +214,10 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     const isDark = themeMode === 'dark';
     const isLightHeader = !isDark && themeStyle === 'apple';
 
-    // Masquer le header pendant les exercices actifs pour gagner de l'espace sur petit écran
+    // Masquer le header pendant les exercices actifs pour gagner de l'espace sur petit écran.
+    // Pour le chat : seulement quand une conversation est en cours (messages > 0).
     const isExerciseActive =
-        labMode === 'chat' ||
+        (labMode === 'chat' && messages.length > 0) ||
         labMode === 'scenario_play' ||
         labMode === 'conversation_active' ||
         labMode === 'shadowing' ||

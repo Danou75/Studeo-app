@@ -87,7 +87,6 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Vocab session active (communiqué par VocabularyLabTab via onSessionActive)
-    const [isVocabSessionActive, setIsVocabSessionActive] = useState(false);
 
     // Affichage temporaire du header pendant un exercice (bouton flottant)
     const [showHeaderOverride, setShowHeaderOverride] = useState(false);
@@ -230,7 +229,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
         labMode === 'conversation_active' ||
         labMode === 'shadowing' ||
         labMode === 'pronunciation' ||
-        (labMode === 'vocabulary' && isVocabSessionActive);
+        labMode === 'vocabulary';
 
     return (
         <div className={`h-full flex flex-col ${isDark ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-800'}`}>
@@ -513,7 +512,6 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     onSetVocabLabCache={onSetVocabLabCache}
                     tutorId={tutor.id}
                     onLaunchQuiz={onStartFlashcardQuiz}
-                    onSessionActive={setIsVocabSessionActive}
                 />
             )}
 

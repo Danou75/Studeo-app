@@ -8,6 +8,8 @@ import { ConjugationResultView } from './conjugator/views/ConjugationResultView'
 import { LibraryModeView } from './conjugator/views/LibraryModeView';
 import { ConjugQuizModalView } from './conjugator/views/ConjugQuizModalView';
 import { RepetitorScreen } from './RepetitorScreen';
+import { useCollapsibleHeader } from '../hooks/useCollapsibleHeader';
+import { FloatingHeaderToggle } from './ui/FloatingHeaderToggle';
 
 interface ConjugatorScreenProps {
     onBack: () => void;
@@ -25,6 +27,7 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
     const conjugator = useConjugator({
         defaultLang, onAddCards, onCreateSet, onStartQuiz
     });
+    const { showHeader, toggleHeader } = useCollapsibleHeader();
 
     const {
         verb, setVerb, language, setLanguage, mode, setMode, result, setResult,
@@ -46,6 +49,13 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
 
     return (
         <div className="flex flex-col h-full bg-background relative animate-fade-in">
+            {/* Bouton flottant toggle */}
+            <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+
+            {/* Header — amovible */}
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
+                showHeader ? 'max-h-52 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+            }`}>
             <ConjugatorHeader 
                 onBack={onBack}
                 onNavigateToSettings={onNavigateToSettings}
@@ -70,6 +80,7 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
                 setSelectedTutorId={setSelectedTutorId}
                 tutorsWithContent={tutorsWithContent}
             />
+            </div>
 
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
                 <div 

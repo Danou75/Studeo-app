@@ -2,6 +2,8 @@ import React from 'react';
 import { Button } from './ui/Button';
 import { getTutorStats, getUserProgress, type TutorProgress } from '../services/progressTrackingService';
 import type { TutorType } from '../services/tutorialSuggestionsService';
+import { useCollapsibleHeader } from '../hooks/useCollapsibleHeader';
+import { FloatingHeaderToggle } from './ui/FloatingHeaderToggle';
 
 interface ProgressScreenProps {
     onBack: () => void;
@@ -25,6 +27,7 @@ function getTimeAgo(date: Date): string {
 
 export const ProgressScreen: React.FC<ProgressScreenProps> = ({ onBack }) => {
     const progress = getUserProgress();
+    const { showHeader, toggleHeader } = useCollapsibleHeader();
 
     // Calculer les badges débloqués
     const getBadges = (tutorType: TutorType, tutorProgress: TutorProgress) => {
@@ -117,8 +120,14 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ onBack }) => {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col bg-background overflow-hidden relative">
-            {/* Header */}
-            <div className="pt-safe p-3 md:p-6 shrink-0 border-b border-border bg-background-secondary shadow-sm">
+            {/* Bouton flottant toggle */}
+            <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+
+            {/* Header — amovible */}
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
+                showHeader ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+            }`}>
+            <div className="pt-safe p-3 md:p-6 border-b border-border bg-background-secondary shadow-sm">
                 <div className="max-w-7xl mx-auto flex justify-between items-center gap-2">
                     <Button onClick={onBack} variant="secondary" size="sm" className="shrink-0">
                         <i className="fas fa-home mr-1 md:mr-2"></i> <span className="hidden sm:inline">Accueil</span>
@@ -129,6 +138,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ onBack }) => {
                     </h1>
                     <div className="w-8 md:w-24"></div> 
                 </div>
+            </div>
             </div>
 
             {/* Content Area */}

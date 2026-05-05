@@ -14,6 +14,8 @@ import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { AILoader } from './ui/AILoader';
+import { useCollapsibleHeader } from '../hooks/useCollapsibleHeader';
+import { FloatingHeaderToggle } from './ui/FloatingHeaderToggle';
 
 interface AIGeneratorModalProps {
     isOpen: boolean;
@@ -58,6 +60,7 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
     const { showToast } = useToast();
     const { t } = useTranslation();
     const { themeMode, themeStyle } = useTheme();
+    const { showHeader, toggleHeader } = useCollapsibleHeader();
 
     const { config, setSelectedTutor } = useAIConfig();
 
@@ -545,7 +548,13 @@ CONTEXTE UTILISATEUR : ${context}
 
     return (
         <div className="flex-1 min-h-0 flex flex-col text-text overflow-hidden">
-            {/* Header avec gradient */}
+            {/* Bouton flottant toggle */}
+            <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+
+            {/* Header avec gradient — amovible */}
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
+                showHeader ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+            }`}>
             <div 
                 className={`pt-safe p-6 transition-all duration-500 group relative ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
@@ -632,6 +641,7 @@ CONTEXTE UTILISATEUR : ${context}
                         </select>
                     </div>
                 </div>
+            </div>
             </div>
 
             <div className="p-3 md:p-6 flex-1 overflow-y-auto min-h-0 pb-32">

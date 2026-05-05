@@ -13,6 +13,8 @@ import { getThemeGradient } from '../constants/themes';
 import { useTheme } from '../contexts/ThemeContext';
 import { ChatService } from '../services/chatService';
 import { useConfirmation } from '../contexts/ConfirmationContext';
+import { useCollapsibleHeader } from '../hooks/useCollapsibleHeader';
+import { FloatingHeaderToggle } from './ui/FloatingHeaderToggle';
 import { TUTORS } from '../constants';
 import { useFlashcardStore } from '../stores/useFlashcardStore';
 
@@ -114,6 +116,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
     const { showConfirmation } = useConfirmation();
     const { config } = useAIConfig();
     const { themeMode, themeStyle } = useTheme();
+    const { showHeader, toggleHeader } = useCollapsibleHeader();
     const [search, setSearch] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isRenewingCatalog, setIsRenewingCatalog] = useState(false);
@@ -626,9 +629,15 @@ Format JSON STRICT (tableau d'objets) :
 
     return (
         <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative" translate="no">
-             {/* Header */}
+            {/* Bouton flottant toggle */}
+            <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+
+            {/* Header — amovible */}
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
+                showHeader ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+            }`}>
              <div 
-                className={`transition-all duration-500 pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden shrink-0 group ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+                className={`transition-all duration-500 pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden group ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
                 style={{ background: getThemeGradient(themeStyle, themeMode) }}
             >
                 {onNavigateToSettings && (
@@ -701,6 +710,7 @@ Format JSON STRICT (tableau d'objets) :
                     </p>
                 </div>
              </div>
+            </div>
 
              <div className="p-4 md:p-6 flex-1 max-w-6xl mx-auto w-full overflow-y-auto min-h-0 pb-32">
 

@@ -4,6 +4,8 @@ import { Button } from './ui/Button';
 import { useTranslation } from '../contexts/LanguageContext';
 import { getThemeGradient } from '../constants/themes';
 import { useTheme } from '../contexts/ThemeContext';
+import { useCollapsibleHeader } from '../hooks/useCollapsibleHeader';
+import { FloatingHeaderToggle } from './ui/FloatingHeaderToggle';
 
 interface SRSReviewScreenProps {
   dueCards: Flashcard[];
@@ -22,6 +24,7 @@ export const SRSReviewScreen: React.FC<SRSReviewScreenProps> = ({
 }) => {
   const { themeMode, themeStyle } = useTheme();
   const { t } = useTranslation();
+  const { showHeader, toggleHeader } = useCollapsibleHeader();
 
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
@@ -53,9 +56,15 @@ export const SRSReviewScreen: React.FC<SRSReviewScreenProps> = ({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
-      {/* Header */}
+      {/* Bouton flottant toggle */}
+      <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+
+      {/* Header — amovible */}
+      <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
+          showHeader ? 'max-h-52 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+      }`}>
       <div 
-        className={`transition-all duration-500 p-4 md:p-6 shadow-lg relative overflow-hidden shrink-0 ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
+        className={`transition-all duration-500 p-4 md:p-6 shadow-lg relative overflow-hidden ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 
         style={{ background: getThemeGradient(themeStyle, themeMode) }}
       >
           <div className="relative z-10 flex justify-between items-start">
@@ -74,6 +83,7 @@ export const SRSReviewScreen: React.FC<SRSReviewScreenProps> = ({
                   <p className="opacity-80 mt-1 text-base text-inherit">{t('srs.dueToday', { count: dueCards.length })}</p>
               </div>
           </div>
+      </div>
       </div>
 
       <div className="p-6 flex-1 overflow-y-auto min-h-0">

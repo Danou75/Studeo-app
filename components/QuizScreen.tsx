@@ -15,6 +15,8 @@ import { generateMnemonic } from '../services/mnemonicService';
 import { DrawingSubmissionModal } from './DrawingSubmissionModal';
 import { useTranslation } from '../contexts/LanguageContext';
 import { generateSmartDistractors } from '../services/aiCardGenerator';
+import { useCollapsibleHeader } from '../hooks/useCollapsibleHeader';
+import { FloatingHeaderToggle } from './ui/FloatingHeaderToggle';
 
 interface QuizScreenProps {
   quizCards: Flashcard[];
@@ -32,6 +34,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
   const speechLangConfig = LANGUAGE_CONFIG[quizConfig.questionLang]?.speechLang;
   const { availableVoices, selectedVoice, setSelectedVoice, speak } = useTTS(speechLangConfig || 'en-US');
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const { showHeader, toggleHeader } = useCollapsibleHeader();
 
   // ----- Core state -----
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -833,17 +836,24 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
   if (quizConfig.tutorCategory === 'arts') {
       return (
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative text-text">
+            {/* Bouton flottant toggle */}
+            <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+
             <div className="flex-1 overflow-y-auto p-4 md:p-8 min-h-0 bg-background/50 pb-32">
                 <div className="max-w-2xl mx-auto">
                     {onBackToLesson && (
+                        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                            showHeader ? 'max-h-20 opacity-100 mb-4' : 'max-h-0 opacity-0 pointer-events-none'
+                        }`}>
                         <Button 
                             onClick={onBackToLesson} 
                             variant="secondary" 
                             size="sm" 
-                            className="mb-4 w-full flex items-center justify-center bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+                            className="w-full flex items-center justify-center bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
                         >
                             <i className="fas fa-book-open mr-2"></i> {t('quiz.backToLesson')}
                         </Button>
+                        </div>
                     )}
                     {renderArtsMode()}
                     
@@ -864,17 +874,24 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
 
   return (
     <div className="flex-1 min-h-0 flex flex-col pt-safe overflow-hidden relative text-text">
+        {/* Bouton flottant toggle */}
+        <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+
         <div className="flex-1 overflow-y-auto p-3 md:p-8 min-h-0 bg-background/50 pb-32">
             <div className="max-w-2xl mx-auto">
       {onBackToLesson && (
+        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            showHeader ? 'max-h-20 opacity-100 mb-4' : 'max-h-0 opacity-0 pointer-events-none'
+        }`}>
         <Button 
             onClick={onBackToLesson} 
             variant="secondary" 
             size="sm" 
-            className="mb-4 w-full flex items-center justify-center bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+            className="w-full flex items-center justify-center bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
         >
             <i className="fas fa-book-open mr-2"></i> {t('quiz.backToLesson')}
         </Button>
+        </div>
       )}
 
       {/* Voice Settings Row */}

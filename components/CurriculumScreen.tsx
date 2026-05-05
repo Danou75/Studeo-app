@@ -7,6 +7,8 @@ import { CurriculumDetailView } from './curriculum/views/CurriculumDetailView';
 import { CurriculumTabsView } from './curriculum/views/CurriculumTabsView';
 import { SuggestionsCatalogView } from './curriculum/views/SuggestionsCatalogView';
 import { CurriculumModals } from './curriculum/views/CurriculumModals';
+import { useCollapsibleHeader } from '../hooks/useCollapsibleHeader';
+import { FloatingHeaderToggle } from './ui/FloatingHeaderToggle';
 
 interface CurriculumScreenProps {
     onBack: () => void;
@@ -42,6 +44,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = (props) => {
     const savedConvSessions = useStudyContentStore(s => s.savedConvSessions);
     const savedVocabLists = useStudyContentStore(s => s.savedVocabLists);
     const savedShadowingSessions = useStudyContentStore(s => s.savedShadowingSessions);
+    const { showHeader, toggleHeader } = useCollapsibleHeader();
 
     const curriculum = useCurriculum({
         programs,
@@ -113,6 +116,13 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = (props) => {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
+            {/* Bouton flottant toggle */}
+            <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+
+            {/* Header — amovible */}
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
+                showHeader ? 'max-h-52 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+            }`}>
             <CurriculumHeader
                 onBack={props.onBack}
                 onNavigateToSettings={props.onNavigateToSettings}
@@ -123,6 +133,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = (props) => {
                 setSelectedTutorId={setSelectedTutorId}
                 tutorsWithContent={tutorsWithContent}
             />
+            </div>
 
             <div className="p-4 md:p-6 flex-1 overflow-y-auto min-h-0 pb-32">
                 <CurriculumTabsView

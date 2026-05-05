@@ -553,7 +553,7 @@ CONTEXTE UTILISATEUR : ${context}
 
             {/* Header avec gradient — amovible */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
-                showHeader ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+                showHeader ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
             }`}>
             <div 
                 className={`pt-safe p-6 transition-all duration-500 group relative ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 

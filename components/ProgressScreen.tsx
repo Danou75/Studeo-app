@@ -125,7 +125,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ onBack }) => {
 
             {/* Header — amovible */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
-                showHeader ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+                showHeader ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
             }`}>
             <div className="pt-safe p-3 md:p-6 border-b border-border bg-background-secondary shadow-sm">
                 <div className="max-w-7xl mx-auto flex justify-between items-center gap-2">

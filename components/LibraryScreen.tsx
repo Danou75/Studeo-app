@@ -634,7 +634,7 @@ Format JSON STRICT (tableau d'objets) :
 
             {/* Header — amovible */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
-                showHeader ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+                showHeader ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
             }`}>
              <div 
                 className={`transition-all duration-500 pt-safe p-3 md:p-6 shadow-lg relative overflow-hidden group ${themeStyle === 'apple' && themeMode === 'light' ? 'text-primary' : 'text-white'} ${themeStyle === 'apple' ? 'backdrop-blur-md' : ''}`} 

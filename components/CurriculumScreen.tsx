@@ -121,7 +121,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = (props) => {
 
             {/* Header — amovible */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
-                showHeader ? 'max-h-52 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+                showHeader ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
             }`}>
             <CurriculumHeader
                 onBack={props.onBack}

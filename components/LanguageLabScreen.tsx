@@ -244,8 +244,8 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
             )}
 
             {/* Header principal — masqué pendant un exercice, révélé via le bouton flottant */}
-            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                isExerciseActive && !showHeaderOverride ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-80 opacity-100'
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden z-20 relative ${
+                isExerciseActive && !showHeaderOverride ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-96 opacity-100'
             }`}>
             <div 
                 className={`pt-12 pb-4 px-6 ${isLightHeader ? 'text-gray-900' : 'text-white'} shadow-md relative z-10 rounded-b-3xl`}
@@ -366,6 +366,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
             </div>
 
             {/* Content Area */}
+            <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col">
             {labMode === 'chat' && (
                 <>
                     <ChatModeView
@@ -517,6 +518,7 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
                     initialSession={initialShadowingSession}
                 />
             )}
+            </div>
         </div>
     );
 };

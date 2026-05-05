@@ -3,6 +3,7 @@ import { Tutor, Flashcard, FlashcardClassic, ConversationSession } from '../type
 import { v4 as uuidv4 } from 'uuid';
 import { getThemeGradient } from '../constants/themes';
 import { useTheme } from '../contexts/ThemeContext';
+import { FloatingHeaderToggle } from './ui/FloatingHeaderToggle';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTTS } from '../hooks/useTTS';
 import { ChatMessage, generateLabResponse } from '../services/conversationService';
@@ -236,18 +237,10 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
 
             {/* Bouton flottant — affiche/masque les onglets pendant un exercice */}
             {isExerciseActive && (
-                <button
-                    onClick={() => setShowHeaderOverride(v => !v)}
-                    style={{ top: 'env(safe-area-inset-top, 12px)', marginTop: '4px' }}
-                    className={`absolute left-4 z-50 w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
-                        isDark
-                            ? 'bg-gray-800/80 text-gray-200 border border-gray-700'
-                            : 'bg-white/80 text-gray-700 border border-gray-200'
-                    } backdrop-blur-md`}
-                    title={showHeaderOverride ? 'Masquer les onglets' : 'Afficher les onglets'}
-                >
-                    <i className={`fas fa-${showHeaderOverride ? 'times' : 'th'} text-sm`} />
-                </button>
+                <FloatingHeaderToggle 
+                    showHeader={showHeaderOverride} 
+                    onToggle={() => setShowHeaderOverride(v => !v)} 
+                />
             )}
 
             {/* Header principal — masqué pendant un exercice, révélé via le bouton flottant */}

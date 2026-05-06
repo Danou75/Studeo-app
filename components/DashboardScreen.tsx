@@ -58,9 +58,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     };
 
     return (
-        <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
-            {/* Bouton flottant toggle */}
-            <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+        <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden">
 
             {/* Header — amovible */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
@@ -98,6 +96,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     )}
                 </div>
             </div>
+            </div>
+
+            {/* Bouton toggle — jonction header/contenu */}
+            <div className="flex justify-center shrink-0 py-1">
+                <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} floating={false} />
             </div>
 
             <div className="p-4 md:p-6 flex-1 overflow-y-auto min-h-0 space-y-4 md:space-y-6 pb-32">

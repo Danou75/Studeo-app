@@ -76,9 +76,7 @@ export const KnowledgeMapScreen: React.FC<KnowledgeMapScreenProps> = ({ flashcar
 
 
     return (
-        <div className="flex-1 min-h-0 flex flex-col text-text animate-fade-in overflow-hidden relative">
-            {/* Bouton flottant toggle */}
-            <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+        <div className="flex-1 min-h-0 flex flex-col text-text animate-fade-in overflow-hidden">
 
             {/* Header — amovible */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
@@ -114,6 +112,11 @@ export const KnowledgeMapScreen: React.FC<KnowledgeMapScreenProps> = ({ flashcar
                     </Button>
                 </div>
             </div>
+            </div>
+
+            {/* Bouton toggle — jonction header/contenu */}
+            <div className="flex justify-center shrink-0 py-1">
+                <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} floating={false} />
             </div>
 
             <div className="flex-1 flex flex-col bg-background-secondary overflow-hidden">

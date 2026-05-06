@@ -115,10 +115,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = (props) => {
     }
 
     return (
-        <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative">
-            {/* Bouton flottant toggle */}
-            <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
-
+        <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden">
             {/* Header — amovible */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
                 showHeader ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
@@ -135,7 +132,12 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = (props) => {
             />
             </div>
 
-            <div className="p-4 md:p-6 flex-1 overflow-y-auto min-h-0 pb-32">
+            {/* Bouton toggle — jonction header/contenu, jamais en overlap */}
+            <div className="flex justify-center shrink-0 py-1">
+                <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} floating={false} />
+            </div>
+
+            <div className="px-4 md:px-6 flex-1 overflow-y-auto min-h-0 pb-32">
                 <CurriculumTabsView
                     viewMode={viewMode}
                     activeTab={activeTab}

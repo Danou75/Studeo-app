@@ -48,9 +48,7 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
     } = conjugator;
 
     return (
-        <div className="flex flex-col h-full bg-background relative animate-fade-in">
-            {/* Bouton flottant toggle */}
-            <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+        <div className="flex flex-col h-full bg-background animate-fade-in">
 
             {/* Header — amovible */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
@@ -80,6 +78,11 @@ export const ConjugatorScreen: React.FC<ConjugatorScreenProps> = ({
                 setSelectedTutorId={setSelectedTutorId}
                 tutorsWithContent={tutorsWithContent}
             />
+            </div>
+
+            {/* Bouton toggle — jonction header/contenu */}
+            <div className="flex justify-center shrink-0 py-1">
+                <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} floating={false} />
             </div>
 
             <div className="flex-1 overflow-y-auto overflow-x-hidden">

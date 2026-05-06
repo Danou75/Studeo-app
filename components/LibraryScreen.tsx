@@ -628,9 +628,7 @@ Format JSON STRICT (tableau d'objets) :
     }, [flashcardSetsMetadata]); // Only depend on global metadata to maintain list stability
 
     return (
-        <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden relative" translate="no">
-            {/* Bouton flottant toggle */}
-            <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+        <div className="flex-1 min-h-0 flex flex-col bg-background animate-fade-in overflow-hidden" translate="no">
 
             {/* Header — amovible */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
@@ -710,6 +708,11 @@ Format JSON STRICT (tableau d'objets) :
                     </p>
                 </div>
              </div>
+            </div>
+
+            {/* Bouton toggle — jonction header/contenu, jamais en overlap */}
+            <div className="flex justify-center shrink-0 py-1">
+                <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} floating={false} />
             </div>
 
              <div className="p-4 md:p-6 flex-1 max-w-6xl mx-auto w-full overflow-y-auto min-h-0 pb-32">

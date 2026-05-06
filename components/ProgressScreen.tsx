@@ -119,9 +119,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ onBack }) => {
     ];
 
     return (
-        <div className="flex-1 min-h-0 flex flex-col bg-background overflow-hidden relative">
-            {/* Bouton flottant toggle */}
-            <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} />
+        <div className="flex-1 min-h-0 flex flex-col bg-background overflow-hidden">
 
             {/* Header — amovible */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden shrink-0 ${
@@ -139,6 +137,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ onBack }) => {
                     <div className="w-8 md:w-24"></div> 
                 </div>
             </div>
+            </div>
+
+            {/* Bouton toggle — jonction header/contenu */}
+            <div className="flex justify-center shrink-0 py-1">
+                <FloatingHeaderToggle showHeader={showHeader} onToggle={toggleHeader} floating={false} />
             </div>
 
             {/* Content Area */}

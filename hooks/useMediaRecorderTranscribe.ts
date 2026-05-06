@@ -168,7 +168,9 @@ export function useMediaRecorderTranscribe({
                 audioBase64,
                 mimeType: actualMimeType,
                 language,
-                apiKey: '',  // Le serveur utilise sa propre clé Vercel
+                // Passer la clé utilisateur si disponible — le serveur l'utilise
+                // en priorité sur sa propre clé Vercel (VITE_GEMINI_API_KEY)
+                apiKey: currentApiKey || '',
               }),
             });
 

@@ -161,27 +161,53 @@ body {
 .animate-scale-in { animation: scale-in 0.2s ease-out both; }
 .bounce-slow { animation: bounce-slow 2s infinite; }
 
-/* Custom Scrollbar */
-.scrollbar-thin::-webkit-scrollbar {
-  width: 4px;
+/* ── Scrollbars — fines et discrètes sur tous les conteneurs ── */
+
+/* Global : tous les éléments scrollables */
+* {
+  scrollbar-width: thin;                        /* Firefox */
+  scrollbar-color: rgba(156,163,175,0.25) transparent; /* Firefox */
 }
-.scrollbar-thin::-webkit-scrollbar-track {
+
+/* Chrome / Safari / Edge / WebView Mac */
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+*::-webkit-scrollbar-track {
   background: transparent;
 }
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.3);
+*::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.25);
   border-radius: 20px;
+  transition: background 0.2s;
 }
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+*::-webkit-scrollbar-thumb:hover {
   background: rgba(156, 163, 175, 0.5);
 }
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+/* Mode sombre : pouces encore plus discrets */
+.dark *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
 }
+.dark *::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+.dark * {
+  scrollbar-color: rgba(255,255,255,0.12) transparent;
+}
+
+/* Utilitaires conservés */
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(156,163,175,0.3); border-radius: 20px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(156,163,175,0.5); }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ── HomeScreen mobile: Header compact ── */
 @media (max-width: 639px) {

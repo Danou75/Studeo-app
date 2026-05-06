@@ -386,10 +386,12 @@ export const useSpeechRecognition = (language: string = 'fr-FR') => {
     console.error('[Speech] Transcription error:', err);
 
     if (err.includes('429') || err.toLowerCase().includes('quota')) {
+      // Le fallback serveur a déjà été tenté automatiquement.
+      // Si on arrive ici, les deux clés (personnelle + serveur) sont épuisées.
       showToast(
-        '⏳ Quota Gemini dépassé. Attendez 1 minute puis réessayez.',
+        '⏳ Quota Gemini épuisé (clé personnelle + serveur). Vérifiez votre quota sur console.cloud.google.com ou attendez la réinitialisation quotidienne.',
         'warning',
-        10000
+        12000
       );
     } else if (err.includes('refusé') || err.includes('NotAllowed') || err.includes('Permission')) {
       showToast(

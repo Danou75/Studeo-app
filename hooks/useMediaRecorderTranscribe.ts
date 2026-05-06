@@ -153,11 +153,36 @@ export function useMediaRecorderTranscribe({
 
           const sizeKB = (audioBlob.size / 1024).toFixed(1);
           const currentApiKey = apiKeyRef.current;
-
           let result = '';
 
+          /**
+           * Appel au serveur Vercel (utilise VITE_GEMINI_API_KEY côté serveur).
+           * Utilisé comme fallback quand la clé directe est absente ou épuisée (429).
+           */
+          const callServer = async (): Promise<string> => {
+            console.log(`[MediaRecorder] Server fallback — ${sizeKB}KB`);
+            const serverRes = await fetch('/api/gemini/transcribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                audioBase64,
+                mimeType: actualMimeType,
+                language,
+                apiKey: '',  // Le serveur utilise sa propre clé Vercel
+              }),
+            });
+
+            if (!serverRes.ok) {
+              const errData = await serverRes.json().catch(() => ({}));
+              throw new Error(errData.error || `Erreur serveur ${serverRes.status}`);
+            }
+
+            const serverData = await serverRes.json();
+            return (serverData.transcript || '').trim();
+          };
+
           if (currentApiKey) {
-            // ── Appel direct Gemini depuis le browser (plus fiable, pas de limite Vercel) ──
+            // ── Tentative 1 : appel direct Gemini depuis le browser ──────────
             console.log(`[MediaRecorder] Direct Gemini call — ${sizeKB}KB, mimeType: ${actualMimeType}`);
 
             const langHint = language?.startsWith('fr') ? 'français' :
@@ -187,35 +212,22 @@ export function useMediaRecorderTranscribe({
             });
 
             if (!geminiRes.ok) {
-              const errText = await geminiRes.text().catch(() => '');
-              throw new Error(`Gemini API ${geminiRes.status}: ${errText.slice(0, 200)}`);
+              if (geminiRes.status === 429) {
+                // ── Tentative 2 : quota épuisé → fallback serveur Vercel ───
+                console.warn('[MediaRecorder] Quota 429 on direct key — falling back to server endpoint...');
+                result = await callServer();
+              } else {
+                const errText = await geminiRes.text().catch(() => '');
+                throw new Error(`Gemini API ${geminiRes.status}: ${errText.slice(0, 200)}`);
+              }
+            } else {
+              const geminiData = await geminiRes.json();
+              result = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
             }
-
-            const geminiData = await geminiRes.json();
-            result = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
 
           } else {
-            // ── Fallback serveur (utilise VITE_GEMINI_API_KEY côté Vercel) ──
-            console.log(`[MediaRecorder] Server fallback — ${sizeKB}KB`);
-
-            const serverRes = await fetch('/api/gemini/transcribe', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                audioBase64,
-                mimeType: actualMimeType,
-                language,
-                apiKey: '',  // Pas de clé client → serveur utilise la sienne
-              }),
-            });
-
-            if (!serverRes.ok) {
-              const errData = await serverRes.json().catch(() => ({}));
-              throw new Error(errData.error || `Erreur serveur ${serverRes.status}`);
-            }
-
-            const serverData = await serverRes.json();
-            result = (serverData.transcript || '').trim();
+            // ── Pas de clé utilisateur → serveur directement ────────────────
+            result = await callServer();
           }
 
           console.log('[MediaRecorder] Transcript:', result.slice(0, 100));

@@ -198,7 +198,7 @@ export function useMediaRecorderTranscribe({
               `Retourne UNIQUEMENT la transcription, sans explication, sans guillemets. ` +
               `Si rien n'est audible, retourne une chaîne vide.`;
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${currentApiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${currentApiKey}`;
             const geminiRes = await fetch(url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

@@ -235,13 +235,6 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
     return (
         <div className={`h-full flex flex-col ${isDark ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-800'}`}>
 
-            {/* Bouton flottant — affiche/masque les onglets pendant un exercice */}
-            {isExerciseActive && (
-                <FloatingHeaderToggle 
-                    showHeader={showHeaderOverride} 
-                    onToggle={() => setShowHeaderOverride(v => !v)} 
-                />
-            )}
 
             {/* Header principal — masqué pendant un exercice, révélé via le bouton flottant */}
             <div className={`transition-all duration-300 ease-in-out overflow-hidden z-20 relative ${
@@ -364,6 +357,17 @@ export const LanguageLabScreen: React.FC<LanguageLabScreenProps> = ({
             </div>
             {/* Fin header principal */}
             </div>
+
+            {/* Bouton toggle — jonction header/contenu, visible uniquement pendant un exercice */}
+            {isExerciseActive && (
+                <div className="flex justify-center shrink-0 py-1">
+                    <FloatingHeaderToggle
+                        showHeader={showHeaderOverride}
+                        onToggle={() => setShowHeaderOverride(v => !v)}
+                        floating={false}
+                    />
+                </div>
+            )}
 
             {/* Content Area */}
             <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col">

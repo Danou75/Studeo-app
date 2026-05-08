@@ -49,6 +49,7 @@ ${types.map(t => `- ${getExerciseTypeDescription(t)}`).join('\n')}
 2. **Textes à trous (fill-blank)** :
    - Crée des **paragraphes complets** ou des **dialogues** avec plusieurs trous (2 à 5 trous par exercice).
    - Utilise des **séries de questions** regroupées (a., b., c.) pour travailler les déclinaisons, conjugaisons ou transformations.
+   - **RÈGLE CRUCIALE** : Inclure la traduction FRANÇAISE du mot manquant entre parenthèses juste après chaque blanc. EXEMPLE : "Oggi ho {blank} (mal) di testa."
    - Utilise des sauts de ligne (\\n) pour structurer le texte.
 3. **Questions Ouvertes / Transformations** :
    - Propose des exercices de transformation (ex: "Mettez ces phrases au pluriel", "Changez le temps").

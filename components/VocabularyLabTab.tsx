@@ -100,6 +100,7 @@ RÈGLES ABSOLUES :
    - NOMS (substantifs) : TOUJOURS précédés de leur article défini pour indiquer le genre (ex: "il negozio", "la porta", "lo scontrino" en italien ; "el libro", "la mesa" en espagnol).
    - VERBES : JAMAIS d'article. Les verbes s'écrivent à l'infinitif seul, sans article (ex: "stare", "bere", "parlare" en italien — PAS "il stare", "il bere").
    - ADJECTIFS : JAMAIS d'article. Les adjectifs s'écrivent seuls, sans article.
+7. TEXTES À TROUS (fill-in) : La phrase ('sentence') doit inclure la traduction FRANÇAISE du mot manquant entre parenthèses juste après le blanc '_____'. EXEMPLE : "Oggi ho _____ (mal) di testa."
 
 FORMAT JSON STRICT :
 {

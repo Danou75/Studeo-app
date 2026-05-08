@@ -43,6 +43,12 @@
 
       // Diagnostic
       window.onerror = function(msg, url, line, col, error) {
+        // Ignorer les erreurs de script cross-origin sans détails (souvent causées par Safari/Extensions)
+        if (msg === 'Script error.' || line === 0 || !url) {
+          console.warn('Ignored harmless script error:', msg, url, 'L:' + line);
+          return true; // Empêche l'affichage de l'erreur technique
+        }
+
         var root = document.getElementById('root');
         if (root) {
           root.innerHTML = '<div style="padding: 20px; color: red; font-family: sans-serif;">' +

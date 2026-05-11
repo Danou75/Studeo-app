@@ -226,6 +226,30 @@ ${prompt}`;
                 if (!response.ok) throw new Error(`Anthropic Multimodal Error: ${await response.text()}`);
                 const data = await response.json();
                 responseText = data.content?.[0]?.text || "";
+             } else if (provider === 'openrouter') {
+                if (!apiKey) throw new Error("Clé API OpenRouter manquante");
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`,
+                        'HTTP-Referer': 'https://studeo.app',
+                        'X-Title': 'Studeo'
+                    },
+                    body: JSON.stringify({
+                        model: modelName || 'openai/gpt-4o',
+                        messages: [{
+                            role: "user",
+                            content: [
+                                { type: "text", text: prompt },
+                                { type: "image_url", image_url: { url: `data:${media.mimeType};base64,${media.data}` } }
+                            ]
+                        }]
+                    })
+                });
+                if (!response.ok) throw new Error(`OpenRouter Multimodal Error: ${await response.text()}`);
+                const data = await response.json();
+                responseText = data.choices?.[0]?.message?.content || "";
              }
 
         } else if (!isTauri) {
@@ -303,6 +327,31 @@ ${prompt}`;
                 const data = await response.json();
                 responseText = data.content?.[0]?.text || "";
 
+            } else if (provider === 'openrouter') {
+                if (!apiKey) throw new Error("Clé API OpenRouter manquante");
+
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`,
+                        'HTTP-Referer': 'https://studeo.app',
+                        'X-Title': 'Studeo'
+                    },
+                    body: JSON.stringify({
+                        model: modelName || "openai/gpt-4o",
+                        messages: [{ role: "user", content: prompt }],
+                        temperature: 0.7
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.text();
+                    throw new Error(`OpenRouter API Error: ${err}`);
+                }
+                const data = await response.json();
+                responseText = data.choices?.[0]?.message?.content || "";
+
             } else if (provider === 'gemini') {
                 // Text only (Web)
                 if (!apiKey) throw new Error("Clé API Gemini manquante");
@@ -377,18 +426,31 @@ ${prompt}`;
                  } else if (provider === 'openai') {
                     url = 'https://api.openai.com/v1/chat/completions';
                     body = { model: modelName || "gpt-4o", messages: [{ role: "user", content: prompt }] };
+                 } else if (provider === 'openrouter') {
+                    url = 'https://openrouter.ai/api/v1/chat/completions';
+                    body = { model: modelName || "openai/gpt-4o", messages: [{ role: "user", content: prompt }] };
                  } else if (provider === 'anthropic') {
                     url = 'https://api.anthropic.com/v1/messages';
                  }
 
                  if (url) {
+                    const headers: Record<string, string> = { 
+                             'Content-Type': 'application/json',
+                             'Authorization': `Bearer ${apiKey}`
+                        };
+                    
+                    if (provider === 'anthropic') {
+                        headers['x-api-key'] = apiKey;
+                        headers['anthropic-version'] = '2023-06-01';
+                        headers['anthropic-dangerous-direct-browser-access'] = 'true';
+                    } else if (provider === 'openrouter') {
+                        headers['HTTP-Referer'] = 'https://studeo.app';
+                        headers['X-Title'] = 'Studeo';
+                    }
+                    
                     const response = await fetch(url, {
                      method: 'POST',
-                        headers: { 
-                             'Content-Type': 'application/json',
-                             'Authorization': `Bearer ${apiKey}`,
-                             ...(provider==='anthropic' ? {'x-api-key': apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'} : {})
-                        },
+                        headers,
                         body: JSON.stringify(provider === 'anthropic' ? {
                             model: modelName || "claude-3-5-sonnet-20240620", messages: [{role:"user", content:prompt}], max_tokens:4096
                         } : body)

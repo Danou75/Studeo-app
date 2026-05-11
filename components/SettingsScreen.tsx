@@ -244,14 +244,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
     setIsFetchingModels(true);
     try {
-        const response = await fetch('https://openrouter.ai/api/v1/models', {
+        // Sur Safari iOS (WKWebView/PWA), le fetch direct vers openrouter.ai peut
+        // échouer avec "load failing" à cause des restrictions CORS. On passe
+        // par le proxy Vercel côté serveur pour éviter ce problème.
+        const isWebPWA = !window.__TAURI__;
+        const modelsUrl = isWebPWA
+            ? '/api/openrouter-models'
+            : 'https://openrouter.ai/api/v1/models';
+
+        const response = await fetch(modelsUrl, {
             headers: {
                 'Authorization': `Bearer ${config.openrouterApiKey}`,
-                'HTTP-Referer': 'https://studeo.app',
-                'X-Title': 'Studeo'
+                ...(isWebPWA ? {} : {
+                    'HTTP-Referer': 'https://studeo.app',
+                    'X-Title': 'Studeo'
+                })
             }
         });
-        if (!response.ok) throw new Error('Erreur OpenRouter: ' + response.statusText);
+        if (!response.ok) {
+            const errText = await response.text().catch(() => response.statusText);
+            throw new Error(`OpenRouter ${response.status}: ${errText}`);
+        }
         const data = await response.json();
         const models = data.data
           .map((m: any) => ({ id: m.id, name: m.name ? `${m.name} (${m.id})` : m.id }))
@@ -268,6 +281,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         setIsFetchingModels(false);
     }
   };
+
 
   /* --- LOCAL LOGIC --- */
   const [localModelsList, setLocalModelsList] = useState<{id: string, name: string}[]>([

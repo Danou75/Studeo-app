@@ -268,10 +268,6 @@ export const generateLabResponse = async (
             apiKey = config.anthropicApiKey;
             modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620';
             break;
-        case 'openrouter':
-            apiKey = config.openrouterApiKey;
-            modelName = config.openrouterModel || 'openai/gpt-4o';
-            break;
          case 'mistral':
             apiKey = config.mistralApiKey;
             modelName = config.mistralModel || 'mistral-large-latest';

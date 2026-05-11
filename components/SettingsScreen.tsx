@@ -245,7 +245,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setIsFetchingModels(true);
     try {
         const response = await fetch('https://openrouter.ai/api/v1/models', {
-            headers: { 'Authorization': `Bearer ${config.openrouterApiKey}` }
+            headers: {
+                'Authorization': `Bearer ${config.openrouterApiKey}`,
+                'HTTP-Referer': 'https://studeo.app',
+                'X-Title': 'Studeo'
+            }
         });
         if (!response.ok) throw new Error('Erreur OpenRouter: ' + response.statusText);
         const data = await response.json();

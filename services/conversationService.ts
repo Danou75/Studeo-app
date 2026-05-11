@@ -45,7 +45,31 @@ export const executeAIRequest = async (
         return data.choices?.[0]?.message?.content || "";
     }
 
-    // 2. ANTHROPIC
+    // 2. OPENROUTER
+    if (provider === 'openrouter') {
+        if (!apiKey) throw new Error("Clé API OpenRouter manquante.");
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': 'https://studeo.app',
+                'X-Title': 'Studeo'
+            },
+            body: JSON.stringify({
+                model: modelName,
+                messages: messages,
+                temperature: 0.7,
+            })
+        });
+
+        if (!response.ok) throw new Error(`OpenRouter Error: ${await response.text()}`);
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content || "";
+    }
+
+    // 3. ANTHROPIC
     if (provider === 'anthropic') {
         if (!apiKey) throw new Error("Clé API Anthropic manquante.");
 
@@ -236,9 +260,17 @@ export const generateLabResponse = async (
             apiKey = config.openaiApiKey;
             modelName = config.openaiModel || 'gpt-4o';
             break;
+        case 'openrouter':
+            apiKey = config.openrouterApiKey;
+            modelName = config.openrouterModel || 'openai/gpt-4o';
+            break;
         case 'anthropic':
             apiKey = config.anthropicApiKey;
             modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620';
+            break;
+        case 'openrouter':
+            apiKey = config.openrouterApiKey;
+            modelName = config.openrouterModel || 'openai/gpt-4o';
             break;
          case 'mistral':
             apiKey = config.mistralApiKey;
@@ -344,6 +376,10 @@ export const generateScenario = async (
             apiKey = config.anthropicApiKey;
             modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620';
             break;
+        case 'openrouter':
+            apiKey = config.openrouterApiKey;
+            modelName = config.openrouterModel || 'openai/gpt-4o';
+            break;
          case 'mistral':
             apiKey = config.mistralApiKey;
             modelName = config.mistralModel || 'mistral-large-latest';
@@ -408,6 +444,7 @@ export const resolveConfig = (config: any) => {
         case 'gemini': apiKey = config.geminiApiKey; modelName = config.geminiModel; break;
         case 'openai': apiKey = config.openaiApiKey; modelName = config.openaiModel || 'gpt-4o'; break;
         case 'anthropic': apiKey = config.anthropicApiKey; modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620'; break;
+        case 'openrouter': apiKey = config.openrouterApiKey; modelName = config.openrouterModel || 'openai/gpt-4o'; break;
         case 'mistral': apiKey = config.mistralApiKey; modelName = config.mistralModel || 'mistral-large-latest'; break;
         case 'local': apiUrl = config.localApiUrl; modelName = config.localModelName; break;
     }

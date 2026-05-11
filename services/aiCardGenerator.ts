@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/tauri';
 import { v4 as uuidv4 } from 'uuid';
 import { Flashcard, AIGenerationConfig, AIProvider } from '../types';
 import { getTutorPrompt } from '../constants/promptSelector';
+import { callAI } from './aiClient';
 
 /**
  * Génère des flashcards (Texte ou Vision) avec Gemini ou Local AI.
@@ -107,6 +108,32 @@ export const generateFlashcardsWithAI = async (
                     }
                 ],
                 response_format: activeProvider === 'openai' ? { type: "json_object" } : undefined
+            };
+         } else if (activeProvider === 'openrouter') {
+            if (!apiKey) throw new Error("Clé API OpenRouter requise.");
+            url = 'https://openrouter.ai/api/v1/chat/completions';
+            headers['Authorization'] = `Bearer ${apiKey}`;
+            headers['HTTP-Referer'] = 'https://studeo.app';
+            headers['X-Title'] = 'Studeo';
+            model = model || 'openai/gpt-4o';
+
+            payload = {
+                model: model,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: multimodalPrompt },
+                            { 
+                                type: "image_url", 
+                                image_url: { 
+                                    url: `data:${mimeType};base64,${mediaData}` 
+                                } 
+                            }
+                        ]
+                    }
+                ],
+                response_format: { type: "json_object" }
             };
          } else if (activeProvider === 'anthropic') {
             if (!apiKey) throw new Error("Clé API Anthropic requise.");
@@ -357,6 +384,21 @@ Réponds UNIQUEMENT avec le JSON.`;
             }
             const data = await response.json();
             responseText = data.content?.[0]?.text || "";
+
+        } else if (aiProvider === 'openrouter') {
+            const apiKey = config.apiKey;
+            if (!apiKey) throw new Error("Clé API OpenRouter manquante.");
+            
+            const result = await callAI(
+                {
+                    provider: 'openrouter',
+                    apiKey: apiKey,
+                    modelName: config.modelName || 'openai/gpt-4o',
+                    jsonMode: true
+                },
+                prompt
+            );
+            responseText = result.text;
 
         } else {
             // --- LEGACY (Gemini / Local) ---

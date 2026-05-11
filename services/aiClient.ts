@@ -59,6 +59,53 @@ const extractText = (data: any, provider: AIProvider): string => {
             return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
         case 'anthropic':
             return data.content?.[0]?.text ?? '';
+        case 'openrouter': {
+            if (data.error) {
+                const errMsg = typeof data.error === 'string' ? data.error : (data.error?.message || JSON.stringify(data.error));
+                throw new Error(`[openrouter] ${errMsg}`);
+            }
+            const choice  = data.choices?.[0];
+            const msg     = choice?.message;
+            const finish  = choice?.finish_reason ?? choice?.native_finish_reason ?? '';
+
+            if (!msg) return '';
+
+            // 1. Contenu direct (string) — cas normal
+            if (typeof msg.content === 'string' && msg.content.trim()) return msg.content;
+
+            // 2. Contenu en tableau (format vision/multi-modal)
+            if (Array.isArray(msg.content)) {
+                const textPart = msg.content.find((p: any) => p.type === 'text');
+                if (textPart?.text?.trim()) return textPart.text;
+            }
+
+            // 3. Modèle thinking : content est null, mais reasoning contient peut-être du JSON
+            const reasoning: string = msg.reasoning || (msg as any).reasoning_content || '';
+
+            if (reasoning.trim()) {
+                // Réponse tronquée (quota tokens dépassé) — le raisonnement est incomplet
+                if (finish === 'length') {
+                    throw new Error(
+                        `[openrouter] Réponse tronquée (finish_reason=length). Éliminez ce modèle thinking pour les tâches JSON ou utilisez un modèle non-thinking (ex: google/gemma-3-27b-it:free).`
+                    );
+                }
+                // Modèle thinking complet : essayer d'extraire le JSON de la réflexion
+                const jsonInReasoning = reasoning.match(/```json([\s\S]*?)```/)?.[1]
+                    ?? reasoning.match(/(\[\s*\{[\s\S]*?\}\s*\])/)?.[0]
+                    ?? reasoning.match(/(\{[\s\S]*\})/)?.[0]
+                    ?? '';
+                if (jsonInReasoning.trim()) {
+                    console.warn('[openrouter] content=null, JSON extrait depuis reasoning (modèle thinking).');
+                    return jsonInReasoning;
+                }
+                // Aucun JSON trouvé dans le raisonnement
+                throw new Error(
+                    `[openrouter] Modèle thinking sans réponse finale (content=null). Utilisez un modèle non-thinking pour cette tâche.`
+                );
+            }
+
+            return '';
+        }
         default:
             // OpenAI, Mistral, Local → format OpenAI compatible
             return data.choices?.[0]?.message?.content ?? '';
@@ -126,13 +173,51 @@ export const callAI = async (
 
     if (!response.ok) {
         const errBody = await response.text().catch(() => response.statusText);
+
+        // Pour OpenRouter, on parse le JSON pour afficher un message lisible
+        if (provider === 'openrouter') {
+            try {
+                const errJson = JSON.parse(errBody);
+                const meta    = errJson?.error?.metadata;
+                const retryIn = meta?.retry_after_seconds ? Math.ceil(meta.retry_after_seconds) : null;
+                const raw     = meta?.raw ?? errJson?.error?.message ?? errBody;
+
+                if (response.status === 429) {
+                    const retryMsg = retryIn ? ` Réessayez dans ${retryIn}s.` : ' Réessayez dans quelques instants.';
+                    throw new Error(`[openrouter] Limite de débit atteinte (429).${retryMsg}\n→ ${raw}`);
+                }
+                if (response.status === 503 || response.status === 502) {
+                    throw new Error(`[openrouter] Modèle temporairement indisponible (${response.status}). Essayez un autre modèle.\n→ ${raw}`);
+                }
+                throw new Error(`[openrouter] Erreur ${response.status} : ${raw}`);
+            } catch (parseErr: any) {
+                // Si le corps n'est pas du JSON, on relance l'erreur originale
+                if (parseErr.message?.startsWith('[openrouter]')) throw parseErr;
+                throw new Error(`[openrouter] HTTP ${response.status}: ${errBody}`);
+            }
+        }
+
         throw new Error(`[${provider}] HTTP ${response.status}: ${errBody}`);
     }
 
     const data = await response.json();
+
+    // Debug log pour faciliter le diagnostic en dev
+    if (provider === 'openrouter') {
+        console.log('[openrouter] raw response:', JSON.stringify(data).substring(0, 400));
+    }
+
     const text = extractText(data, provider);
 
-    if (!text) throw new Error(`[${provider}] Réponse vide ou inattendue.`);
+    if (!text) {
+        // Diagnostic enrichi pour openrouter
+        if (provider === 'openrouter') {
+            const finishReason = data.choices?.[0]?.finish_reason;
+            const errDetail = data.error ? JSON.stringify(data.error) : `finish_reason=${finishReason}`;
+            throw new Error(`[openrouter] Réponse vide — ${errDetail}. Vérifiez que le modèle est disponible et que votre quota n'est pas épuisé.`);
+        }
+        throw new Error(`[${provider}] Réponse vide ou inattendue.`);
+    }
 
     return { text, provider, model: modelName };
 };
@@ -259,8 +344,9 @@ const buildRequest = ({
                         { role: 'user',   content: prompt },
                     ],
                     temperature,
-                    max_tokens: maxTokens,
-                    ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+                    // Limiter max_tokens pour les modèles free (quota limité)
+                    max_tokens: Math.min(maxTokens, 2048),
+                    // NE PAS forcer response_format: les modèles free ne le supportent pas tous
                 },
             };
         }

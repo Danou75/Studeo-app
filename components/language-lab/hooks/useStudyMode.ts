@@ -49,11 +49,13 @@ export const useStudyMode = ({ t, showToast, activeLang, config, tutor, onAddCar
                 apiKey: config.provider === 'gemini' ? config.geminiApiKey : 
                         config.provider === 'openai' ? config.openaiApiKey :
                         config.provider === 'anthropic' ? config.anthropicApiKey :
-                        config.provider === 'mistral' ? config.mistralApiKey : undefined,
+                        config.provider === 'mistral' ? config.mistralApiKey :
+                        config.provider === 'openrouter' ? config.openrouterApiKey : undefined,
                 modelName: config.provider === 'gemini' ? config.geminiModel :
                            config.provider === 'openai' ? config.openaiModel :
                            config.provider === 'anthropic' ? config.anthropicModel :
-                           config.provider === 'mistral' ? config.mistralModel : config.localModelName,
+                           config.provider === 'mistral' ? config.mistralModel :
+                           config.provider === 'openrouter' ? (config.openrouterModel || 'openai/gpt-4o') : config.localModelName,
                 apiUrl: config.localApiUrl
             };
 

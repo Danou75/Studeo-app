@@ -14,7 +14,10 @@ export const fr = {
         light: "Clair",
         dark: "Sombre",
         auto: "Auto",
-        actions: "Actions"
+        actions: "Actions",
+        clear: "Effacer",
+        reset: "Réinitialiser",
+        all: "Tous"
     },
     languages: {
         fr: "Français",
@@ -844,6 +847,7 @@ Tu cultives un dialogue authentique en répondant aux détails partagés, en pos
         translatePlaceholder: "Ex: bonjour, merci, comment allez-vous...",
         translate: "Traduire",
         conjugateSubtitle: "Conjuguez n'importe quel verbe instantanément",
+        translateSubtitle: "Traduisez n'importe quel texte avec contexte et exemples",
     },
     curriculum: {
         title: "Mes Leçons & Programmes",

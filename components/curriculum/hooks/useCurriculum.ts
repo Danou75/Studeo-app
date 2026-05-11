@@ -98,6 +98,10 @@ export const useCurriculum = ({
                     apiKey = config.mistralApiKey || '';
                     modelName = config.mistralModel || 'mistral-large-latest';
                     break;
+                case 'openrouter':
+                    apiKey = config.openrouterApiKey || '';
+                    modelName = config.openrouterModel || 'openai/gpt-4o';
+                    break;
                 case 'local':
                     apiKey = '';
                     modelName = config.localModelName || '';

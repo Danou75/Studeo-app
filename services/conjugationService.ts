@@ -1,5 +1,4 @@
-import { invoke } from '@tauri-apps/api/tauri';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { callAI } from './aiClient';
 import { ConjugationResult, AIProvider } from '../types';
 
 export const conjugateVerb = async (
@@ -11,137 +10,19 @@ export const conjugateVerb = async (
   apiKey?: string
 ): Promise<ConjugationResult> => {
 
-    const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
-    
+
     // --- 1. FONCTION HELPER POUR APPELER L'API ---
     const executeConjugation = async (currentPrompt: string): Promise<string> => {
+        // Gestion spéciale Gemini : fallback localStorage
+        const effectiveApiKey = provider === 'gemini'
+            ? (apiKey || localStorage.getItem('gemini_api_key') || undefined)
+            : apiKey || undefined;
         
-        // --- 1. OPENAI / MISTRAL ---
-        if (provider === 'openai' || provider === 'mistral') {
-            const apiEndpoint = provider === 'mistral' 
-                ? 'https://api.mistral.ai/v1/chat/completions' 
-                : 'https://api.openai.com/v1/chat/completions';
-            
-            if (!apiKey) throw new Error(`Clé API ${provider} manquante.`);
-
-            const response = await fetch(apiEndpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: modelName,
-                    messages: [
-                        { role: "system", content: "You are a helpful assistant that outputs JSON only." },
-                        { role: "user", content: currentPrompt }
-                    ],
-                    temperature: 0.3,
-                    response_format: provider === 'openai' ? { type: "json_object" } : undefined
-                })
-            });
-
-            if (!response.ok) throw new Error(`${provider} Error: ${await response.text()}`);
-            const data = await response.json();
-            return data.choices?.[0]?.message?.content || "";
-        }
-
-        // --- 2. ANTHROPIC ---
-        if (provider === 'anthropic') {
-            if (!apiKey) throw new Error("Clé API Anthropic manquante.");
-            
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': apiKey,
-                    'anthropic-version': '2023-06-01',
-                    'anthropic-dangerous-direct-browser-access': 'true'
-                },
-                body: JSON.stringify({
-                    model: modelName,
-                    max_tokens: 4096,
-                    messages: [
-                        { role: "user", content: currentPrompt }
-                    ]
-                })
-            });
-            
-            if (!response.ok) throw new Error(`Anthropic Error: ${await response.text()}`);
-            const data = await response.json();
-            return data.content?.[0]?.text || "";
-        }
-
-        // --- 3. LEGACY GEMINI / LOCAL ---
-        if (isTauri) {
-            // MODE TAURI
-            if (provider === 'gemini') {
-                const effectiveKey = apiKey || localStorage.getItem('gemini_api_key');
-                if (!effectiveKey) throw new Error("Clé API Gemini manquante localement");
-                return await invoke<string>('generate_flashcards_command', {
-                    prompt: currentPrompt,
-                    apiKey: effectiveKey.trim(),
-                    modelName
-                });
-            } else {
-                if (!apiUrl) throw new Error("URL API locale manquante");
-                return await invoke<string>('generate_flashcards_local', {
-                    prompt: currentPrompt,
-                    apiUrl,
-                    modelName
-                });
-            }
-        } else {
-            // MODE WEB (Vercel)
-            if (provider === 'local') {
-                 // APPEL DIRECT À L'IA LOCALE
-                 console.log("🌐 Calling Local AI directly from browser with prompt length:", currentPrompt.length);
-                 if (!apiUrl) throw new Error("URL API locale manquante");
-                 
-                 let baseUrl = apiUrl.replace(/\/$/, '');
-                 let endpoint = `${baseUrl}/v1/chat/completions`;
-                 if (baseUrl.endsWith('/v1/chat/completions')) endpoint = baseUrl;
-                 else if (baseUrl.endsWith('/v1')) endpoint = `${baseUrl}/chat/completions`;
-    
-                 const response = await fetch(endpoint, {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({
-                         model: modelName || "local-model",
-                         messages: [
-                             { role: "system", content: "You are a helpful assistant that outputs JSON only." },
-                             { role: "user", content: currentPrompt }
-                         ],
-                         temperature: 0.3,
-                         max_tokens: 4000
-                     })
-                 });
-    
-                 if (!response.ok) throw new Error(`Local API Error: ${await response.text()}`);
-                 
-                 const data = await response.json();
-                 if (data.error) throw new Error(`Local API Error: ${data.error.message}`);
-                 if (!data.choices?.[0]?.message) throw new Error("Format réponse invalide");
-                 
-                 return data.choices[0].message.content;
-    
-            } else {
-                // MODE CLOUD GEMINI (Client SDK)
-                const effectiveKey = apiKey || localStorage.getItem('gemini_api_key');
-                if (!effectiveKey) throw new Error("Clé API Gemini manquante");
-
-                const genAI = new GoogleGenerativeAI(effectiveKey);
-                const model = genAI.getGenerativeModel({ 
-                    model: modelName || "gemini-2.5-flash",
-                    generationConfig: { responseMimeType: "application/json" }
-                });
-                
-                const result = await model.generateContent(currentPrompt);
-                const text = result.response.text();
-                if (!text) throw new Error("Gemini a renvoyé une réponse vide");
-                return text;
-            }
-        }
+        const result = await callAI(
+            { provider, apiKey: effectiveApiKey, modelName, apiUrl },
+            currentPrompt
+        );
+        return result.text;
     }; // Fin helper
 
     // --- 2. DÉFINITION DES PROMPTS ---

@@ -16,7 +16,10 @@ export const en: typeof fr = {
         light: "Light",
         dark: "Dark",
         auto: "Auto",
-        actions: "Actions"
+        actions: "Actions",
+        clear: "Clear",
+        reset: "Reset",
+        all: "All"
     },
     languages: {
         fr: "French",
@@ -828,6 +831,7 @@ export const en: typeof fr = {
         translatePlaceholder: "E.g. hello, thank you, how are you...",
         translate: "Translate",
         conjugateSubtitle: "Conjugate any verb instantly",
+        translateSubtitle: "Translate any text with context and examples",
     },
     curriculum: {
         title: "My Lessons & Programs",

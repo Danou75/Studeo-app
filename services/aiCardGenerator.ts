@@ -766,10 +766,7 @@ export const generateSmartDistractors = async (
         } else if (aiProvider === 'local') {
              const apiUrl = config.apiUrl;
              if (!apiUrl) throw new Error("URL API Local requise.");
-             // ... logic same as main function ...
-             // Simplified for brevity in this specific helper
              const endpoint = apiUrl.replace(/\/$/, '') + '/v1/chat/completions';
-
              const response = await fetch(endpoint, {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
@@ -780,6 +777,15 @@ export const generateSmartDistractors = async (
              });
              const data = await response.json();
              responseText = data.choices?.[0]?.message?.content || "";
+
+        } else if (aiProvider === 'openrouter') {
+             const apiKey = config.apiKey;
+             if (!apiKey) throw new Error("Clé API OpenRouter manquante.");
+             const result = await callAI(
+                 { provider: 'openrouter', apiKey, modelName: config.modelName, jsonMode: false },
+                 prompt
+             );
+             responseText = result.text;
         }
 
         const cleaned = responseText.replace(/```json/g, '').replace(/```/g, '').trim();

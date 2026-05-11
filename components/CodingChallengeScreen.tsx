@@ -23,6 +23,7 @@ export const CodingChallengeScreen: React.FC<{ onBack: () => void }> = ({ onBack
             case 'openai': return config.openaiApiKey || '';
             case 'anthropic': return config.anthropicApiKey || '';
             case 'mistral': return config.mistralApiKey || '';
+            case 'openrouter': return config.openrouterApiKey || '';
             case 'gemini': default: return config.geminiApiKey || '';
         }
     };
@@ -32,6 +33,7 @@ export const CodingChallengeScreen: React.FC<{ onBack: () => void }> = ({ onBack
             case 'openai': return config.openaiModel;
             case 'anthropic': return config.anthropicModel;
             case 'mistral': return config.mistralModel;
+            case 'openrouter': return config.openrouterModel || 'openai/gpt-4o';
             case 'gemini': default: return config.geminiModel;
         }
     };

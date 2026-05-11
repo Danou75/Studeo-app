@@ -154,10 +154,48 @@ IMPORTANT :
 
             const data = await res.json();
             response = data.choices?.[0]?.message?.content || '';
+
+        } else if (provider === 'openrouter') {
+            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'https://studeo.app',
+                    'X-Title': 'Studeo',
+                },
+                body: JSON.stringify({
+                    model: modelName,
+                    messages: [
+                        { role: 'system', content: 'You are a translation expert. Always respond with valid JSON only, no markdown.' },
+                        { role: 'user', content: prompt }
+                    ],
+                    temperature: 0.3,
+                    max_tokens: 2048,
+                })
+            });
+
+            if (!res.ok) {
+                const errBody = await res.text().catch(() => res.statusText);
+                throw new Error(`OpenRouter API error ${res.status}: ${errBody}`);
+            }
+
+            const data = await res.json();
+            if (data.error) throw new Error(data.error?.message || JSON.stringify(data.error));
+
+            const msg = data.choices?.[0]?.message;
+            // Certains modèles free mettent le texte dans reasoning au lieu de content
+            response = (typeof msg?.content === 'string' && msg.content.trim())
+                ? msg.content
+                : (msg?.reasoning || msg?.reasoning_content || '');
         }
 
-        // Extract JSON from response
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        // Extraction JSON robuste — supporte ```json ... ``` et {…} direct
+        const stripped = response
+            .replace(/^```(?:json)?\s*/i, '')
+            .replace(/```\s*$/, '')
+            .trim();
+        const jsonMatch = stripped.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             throw new Error('Invalid response format from AI');
         }

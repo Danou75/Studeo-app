@@ -179,6 +179,7 @@ export function useConjugator(props: {
                 case 'openai': apiKey = config.openaiApiKey; modelName = config.openaiModel || 'gpt-4o'; break;
                 case 'anthropic': apiKey = config.anthropicApiKey; modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620'; break;
                 case 'mistral': apiKey = config.mistralApiKey; modelName = config.mistralModel || 'mistral-large-latest'; break;
+                case 'openrouter': apiKey = config.openrouterApiKey; modelName = config.openrouterModel || 'openai/gpt-4o'; break;
                 case 'local': apiUrl = config.localApiUrl; modelName = config.localModelName; break;
             }
 
@@ -228,6 +229,7 @@ export function useConjugator(props: {
                 case 'openai': apiKey = config.openaiApiKey; modelName = config.openaiModel || 'gpt-4o'; break;
                 case 'anthropic': apiKey = config.anthropicApiKey; modelName = config.anthropicModel || 'claude-3-5-sonnet-20240620'; break;
                 case 'mistral': apiKey = config.mistralApiKey; modelName = config.mistralModel || 'mistral-large-latest'; break;
+                case 'openrouter': apiKey = config.openrouterApiKey; modelName = config.openrouterModel || 'openai/gpt-4o'; break;
                 case 'local': apiUrl = config.localApiUrl; modelName = config.localModelName; break;
             }
 

@@ -93,12 +93,14 @@ export const FeynmanVoiceModal: React.FC<FeynmanVoiceModalProps> = ({ isOpen, on
             const apiKey = config.provider === 'gemini' ? config.geminiApiKey 
                            : config.provider === 'openai' ? config.openaiApiKey 
                            : config.provider === 'anthropic' ? config.anthropicApiKey
-                           : config.provider === 'mistral' ? config.mistralApiKey : '';
+                           : config.provider === 'mistral' ? config.mistralApiKey
+                           : config.provider === 'openrouter' ? config.openrouterApiKey : '';
             
             const modelName = config.provider === 'gemini' ? config.geminiModel
                               : config.provider === 'openai' ? config.openaiModel
                               : config.provider === 'anthropic' ? config.anthropicModel
                               : config.provider === 'mistral' ? config.mistralModel
+                              : config.provider === 'openrouter' ? (config.openrouterModel || 'openai/gpt-4o')
                               : config.localModelName;
 
             const cards = await generateFlashcardsWithAI({

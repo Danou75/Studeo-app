@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { callAI } from './aiClient';
 import { AIConfig } from "../contexts/AIConfigContext";
 
 export interface TutorialStep {
@@ -502,6 +503,14 @@ export const generateDrawingTutorial = async (
 
             const data = await response.json();
             rawResponse = data.content?.[0]?.text || "";
+
+        } else if (config.provider === 'openrouter') {
+            if (!config.openrouterApiKey) throw new Error("Clé API OpenRouter manquante");
+            const result = await callAI(
+                { provider: 'openrouter', apiKey: config.openrouterApiKey, modelName: config.openrouterModel },
+                `INSTRUCTION: Réponds UNIQUEMENT au format JSON strict.\n\n${prompt}`
+            );
+            rawResponse = result.text;
 
         } else {
             // Gemini (Défaut)

@@ -59,6 +59,12 @@ export const usePronunciationCoach = ({ activeLang, config, showToast, t }: UseP
             } else if (config.provider === 'mistral') {
                 apiKey = config.mistralApiKey || '';
                 model = config.mistralModel || '';
+            } else if (config.provider === 'openrouter') {
+                apiKey = config.openrouterApiKey || '';
+                model = config.openrouterModel || 'openai/gpt-4o';
+            } else if (config.provider === 'anthropic') {
+                apiKey = config.anthropicApiKey || '';
+                model = config.anthropicModel || '';
             }
 
              fullResponse = await executeAIRequest(

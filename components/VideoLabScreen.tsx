@@ -69,12 +69,14 @@ export const VideoLabScreen: React.FC<VideoLabScreenProps> = ({
             const aiKey = config.provider === 'gemini' ? config.geminiApiKey 
                            : config.provider === 'openai' ? config.openaiApiKey 
                            : config.provider === 'anthropic' ? config.anthropicApiKey
-                           : config.provider === 'mistral' ? config.mistralApiKey : '';
+                           : config.provider === 'mistral' ? config.mistralApiKey
+                           : config.provider === 'openrouter' ? config.openrouterApiKey : '';
             
             const aiModel = config.provider === 'gemini' ? config.geminiModel 
                            : config.provider === 'mistral' ? config.mistralModel
                            : config.provider === 'anthropic' ? config.anthropicModel
                            : config.provider === 'openai' ? config.openaiModel
+                           : config.provider === 'openrouter' ? (config.openrouterModel || 'openai/gpt-4o')
                            : config.provider === 'local' ? config.localModelName
                            : 'gpt-4o';
 
@@ -235,12 +237,14 @@ export const VideoLabScreen: React.FC<VideoLabScreenProps> = ({
             const apiKey = config.provider === 'gemini' ? config.geminiApiKey 
                            : config.provider === 'openai' ? config.openaiApiKey 
                            : config.provider === 'anthropic' ? config.anthropicApiKey
-                           : config.provider === 'mistral' ? config.mistralApiKey : '';
+                           : config.provider === 'mistral' ? config.mistralApiKey
+                           : config.provider === 'openrouter' ? config.openrouterApiKey : '';
             
             const modelName = config.provider === 'gemini' ? config.geminiModel 
                            : config.provider === 'mistral' ? config.mistralModel
                            : config.provider === 'anthropic' ? config.anthropicModel
                            : config.provider === 'openai' ? config.openaiModel
+                           : config.provider === 'openrouter' ? (config.openrouterModel || 'openai/gpt-4o')
                            : config.provider === 'local' ? config.localModelName
                            : 'gpt-4o';
 
@@ -406,7 +410,8 @@ ${analysisResult.summary || "Résumé non disponible."}
             const apiKey = config.provider === 'gemini' ? config.geminiApiKey 
                            : config.provider === 'openai' ? config.openaiApiKey 
                            : config.provider === 'anthropic' ? config.anthropicApiKey
-                           : config.provider === 'mistral' ? config.mistralApiKey : '';
+                           : config.provider === 'mistral' ? config.mistralApiKey
+                           : config.provider === 'openrouter' ? config.openrouterApiKey : '';
 
             const behaviorPrompt = type === 'quiz' 
                 ? `Génère un quiz de compréhension complet. Questions variées sur les concepts.`
@@ -437,6 +442,7 @@ ${analysisResult.summary || "Résumé non disponible."}
                            : config.provider === 'mistral' ? config.mistralModel
                            : config.provider === 'anthropic' ? config.anthropicModel
                            : config.provider === 'openai' ? config.openaiModel
+                           : config.provider === 'openrouter' ? (config.openrouterModel || 'openai/gpt-4o')
                            : config.provider === 'local' ? config.localModelName
                            : 'gpt-4o'
             }, selectedTutorId || undefined);

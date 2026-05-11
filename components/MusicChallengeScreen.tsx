@@ -1222,12 +1222,14 @@ export const MusicChallengeScreen: React.FC<MusicChallengeScreenProps> = ({ onBa
                 challenge={getCurrentChallenge()}
                 criteria={getCurrentCriteria()}
                 apiKey={
+                    config.provider === 'openrouter' ? (config.openrouterApiKey || '') :
                     config.provider === 'mistral' ? (config.mistralApiKey || '') :
                     config.provider === 'openai' ? (config.openaiApiKey || '') :
                     (config.geminiApiKey || '')
                 }
                 provider={config.provider}
                 modelName={
+                    config.provider === 'openrouter' ? (config.openrouterModel || 'openai/gpt-4o') :
                     config.provider === 'mistral' ? (config.mistralModel || 'pixtral-12b-2409') :
                     config.provider === 'openai' ? (config.openaiModel || 'gpt-4o') :
                     (config.geminiModel || 'gemini-2.5-flash')

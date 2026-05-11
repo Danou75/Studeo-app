@@ -344,6 +344,10 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
             apiKey = config.mistralApiKey || '';
             modelName = config.mistralModel || 'mistral-large-latest';
             if (!apiKey?.trim()) { setError(t('ai.config.mistralKey')); return; }
+        } else if (config.provider === 'openrouter') {
+            apiKey = config.openrouterApiKey || '';
+            modelName = config.openrouterModel || 'openai/gpt-4o';
+            if (!apiKey?.trim()) { setError(t('ai.config.openrouterKey') || 'Clé API OpenRouter manquante. Configurez-la dans les paramètres.'); return; }
         } else if (config.provider === 'local') {
             apiUrl = config.localApiUrl;
             modelName = config.localModelName;
@@ -745,6 +749,7 @@ CONTEXTE UTILISATEUR : ${context}
                                             config.provider === 'openai' ? '🟢 OpenAI' :
                                             config.provider === 'anthropic' ? '🧠 Anthropic' :
                                             config.provider === 'mistral' ? '🌪️ Mistral AI' :
+                                            config.provider === 'openrouter' ? '🔀 OpenRouter' :
                                             '🖥️ IA Locale'
                                         }
                                         <span className="ml-2">
@@ -753,6 +758,7 @@ CONTEXTE UTILISATEUR : ${context}
                                                 config.provider === 'openai' ? (config.openaiModel || 'gpt-4o') :
                                                 config.provider === 'anthropic' ? (config.anthropicModel || 'claude-3-5-sonnet-20241022') :
                                                 config.provider === 'mistral' ? (config.mistralModel || 'mistral-large-latest') :
+                                                config.provider === 'openrouter' ? (config.openrouterModel || 'openai/gpt-4o') :
                                                 config.localModelName
                                             }
                                         </span>
@@ -760,7 +766,8 @@ CONTEXTE UTILISATEUR : ${context}
                                     {((config.provider === 'gemini' && !config.geminiApiKey) ||
                                       (config.provider === 'openai' && !config.openaiApiKey) ||
                                       (config.provider === 'anthropic' && !config.anthropicApiKey) ||
-                                      (config.provider === 'mistral' && !config.mistralApiKey)) && (
+                                      (config.provider === 'mistral' && !config.mistralApiKey) ||
+                                      (config.provider === 'openrouter' && !config.openrouterApiKey)) && (
                                         <p className="text-sm text-red-600 dark:text-red-400 mt-2">
                                             {t('ai.config.missingKey')}
                                         </p>

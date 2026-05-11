@@ -241,6 +241,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 : config.config.provider === 'openai' ? config.config.openaiApiKey
                 : config.config.provider === 'anthropic' ? config.config.anthropicApiKey
                 : config.config.provider === 'mistral' ? config.config.mistralApiKey
+                : config.config.provider === 'openrouter' ? config.config.openrouterApiKey
                 : config.config.provider === 'local' ? config.config.localApiUrl
                 : '';
 
@@ -248,6 +249,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 : config.config.provider === 'openai' ? config.config.openaiModel
                 : config.config.provider === 'anthropic' ? config.config.anthropicModel
                 : config.config.provider === 'mistral' ? config.config.mistralModel
+                : config.config.provider === 'openrouter' ? (config.config.openrouterModel || 'openai/gpt-4o')
                 : config.config.provider === 'local' ? config.config.localModelName
                 : '';
 
@@ -347,12 +349,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 : config.config.provider === 'openai' ? config.config.openaiApiKey
                 : config.config.provider === 'anthropic' ? config.config.anthropicApiKey
                 : config.config.provider === 'mistral' ? config.config.mistralApiKey
+                : config.config.provider === 'openrouter' ? config.config.openrouterApiKey
                 : '';
 
             const modelName = config.config.provider === 'gemini' ? config.config.geminiModel
                 : config.config.provider === 'openai' ? config.config.openaiModel
                 : config.config.provider === 'anthropic' ? config.config.anthropicModel
                 : config.config.provider === 'mistral' ? config.config.mistralModel
+                : config.config.provider === 'openrouter' ? (config.config.openrouterModel || 'openai/gpt-4o')
                 : config.config.localModelName;
 
             // Nettoyage et validation de la clé API

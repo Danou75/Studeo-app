@@ -172,6 +172,10 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                     apiKey = config.mistralApiKey || '';
                     modelName = config.mistralModel || 'mistral-large-latest';
                     break;
+                case 'openrouter':
+                    apiKey = config.openrouterApiKey || '';
+                    modelName = config.openrouterModel || 'openai/gpt-4o';
+                    break;
                 case 'local':
                     apiKey = '';
                     modelName = config.localModelName || '';
@@ -244,6 +248,10 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                 case 'mistral':
                     apiKey = config.mistralApiKey || '';
                     modelName = config.mistralModel || 'mistral-large-latest';
+                    break;
+                case 'openrouter':
+                    apiKey = config.openrouterApiKey || '';
+                    modelName = config.openrouterModel || 'openai/gpt-4o';
                     break;
                 case 'local':
                     apiKey = '';
@@ -326,6 +334,10 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({
                 case 'mistral':
                     apiKey = config.mistralApiKey || '';
                     modelName = config.mistralModel || 'mistral-large-latest';
+                    break;
+                case 'openrouter':
+                    apiKey = config.openrouterApiKey || '';
+                    modelName = config.openrouterModel || 'openai/gpt-4o';
                     break;
                 case 'local':
                     apiKey = '';

@@ -46,19 +46,18 @@ export const ConjugatorInput: React.FC<ConjugatorInputProps> = ({
                         {mode === 'conjugate' ? t('conjugator.verbLabel') : t('conjugator.textToTranslate')}
                     </label>
                     <div className="relative group/input">
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            value={verb}
-                            onChange={(e) => {
-                                setVerb(e.target.value);
-                                updateSuggestions(e.target.value, mode, language);
-                            }}
-                            onFocus={() => updateSuggestions(verb, mode, language)}
-                            placeholder={mode === 'conjugate' ? t('conjugator.verbPlaceholder') : t('conjugator.translatePlaceholder')}
-                            className="w-full p-3 pr-10 rounded-lg bg-background border border-border focus:ring-2 focus:ring-primary outline-none transition-all text-lg text-text"
-                            autoFocus
-                        />
+                     <input
+                        ref={inputRef}
+                        type="text"
+                        value={verb}
+                        onChange={(e) => {
+                            setVerb(e.target.value);
+                            updateSuggestions(e.target.value, mode, language);
+                        }}
+                        onFocus={() => updateSuggestions(verb, mode, language)}
+                        placeholder={mode === 'conjugate' ? t('conjugator.verbPlaceholder') : t('conjugator.translatePlaceholder')}
+                        className="w-full p-3 pr-10 rounded-lg bg-background border border-border focus:ring-2 focus:ring-primary outline-none transition-all text-lg text-text"
+                    />
                         {verb && (
                             <button
                                 type="button"

@@ -58,13 +58,91 @@ export const conjugateVerb = async (
     Conjugue SEULEMENT au Présent, Passé Composé et Futur.
     `;
 
+    const normalizeResult = (res: any): ConjugationResult => {
+        if (!res) return res;
+
+        // Normalisation de la traduction en chaîne
+        if (res.translation && typeof res.translation === 'object') {
+            const keys = Object.keys(res.translation);
+            // On cherche en priorité le Français ou l'Anglais
+            const frenchKey = keys.find(k => k.toLowerCase() === 'french' || k.toLowerCase() === 'français' || k.toLowerCase() === 'francais' || k.toLowerCase() === 'fr');
+            const englishKey = keys.find(k => k.toLowerCase() === 'english' || k.toLowerCase() === 'anglais' || k.toLowerCase() === 'en');
+            
+            if (frenchKey) {
+                res.translation = res.translation[frenchKey];
+            } else if (englishKey) {
+                res.translation = res.translation[englishKey];
+            } else if (keys.length > 0) {
+                res.translation = keys.map(k => `${k}: ${res.translation[k]}`).join(', ');
+            } else {
+                res.translation = String(res.translation);
+            }
+        } else if (res.translation !== undefined) {
+            res.translation = String(res.translation);
+        }
+
+        // Normalisation de la définition
+        if (res.definition && typeof res.definition === 'object') {
+            const keys = Object.keys(res.definition);
+            const frenchKey = keys.find(k => k.toLowerCase() === 'french' || k.toLowerCase() === 'français' || k.toLowerCase() === 'francais' || k.toLowerCase() === 'fr');
+            const englishKey = keys.find(k => k.toLowerCase() === 'english' || k.toLowerCase() === 'anglais' || k.toLowerCase() === 'en');
+            
+            if (frenchKey) {
+                res.definition = res.definition[frenchKey];
+            } else if (englishKey) {
+                res.definition = res.definition[englishKey];
+            } else if (keys.length > 0) {
+                res.definition = keys.map(k => `${k}: ${res.definition[k]}`).join(', ');
+            } else {
+                res.definition = String(res.definition);
+            }
+        } else if (res.definition !== undefined) {
+            res.definition = String(res.definition);
+        }
+
+        // Normalisation de l'exemple
+        if (res.example && typeof res.example === 'object') {
+            const keys = Object.keys(res.example);
+            const frenchKey = keys.find(k => k.toLowerCase() === 'french' || k.toLowerCase() === 'français' || k.toLowerCase() === 'francais' || k.toLowerCase() === 'fr');
+            const englishKey = keys.find(k => k.toLowerCase() === 'english' || k.toLowerCase() === 'anglais' || k.toLowerCase() === 'en');
+            
+            if (frenchKey) {
+                res.example = res.example[frenchKey];
+            } else if (englishKey) {
+                res.example = res.example[englishKey];
+            } else if (keys.length > 0) {
+                res.example = keys.map(k => `${k}: ${res.example[k]}`).join(', ');
+            } else {
+                res.example = String(res.example);
+            }
+        } else if (res.example !== undefined) {
+            res.example = String(res.example);
+        }
+
+        // Normalisation du verbe et de la langue
+        if (res.verb && typeof res.verb === 'object') {
+            res.verb = String(Object.values(res.verb)[0] || '');
+        } else if (res.verb !== undefined) {
+            res.verb = String(res.verb);
+        }
+        
+        if (res.language && typeof res.language === 'object') {
+            res.language = String(Object.values(res.language)[0] || '');
+        } else if (res.language !== undefined) {
+            res.language = String(res.language);
+        }
+
+        return res as ConjugationResult;
+    };
+
     // --- 3. EXÉCUTION AVEC RETRY ---
     try {
         console.log("🚀 Tentative 1 : Conjugaison Complète (7 temps)");
         const rawText = await executeConjugation(fullPrompt);
         
         const cleanedJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanedJson) as ConjugationResult;
+        const parsed = JSON.parse(cleanedJson);
+        return normalizeResult(parsed);
 
     } catch (error) {
         console.warn("⚠️ Échec de la conjugaison complète :", error);
@@ -75,7 +153,8 @@ export const conjugateVerb = async (
             try {
                 const rawTextRetry = await executeConjugation(simplifiedPrompt);
                 const cleanedJsonRetry = rawTextRetry.replace(/```json/g, '').replace(/```/g, '').trim();
-                return JSON.parse(cleanedJsonRetry) as ConjugationResult;
+                const parsedRetry = JSON.parse(cleanedJsonRetry);
+                return normalizeResult(parsedRetry);
             } catch (retryError) {
                 console.error("❌ Échec aussi en mode simplifié :", retryError);
                 throw retryError; // Si ça rate encore, on abandonne

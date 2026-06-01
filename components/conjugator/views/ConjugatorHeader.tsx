@@ -121,97 +121,99 @@ export const ConjugatorHeader: React.FC<ConjugatorHeaderProps> = ({
                     </div>
                 </div>
 
-                <div className="flex gap-2 items-center">
+                <div className="flex flex-col xs:flex-row gap-2 items-end sm:items-center mt-3 sm:mt-0 max-w-full overflow-x-auto pb-1 sm:pb-0">
                     {resultExists && (
-                        <div className={`flex gap-1 p-1 rounded-xl backdrop-blur-sm shadow-inner border transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'}`}>
+                        <div className={`flex flex-wrap gap-1 p-1 rounded-xl backdrop-blur-sm shadow-inner border transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'}`}>
                             {mode === 'conjugate' && (
                                 <>
                                   <button 
                                       onClick={() => handleExport('md')}
                                       disabled={isExporting}
-                                      className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
+                                      className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
                                       title={t('conjugator.exportMD')}
                                   >
-                                      {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fab fa-markdown"></i>} <span className="hidden sm:inline">MD</span>
+                                      {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fab fa-markdown"></i>} <span>MD</span>
                                   </button>
                                   <div className={`w-px h-4 self-center ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/10' : 'bg-white/20'}`}></div>
                                   <button 
                                       onClick={() => handleExport('doc')}
                                       disabled={isExporting}
-                                      className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
+                                      className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
                                       title={t('conjugator.exportWord')}
                                   >
-                                      {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-file-word"></i>} <span className="hidden sm:inline">RTF</span>
+                                      {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-file-word"></i>} <span>RTF</span>
                                   </button>
                                   <div className={`w-px h-4 self-center ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/10' : 'bg-white/20'}`}></div>
                                 </>
-                            )}
+                             )}
                             <button 
                                 onClick={handleShare}
-                                className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
+                                className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
                                 title="Partager"
                             >
-                                <i className="fas fa-share-alt"></i> <span className="hidden sm:inline">Partager</span>
+                                <i className="fas fa-share-alt"></i> <span>Partager</span>
                             </button>
                         </div>
                     )}
 
-                    <div className="relative">
-                        <button 
-                            onClick={() => setShowVoiceSettings(!showVoiceSettings)}
-                            className={`w-10 h-10 rounded-xl inline-flex items-center justify-center transition-all backdrop-blur-sm border ${
-                                showVoiceSettings ? 'bg-white text-rose-600 border-white' : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
-                            }`}
-                            title={t('conjugator.voiceSettings')}
-                        >
-                            <i className="fas fa-sliders-h"></i>
-                        </button>
+                    <div className="flex gap-2 items-center">
+                        <div className="relative">
+                            <button 
+                                onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+                                className={`w-10 h-10 rounded-xl inline-flex items-center justify-center transition-all backdrop-blur-sm border ${
+                                    showVoiceSettings ? 'bg-white text-rose-600 border-white' : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+                                }`}
+                                title={t('conjugator.voiceSettings')}
+                            >
+                                <i className="fas fa-sliders-h"></i>
+                            </button>
+                            
+                            {showVoiceSettings && (
+                                <div className="absolute top-12 right-0 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 w-72 overflow-hidden animate-fade-in-down origin-top-right">
+                                    <div className="p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center text-gray-800 dark:text-gray-200">
+                                        <h3 className="font-bold text-sm">
+                                            <i className="fas fa-volume-up mr-2 text-rose-500"></i>
+                                            {t('quiz.voice.title', { lang: language })}
+                                        </h3>
+                                        <button onClick={() => setShowVoiceSettings(false)} className="text-gray-400 hover:text-red-500 transition-colors">
+                                            <i className="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div className="max-h-60 overflow-y-auto p-2 space-y-1">
+                                        {availableVoices.length === 0 ? (
+                                            <div className="text-center p-4 text-sm text-gray-500 dark:text-gray-400">{t('quiz.voice.noVoice')}</div>
+                                        ) : (
+                                            availableVoices.map((voice, idx) => (
+                                                <button
+                                                    key={`${voice.name}-${idx}`}
+                                                    onClick={() => {
+                                                        if (setSelectedVoice) setSelectedVoice(voice);
+                                                        if (speak) speak(t('quiz.voice.test'), 1, voice);
+                                                    }}
+                                                    className={`w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm flex items-center justify-between transition-colors ${
+                                                        selectedVoice?.name === voice.name 
+                                                            ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-semibold border border-rose-200 dark:border-rose-800/30' 
+                                                            : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border border-transparent'
+                                                    }`}
+                                                >
+                                                    <span className="truncate mr-2 font-medium">{voice.name}</span>
+                                                    {selectedVoice?.name === voice.name && <i className="fas fa-check text-rose-500"></i>}
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
                         {onNavigateToSettings && (
                             <button 
                                 onClick={onNavigateToSettings}
-                                className={`sm:hidden w-10 h-10 ml-2 rounded-xl inline-flex items-center justify-center transition-all backdrop-blur-sm border ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 hover:bg-black/10 text-primary border-black/10' : 'bg-white/10 hover:bg-white/20 text-white border-white/20'}`}
+                                className={`sm:hidden w-10 h-10 rounded-xl inline-flex items-center justify-center transition-all backdrop-blur-sm border ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 hover:bg-black/10 text-primary border-black/10' : 'bg-white/10 hover:bg-white/20 text-white border-white/20'}`}
                                 title="Paramètres de l'IA"
                             >
                                 <i className="fas fa-cog"></i>
                             </button>
-                        )}
-                        
-                        {showVoiceSettings && (
-                            <div className="absolute top-12 right-0 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 w-72 overflow-hidden animate-fade-in-down origin-top-right">
-                                <div className="p-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center text-gray-800 dark:text-gray-200">
-                                    <h3 className="font-bold text-sm">
-                                        <i className="fas fa-volume-up mr-2 text-rose-500"></i>
-                                        {t('quiz.voice.title', { lang: language })}
-                                    </h3>
-                                    <button onClick={() => setShowVoiceSettings(false)} className="text-gray-400 hover:text-red-500 transition-colors">
-                                        <i className="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <div className="max-h-60 overflow-y-auto p-2 space-y-1">
-                                    {availableVoices.length === 0 ? (
-                                        <div className="text-center p-4 text-sm text-gray-500 dark:text-gray-400">{t('quiz.voice.noVoice')}</div>
-                                    ) : (
-                                        availableVoices.map((voice, idx) => (
-                                            <button
-                                                key={`${voice.name}-${idx}`}
-                                                onClick={() => {
-                                                    if (setSelectedVoice) setSelectedVoice(voice);
-                                                    if (speak) speak(t('quiz.voice.test'), 1, voice);
-                                                }}
-                                                className={`w-full text-left px-3 py-2.5 rounded-lg text-xs md:text-sm flex items-center justify-between transition-colors ${
-                                                    selectedVoice?.name === voice.name 
-                                                        ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-semibold border border-rose-200 dark:border-rose-800/30' 
-                                                        : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border border-transparent'
-                                                }`}
-                                            >
-                                                <span className="truncate mr-2 font-medium">{voice.name}</span>
-                                                {selectedVoice?.name === voice.name && <i className="fas fa-check text-rose-500"></i>}
-                                            </button>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
                         )}
                     </div>
 

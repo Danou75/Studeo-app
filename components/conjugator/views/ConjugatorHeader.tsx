@@ -57,104 +57,17 @@ export const ConjugatorHeader: React.FC<ConjugatorHeaderProps> = ({
                 >
                     <i className="fas fa-cog text-inherit"></i>
                 </button>
-            )}
-            <div className="relative z-10 flex justify-between items-start">
-                <div className="flex flex-col">
+            )}            <div className="relative z-10 flex flex-col gap-4">
+                {/* Top Row: Back button & Settings actions */}
+                <div className="flex justify-between items-center w-full">
                     <Button 
                         variant="secondary" 
                         onClick={onBack} 
                         size="sm" 
-                        className={`transition-all mb-4 w-fit ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
+                        className={`transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 text-primary' : 'bg-white/20 text-white'} hover:opacity-80 border-transparent backdrop-blur-sm`}
                     >
                         <i className="fas fa-home mr-2 text-inherit"></i> {t('common.home')}
                     </Button>
-                    <h1 className="text-3xl font-black drop-shadow-sm text-inherit">
-                        {t('conjugator.title')}
-                    </h1>
-                    <p className="opacity-80 mt-1 text-base text-inherit">
-                        {mode === 'conjugate' ? t('conjugator.conjugateSubtitle') : mode === 'translate' ? t('conjugator.translateSubtitle') : '📚 Vos conjugaisons & traductions sauvegardées'}
-                    </p>
-                    
-                    {/* Mode Selector */}
-                    <div className={`inline-flex gap-0.5 mt-2 p-0.5 rounded-lg backdrop-blur-sm shadow-inner border ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'}`}>
-                        <button
-                            onClick={() => setMode('conjugate')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                                mode === 'conjugate'
-                                    ? 'bg-white text-primary shadow-md'
-                                    : themeStyle === 'apple' && themeMode === 'light' 
-                                        ? 'text-primary/40 hover:text-primary/60' 
-                                        : 'text-white/70 hover:text-white'
-                            }`}
-                        >
-                            <i className="fas fa-book mr-1.5"></i>Conjugaison
-                        </button>
-                        <button
-                            onClick={() => setMode('translate')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                                mode === 'translate'
-                                    ? 'bg-white text-primary shadow-md'
-                                    : themeStyle === 'apple' && themeMode === 'light' 
-                                        ? 'text-primary/40 hover:text-primary/60' 
-                                        : 'text-white/70 hover:text-white'
-                            }`}
-                        >
-                            <i className="fas fa-language mr-1.5"></i>Traduction
-                        </button>
-                        <button
-                            onClick={() => setMode('library')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all relative ${
-                                mode === 'library'
-                                    ? 'bg-white text-primary shadow-md'
-                                    : themeStyle === 'apple' && themeMode === 'light' 
-                                        ? 'text-primary/40 hover:text-primary/60' 
-                                        : 'text-white/70 hover:text-white'
-                            }`}
-                        >
-                            <i className="fas fa-database mr-1.5"></i>Bibliothèque
-                            {cacheEntryCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-accent text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">
-                                    {cacheEntryCount > 99 ? '99+' : cacheEntryCount}
-                                </span>
-                            )}
-                        </button>
-                    </div>
-                </div>
-
-                <div className="flex flex-col xs:flex-row gap-2 items-end sm:items-center mt-3 sm:mt-0 max-w-full overflow-x-auto pb-1 sm:pb-0">
-                    {resultExists && (
-                        <div className={`flex flex-wrap gap-1 p-1 rounded-xl backdrop-blur-sm shadow-inner border transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'}`}>
-                            {mode === 'conjugate' && (
-                                <>
-                                  <button 
-                                      onClick={() => handleExport('md')}
-                                      disabled={isExporting}
-                                      className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
-                                      title={t('conjugator.exportMD')}
-                                  >
-                                      {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fab fa-markdown"></i>} <span>MD</span>
-                                  </button>
-                                  <div className={`w-px h-4 self-center ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/10' : 'bg-white/20'}`}></div>
-                                  <button 
-                                      onClick={() => handleExport('doc')}
-                                      disabled={isExporting}
-                                      className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
-                                      title={t('conjugator.exportWord')}
-                                  >
-                                      {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-file-word"></i>} <span>RTF</span>
-                                  </button>
-                                  <div className={`w-px h-4 self-center ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/10' : 'bg-white/20'}`}></div>
-                                </>
-                             )}
-                            <button 
-                                onClick={handleShare}
-                                className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
-                                title="Partager"
-                            >
-                                <i className="fas fa-share-alt"></i> <span>Partager</span>
-                            </button>
-                        </div>
-                    )}
 
                     <div className="flex gap-2 items-center">
                         <div className="relative">
@@ -209,19 +122,114 @@ export const ConjugatorHeader: React.FC<ConjugatorHeaderProps> = ({
                         {onNavigateToSettings && (
                             <button 
                                 onClick={onNavigateToSettings}
-                                className={`sm:hidden w-10 h-10 rounded-xl inline-flex items-center justify-center transition-all backdrop-blur-sm border ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 hover:bg-black/10 text-primary border-black/10' : 'bg-white/10 hover:bg-white/20 text-white border-white/20'}`}
+                                className={`w-10 h-10 rounded-xl inline-flex items-center justify-center transition-all backdrop-blur-sm border ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 hover:bg-black/10 text-primary border-black/10' : 'bg-white/10 hover:bg-white/20 text-white border-white/20'}`}
                                 title="Paramètres de l'IA"
                             >
                                 <i className="fas fa-cog"></i>
                             </button>
                         )}
                     </div>
+                </div>
 
-                    {selectedCount > 0 && onAddCards && (
-                        <Button onClick={handleCreateCards} size="sm" className="bg-white/90 hover:bg-white text-rose-600 border-none font-bold shadow-lg transform hover:scale-105 active:scale-95 transition-all">
-                            <i className="fas fa-plus-circle mr-2"></i> {t('conjugator.createCards', { count: selectedCount })}
-                        </Button>
-                    )}
+                {/* Middle Row: Title & Subtitle */}
+                <div className="flex flex-col">
+                    <h1 className="text-2xl sm:text-3xl font-black drop-shadow-sm text-inherit">
+                        {t('conjugator.title')}
+                    </h1>
+                    <p className="opacity-80 mt-0.5 text-sm sm:text-base text-inherit">
+                        {mode === 'conjugate' ? t('conjugator.conjugateSubtitle') : mode === 'translate' ? t('conjugator.translateSubtitle') : '📚 Vos conjugaisons & traductions sauvegardées'}
+                    </p>
+                </div>
+
+                {/* Bottom Row: Mode selector & Export/Add Actions */}
+                <div className="flex flex-col md:flex-row gap-3 justify-between items-start md:items-center">
+                    {/* Mode Selector */}
+                    <div className={`inline-flex gap-0.5 p-0.5 rounded-lg backdrop-blur-sm shadow-inner border ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'} max-w-full overflow-x-auto`}>
+                        <button
+                            onClick={() => setMode('conjugate')}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap ${
+                                mode === 'conjugate'
+                                    ? 'bg-white text-primary shadow-md'
+                                    : themeStyle === 'apple' && themeMode === 'light' 
+                                        ? 'text-primary/40 hover:text-primary/60' 
+                                        : 'text-white/70 hover:text-white'
+                            }`}
+                        >
+                            <i className="fas fa-book mr-1.5"></i>Conjugaison
+                        </button>
+                        <button
+                            onClick={() => setMode('translate')}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap ${
+                                mode === 'translate'
+                                    ? 'bg-white text-primary shadow-md'
+                                    : themeStyle === 'apple' && themeMode === 'light' 
+                                        ? 'text-primary/40 hover:text-primary/60' 
+                                        : 'text-white/70 hover:text-white'
+                            }`}
+                        >
+                            <i className="fas fa-language mr-1.5"></i>Traduction
+                        </button>
+                        <button
+                            onClick={() => setMode('library')}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all relative whitespace-nowrap ${
+                                mode === 'library'
+                                    ? 'bg-white text-primary shadow-md'
+                                    : themeStyle === 'apple' && themeMode === 'light' 
+                                        ? 'text-primary/40 hover:text-primary/60' 
+                                        : 'text-white/70 hover:text-white'
+                            }`}
+                        >
+                            <i className="fas fa-database mr-1.5"></i>Bibliothèque
+                            {cacheEntryCount > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-accent text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">
+                                    {cacheEntryCount > 99 ? '99+' : cacheEntryCount}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Export Actions & Add Cards */}
+                    <div className="flex flex-wrap items-center gap-2 max-w-full">
+                        {resultExists && (
+                            <div className={`flex items-center gap-1 p-1 rounded-xl backdrop-blur-sm shadow-inner border transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'}`}>
+                                {mode === 'conjugate' && (
+                                    <>
+                                      <button 
+                                          onClick={() => handleExport('md')}
+                                          disabled={isExporting}
+                                          className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
+                                          title={t('conjugator.exportMD')}
+                                      >
+                                          {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fab fa-markdown text-xs"></i>} <span>MD</span>
+                                      </button>
+                                      <div className={`w-px h-4 self-center ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/10' : 'bg-white/20'}`}></div>
+                                      <button 
+                                          onClick={() => handleExport('doc')}
+                                          disabled={isExporting}
+                                          className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 transition-all disabled:opacity-50 ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
+                                          title={t('conjugator.exportWord')}
+                                      >
+                                          {isExporting ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-file-word text-xs"></i>} <span>RTF</span>
+                                      </button>
+                                      <div className={`w-px h-4 self-center ${themeStyle === 'apple' && themeMode === 'light' ? 'bg-black/10' : 'bg-white/20'}`}></div>
+                                    </>
+                                 )}
+                                <button 
+                                    onClick={handleShare}
+                                    className={`px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 transition-all ${themeStyle === 'apple' && themeMode === 'light' ? 'hover:bg-black/5 text-primary' : 'hover:bg-white/20 text-white'}`}
+                                    title="Partager"
+                                >
+                                    <i className="fas fa-share-alt text-xs"></i> <span>Partager</span>
+                                </button>
+                            </div>
+                        )}
+
+                        {selectedCount > 0 && onAddCards && (
+                            <Button onClick={handleCreateCards} size="sm" className="bg-white/90 hover:bg-white text-rose-600 border-none font-bold shadow-lg transform hover:scale-105 active:scale-95 transition-all">
+                                <i className="fas fa-plus-circle mr-1"></i> {t('conjugator.createCards', { count: selectedCount })}
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
 

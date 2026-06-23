@@ -6,6 +6,21 @@ export interface ChatMessage {
 }
 
 /**
+ * Retourne l'URL pour les appels chat OpenRouter.
+ * - Sur Mac/Tauri et en développement local : appel direct.
+ * - Sur PWA web (iOS Safari, Android, etc.) : via le proxy Vercel
+ *   pour éviter les blocages CORS des navigateurs mobiles.
+ */
+const getOpenRouterChatUrl = (): string => {
+    if (typeof window === 'undefined') return 'https://openrouter.ai/api/v1/chat/completions';
+    const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isTauri = '__TAURI__' in window;
+    return (!isTauri && !isLocalDev)
+        ? '/api/openrouter-chat'
+        : 'https://openrouter.ai/api/v1/chat/completions';
+};
+
+/**
  * Execute AI Request adapted for Chat (Multi-turn)
  */
 /**
@@ -49,13 +64,19 @@ export const executeAIRequest = async (
     if (provider === 'openrouter') {
         if (!apiKey) throw new Error("Clé API OpenRouter manquante.");
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const openrouterUrl = getOpenRouterChatUrl();
+        const isProxy = openrouterUrl.startsWith('/');
+
+        const response = await fetch(openrouterUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': 'https://studeo.app',
-                'X-Title': 'Studeo'
+                // Headers directs uniquement hors proxy (Tauri ou dev local)
+                ...(!isProxy ? {
+                    'HTTP-Referer': 'https://studeo.app',
+                    'X-Title': 'Studeo'
+                } : {})
             },
             body: JSON.stringify({
                 model: modelName,

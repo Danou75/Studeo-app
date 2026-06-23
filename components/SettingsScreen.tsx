@@ -233,9 +233,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B (Meta)' },
     { id: 'mistralai/mistral-large', name: 'Mistral Large' },
   ];
-  const [openrouterModelsList, setOpenrouterModelsList] = useState(() =>
+  const [openrouterModelsList, setOpenrouterModelsList] = useState<{id: string, name: string, isFree?: boolean}[]>(() =>
     getInitialModels('studeo_openrouter_models', DEFAULT_OPENROUTER_MODELS, config.openrouterModel)
   );
+  const [openrouterSearchQuery, setOpenrouterSearchQuery] = useState('');
+  const [openrouterFreeOnly, setOpenrouterFreeOnly] = useState(false);
 
   const checkOpenRouterModels = async () => {
     if (!config.openrouterApiKey) {
@@ -247,18 +249,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         // Sur Safari iOS (WKWebView/PWA), le fetch direct vers openrouter.ai peut
         // échouer avec "load failing" à cause des restrictions CORS. On passe
         // par le proxy Vercel côté serveur pour éviter ce problème.
+        // En dev local (localhost), on appelle directement l'API OpenRouter.
+        const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         const isWebPWA = !window.__TAURI__;
-        const modelsUrl = isWebPWA
-            ? '/api/openrouter-models'
-            : 'https://openrouter.ai/api/v1/models';
+        const modelsUrl = (!isWebPWA || isLocalDev)
+            ? 'https://openrouter.ai/api/v1/models'
+            : '/api/openrouter-models';
+
 
         const response = await fetch(modelsUrl, {
             headers: {
                 'Authorization': `Bearer ${config.openrouterApiKey}`,
-                ...(isWebPWA ? {} : {
+                ...(!isWebPWA || isLocalDev ? {
                     'HTTP-Referer': 'https://studeo.app',
                     'X-Title': 'Studeo'
-                })
+                } : {})
             }
         });
         if (!response.ok) {
@@ -267,12 +272,29 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         }
         const data = await response.json();
         const models = data.data
-          .map((m: any) => ({ id: m.id, name: m.name ? `${m.name} (${m.id})` : m.id }))
-          .sort((a: any, b: any) => a.id.localeCompare(b.id));
+          .map((m: any) => {
+            // Un modèle est gratuit si son ID contient ":free" OU si son pricing prompt+completion = 0
+            const isFree =
+              m.id?.includes(':free') ||
+              (m.pricing &&
+                (parseFloat(m.pricing.prompt) === 0 ||
+                  m.pricing.prompt === '0') &&
+                (parseFloat(m.pricing.completion) === 0 ||
+                  m.pricing.completion === '0'));
+            return { id: m.id, name: m.name ? `${m.name} (${m.id})` : m.id, isFree: !!isFree };
+          })
+          .sort((a: any, b: any) => {
+            // Les modèles gratuits apparaissent en premier
+            if (a.isFree && !b.isFree) return -1;
+            if (!a.isFree && b.isFree) return 1;
+            return a.id.localeCompare(b.id);
+          });
 
         if (models.length > 0) {
             setOpenrouterModelsList(models);
+            const freeCount = models.filter((m: any) => m.isFree).length;
             localStorage.setItem('studeo_openrouter_models', JSON.stringify(models));
+            showToast(`${models.length} modèles chargés dont ${freeCount} gratuits 🆓`, 'success', 4000);
         } else throw new Error('Aucun modèle OpenRouter trouvé');
 
     } catch (e: any) {
@@ -871,15 +893,82 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       {t('settings.ai.refresh')}
                     </button>
                   </div>
+
+                  {/* Barre de recherche + filtre gratuit */}
+                  {openrouterModelsList.length > 5 && (
+                    <div className="mb-2 space-y-2">
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-xs"></i>
+                          <input
+                            type="text"
+                            value={openrouterSearchQuery}
+                            onChange={(e) => setOpenrouterSearchQuery(e.target.value)}
+                            placeholder="Rechercher un modèle…"
+                            className="w-full pl-8 pr-3 py-2 text-sm rounded-lg bg-background-secondary border border-border focus:border-primary outline-none text-text"
+                          />
+                          {openrouterSearchQuery && (
+                            <button
+                              onClick={() => setOpenrouterSearchQuery('')}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text text-xs"
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => setOpenrouterFreeOnly(!openrouterFreeOnly)}
+                          className={`flex-shrink-0 px-3 py-2 text-xs rounded-lg border font-medium transition-colors ${
+                            openrouterFreeOnly
+                              ? 'bg-green-600 text-white border-green-600'
+                              : 'bg-background-secondary border-border text-text-secondary hover:border-green-500 hover:text-green-600'
+                          }`}
+                          title="Afficher uniquement les modèles gratuits"
+                        >
+                          🆓 {openrouterFreeOnly ? 'Gratuits' : 'Gratuits ?'}
+                        </button>
+                      </div>
+                      {/* Compteur */}
+                      <p className="text-xs text-text-muted">
+                        {(() => {
+                          const filtered = openrouterModelsList.filter(m => {
+                            const q = openrouterSearchQuery.toLowerCase();
+                            const matchSearch = !q || m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
+                            const matchFree = !openrouterFreeOnly || m.isFree;
+                            return matchSearch && matchFree;
+                          });
+                          const freeTotal = openrouterModelsList.filter(m => m.isFree).length;
+                          return `${filtered.length} modèle${filtered.length > 1 ? 's' : ''} affiché${filtered.length > 1 ? 's' : ''} · ${freeTotal} gratuit${freeTotal > 1 ? 's' : ''} 🆓 sur ${openrouterModelsList.length} total`;
+                        })()}
+                      </p>
+                    </div>
+                  )}
+
                   <select
                     value={config.openrouterModel || 'openai/gpt-4o'}
                     onChange={(e) => updateConfig({ openrouterModel: e.target.value })}
                     className="w-full p-3 rounded-lg bg-background-secondary border border-border outline-none text-text"
+                    size={Math.min(8, openrouterModelsList.filter(m => {
+                      const q = openrouterSearchQuery.toLowerCase();
+                      return (!q || m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q)) && (!openrouterFreeOnly || m.isFree);
+                    }).length) || 1}
                   >
-                    {openrouterModelsList.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    {openrouterModelsList
+                      .filter(m => {
+                        const q = openrouterSearchQuery.toLowerCase();
+                        const matchSearch = !q || m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
+                        const matchFree = !openrouterFreeOnly || m.isFree;
+                        return matchSearch && matchFree;
+                      })
+                      .map(m => (
+                        <option key={m.id} value={m.id}>
+                          {m.isFree ? '🆓 ' : ''}{m.name}
+                        </option>
+                      ))
+                    }
                   </select>
                   <p className="text-xs text-text-muted mt-2">
-                    Cliquez sur "Actualiser" pour charger tous les modèles disponibles depuis OpenRouter.
+                    Cliquez sur "Actualiser" pour charger tous les modèles depuis OpenRouter. Les modèles gratuits 🆓 sont mis en avant.
                   </p>
                 </div>
               </div>

@@ -176,7 +176,15 @@ export function useMediaRecorderTranscribe({
 
             if (!serverRes.ok) {
               const errData = await serverRes.json().catch(() => ({}));
-              throw new Error(errData.error || `Erreur serveur ${serverRes.status}`);
+              // Cas spécial : clé Gemini manquante sur le serveur
+              if (errData.code === 'MISSING_GEMINI_KEY') {
+                throw new Error(
+                  '🎤 La transcription vocale n\'est pas disponible.\n' +
+                  'Vous utilisez OpenRouter, mais la reconnaissance vocale sur iPad/iPhone requiert aussi une clé API Gemini.\n' +
+                  '→ Ajoutez votre clé Gemini dans Paramètres > IA (gratuite sur aistudio.google.com)'
+                );
+              }
+              throw new Error(errData.error || `erreur serveur ${serverRes.status}`);
             }
 
             const serverData = await serverRes.json();

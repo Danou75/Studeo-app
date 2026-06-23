@@ -1,8 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { checkRateLimit } from '../_rateLimit';
 
-const BACKEND_API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_API_KEY;
-// gemini-1.5-flash = stable, multimodal audio support garanti
+// Note : les variables VITE_* ne sont PAS disponibles dans les fonctions serverless Vercel.
+// Il faut configurer GEMINI_API_KEY (sans préfixe) dans le dashboard Vercel > Settings > Environment Variables.
+const BACKEND_API_KEY =
+  process.env.GEMINI_API_KEY ||
+  process.env.VITE_GEMINI_API_KEY ||
+  process.env.VITE_API_KEY ||
+  process.env.GOOGLE_API_KEY;
 const GEMINI_MODEL = 'gemini-2.5-flash';
 
 /**
@@ -57,7 +62,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!API_KEY) {
       console.error('[Transcribe] No API key available. requestApiKey:', !!requestApiKey, 'BACKEND:', !!BACKEND_API_KEY);
-      return res.status(500).json({ error: 'Server configuration error: API Key missing' });
+      // Message d'erreur explicite pour guider l'utilisateur
+      return res.status(500).json({
+        error: 'Clé API Gemini manquante pour la transcription audio. ' +
+               'Sur iPad/iPhone avec OpenRouter, vous devez aussi configurer une clé API Gemini ' +
+               'dans Paramètres > IA pour activer la reconnaissance vocale. ' +
+               '(La transcription audio utilise toujours Gemini, quel que soit le fournisseur IA choisi.)',
+        code: 'MISSING_GEMINI_KEY',
+      });
     }
 
     if (!audioBase64) {

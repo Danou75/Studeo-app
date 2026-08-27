@@ -7,11 +7,18 @@ import legacy from '@vitejs/plugin-legacy'
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
-    legacy({
-      targets: ['ios >= 14', 'safari >= 14'],
-      polyfills: ['es.promise.finally', 'es/map', 'es/set'],
-      modernPolyfills: ['es.promise.finally']
-    })
+    // Le plugin legacy n'est activé qu'en production :
+    // En dev, il injecte des polyfills SystemJS qui peuvent corrompre
+    // le chargement des modules React → erreur "useState on null".
+    ...(mode !== 'web' ? [] : []),  // Tauri mode : pas de legacy non plus en dev
+    ...(process.env.NODE_ENV === 'production'
+      ? [legacy({
+          targets: ['ios >= 14', 'safari >= 14'],
+          polyfills: ['es.promise.finally', 'es/map', 'es/set'],
+          modernPolyfills: ['es.promise.finally']
+        })]
+      : []
+    ),
   ],
   define: {
     '__APP_VERSION__': JSON.stringify(process.env.npm_package_version),

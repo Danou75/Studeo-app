@@ -37,6 +37,8 @@ export const conjugateVerb = async (
       "definition": "...", "translation": "...", "example": "...",
       "tables": [ { "tense": "present", "tenseName": "Présent", "forms": { ... } }, ... ]
     }
+    IMPORTANT : Les champs "translation" et "definition" doivent OBLIGATOIREMENT être rédigés en FRANÇAIS, quelle que soit la langue cible.
+    Exemple correct : "translation": "observer attentivement, surveiller", "definition": "Fixer son regard ou son attention sur quelque chose."
     Temps requis : Présent, Imparfait, Futur simple, Passé composé, Conditionnel, Subjonctif présent, Impératif.
     Règles : Pronoms standard. PAS de markdown. JSON pur.
     `;
@@ -55,6 +57,7 @@ export const conjugateVerb = async (
         { "tense": "future", "tenseName": "Futur", "forms": { ... } }
       ]
     }
+    IMPORTANT : "translation" et "definition" doivent être en FRANÇAIS.
     Conjugue SEULEMENT au Présent, Passé Composé et Futur.
     `;
 

@@ -389,6 +389,28 @@ Réponds UNIQUEMENT avec le JSON.`;
             const data = await response.json();
             responseText = data.choices?.[0]?.message?.content || data.choices?.[0]?.text || '';
 
+        } else if (provider === 'openrouter') {
+            const model = modelName || 'openai/gpt-4o';
+            const url = 'https://openrouter.ai/api/v1/chat/completions';
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'https://studeo.app',
+                    'X-Title': 'Studeo'
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [{ role: 'user', content: prompt }]
+                })
+            });
+
+            if (!response.ok) throw new Error(`OpenRouter API Error: ${await response.text()}`);
+            const data = await response.json();
+            responseText = data.choices?.[0]?.message?.content || '';
+
         } else {
             throw new Error(`Provider ${provider} non supporté pour la génération de flashcards`);
         }
@@ -514,6 +536,8 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
                 response = await this.callMistral(systemPrompt, conversationHistory, cleanKey, modelName);
             } else if (provider === 'local') {
                 response = await this.callLocal(systemPrompt, conversationHistory, cleanKey || '', modelName);
+            } else if (provider === 'openrouter') {
+                response = await this.callOpenRouter(systemPrompt, conversationHistory, cleanKey, modelName);
             } else {
                 throw new Error(`Provider ${provider} non supporté`);
             }
@@ -559,6 +583,8 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
             return this.callMistral(sysPrompt, history, (apiKey || accessToken)!, modelName);
         } else if (provider === 'local') {
             return this.callLocal(sysPrompt, history, apiUrl || 'http://localhost:11434/v1', modelName);
+        } else if (provider === 'openrouter') {
+            return this.callOpenRouter(sysPrompt, history, (apiKey || accessToken)!, modelName);
         } else {
             throw new Error(`Provider ${provider} non supporté`);
         }
@@ -799,5 +825,71 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
 
         const data = await response.json();
         return data.choices?.[0]?.message?.content || data.choices?.[0]?.text || 'Désolé, je n\'ai pas pu générer de réponse.';
+    }
+
+    private static async callOpenRouter(
+        systemPrompt: string,
+        history: ChatMessage[],
+        apiKey: string,
+        modelName?: string
+    ): Promise<string> {
+        const model = modelName || 'openai/gpt-4o';
+        const url = 'https://openrouter.ai/api/v1/chat/completions';
+
+        console.log('[callOpenRouter] Début appel OpenRouter:', {
+            model,
+            historyLength: history.length,
+            apiKeyLength: apiKey?.length ?? 0,
+            apiKeyPrefix: apiKey ? apiKey.substring(0, 10) + '...' : 'VIDE'
+        });
+
+        if (!apiKey || apiKey.trim().length < 5) {
+            throw new Error('Clé API OpenRouter manquante. Veuillez la saisir dans Paramètres > IA.');
+        }
+
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            ...history.map(msg => ({
+                role: msg.role,
+                content: msg.content
+            }))
+        ];
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'https://studeo.app',
+                    'X-Title': 'Studeo'
+                },
+                body: JSON.stringify({ model, messages, temperature: 0.7 }),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('[callOpenRouter] Erreur HTTP', response.status, errorText);
+                if (response.status === 401) {
+                    throw new Error('Clé API OpenRouter invalide ou expirée. Vérifiez-la dans Paramètres > IA.');
+                }
+                throw new Error(`OpenRouter API Error: ${errorText}`);
+            }
+
+            const data = await response.json();
+            return data.choices?.[0]?.message?.content || 'Désolé, je n\'ai pas pu générer de réponse.';
+        } catch (err: any) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                throw new Error("L'IA est trop longue à répondre. Vérifiez votre connexion ou réessayez.");
+            }
+            throw err;
+        }
     }
 }

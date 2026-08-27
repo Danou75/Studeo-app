@@ -326,12 +326,24 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
     setIsRevealed(true);
   };
   
+  // Résout la clé API et le modèle selon le provider actif
+  const resolveAIParams = (): { apiKey: string | undefined; modelName: string; apiUrl: string | undefined } => {
+      switch (config.provider) {
+          case 'openrouter': return { apiKey: config.openrouterApiKey, modelName: config.openrouterModel || 'openai/gpt-4o', apiUrl: undefined };
+          case 'openai':     return { apiKey: config.openaiApiKey, modelName: config.openaiModel || 'gpt-4o', apiUrl: undefined };
+          case 'anthropic':  return { apiKey: config.anthropicApiKey, modelName: config.anthropicModel || 'claude-3-5-sonnet-20241022', apiUrl: undefined };
+          case 'mistral':    return { apiKey: config.mistralApiKey, modelName: config.mistralModel || 'mistral-large-latest', apiUrl: undefined };
+          case 'local':      return { apiKey: undefined, modelName: config.localModelName, apiUrl: config.localApiUrl };
+          default:           return { apiKey: config.geminiApiKey, modelName: config.geminiModel, apiUrl: undefined };
+      }
+  };
+
   const handleExplain = async () => {
       if (!config.selectedTutor) return; // Pas de tuteur = pas d'explication
       
       setIsExplaining(true);
       try {
-          const modelName = config.provider === 'gemini' ? config.geminiModel : config.localModelName;
+          const { apiKey, modelName, apiUrl } = resolveAIParams();
           
           const text = await getTutorExplanation(
               config.selectedTutor,
@@ -339,9 +351,9 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
               userInput,
               answer,
               config.provider,
-              config.geminiApiKey,
+              apiKey,
               modelName,
-              config.localApiUrl
+              apiUrl
           );
           setExplanation(text);
       } catch (error) {
@@ -360,16 +372,16 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ quizCards, quizConfig, o
       
       setIsGeneratingMnemonic(true);
       try {
-          const modelName = config.provider === 'gemini' ? config.geminiModel : config.localModelName;
+          const { apiKey, modelName, apiUrl } = resolveAIParams();
           
           const text = await generateMnemonic(
               config.selectedTutor || null,
               question,
               answer,
               config.provider,
-              config.geminiApiKey,
+              apiKey,
               modelName,
-              config.localApiUrl
+              apiUrl
           );
           
           setMnemonic(text);

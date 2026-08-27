@@ -29,6 +29,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     const config = useAIConfig();
     const { themeMode, themeStyle } = useTheme();
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const lastAiMessageRef = useRef<HTMLDivElement>(null);
 
     const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
     const [allSessions, setAllSessions] = useState<ChatSession[]>([]);
@@ -98,13 +99,25 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         setAllSessions(sessions);
     }, [currentSession, refreshKey]);
 
-    // Auto-scroll vers le bas
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
+    // Scroll intelligent :
+    // – Quand c'est un message USER (ou loading) → on scrolle en bas (pour voir l'indicateur)
+    // – Quand c'est une réponse ASSISTANT → on scrolle au début du message pour éviter le scroll de retour
     useEffect(() => {
-        scrollToBottom();
+        const messages = currentSession?.messages;
+        if (!messages || messages.length === 0) return;
+
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg.role === 'assistant') {
+            // Petit délai pour laisser le DOM se rendre complètement
+            setTimeout(() => {
+                lastAiMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 80);
+        } else {
+            // Message user ou état initial : on descend en bas
+            setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 80);
+        }
     }, [currentSession?.messages]);
 
     // Charger automatiquement la dernière session au démarrage si aucune n'est spécifiée
@@ -767,9 +780,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                         </div>
                     )}
 
-                    {currentSession.messages.map((message) => (
+                    {currentSession.messages.map((message, index) => {
+                        const isLastAssistant =
+                            message.role === 'assistant' &&
+                            index === currentSession.messages.length - 1;
+                        return (
                         <div
                             key={message.id}
+                            ref={isLastAssistant ? lastAiMessageRef : undefined}
                             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-in-up`}
                         >
                             <div
@@ -874,7 +892,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                                 </div>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
 
                     {isLoading && (
                         <div className="flex justify-start animate-fade-in">

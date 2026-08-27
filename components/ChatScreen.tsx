@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from './ui/Button';
+import { useNavigate } from 'react-router-dom';
 import { ChatService, ChatSession, ChatMessage } from '../services/chatService';
 import { useAIConfig } from '../contexts/AIConfigContext';
 import { useToast } from '../contexts/ToastContext';
@@ -28,6 +29,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     const { showToast } = useToast();
     const config = useAIConfig();
     const { themeMode, themeStyle } = useTheme();
+    const navigate = useNavigate();
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const lastAiMessageRef = useRef<HTMLDivElement>(null);
 
@@ -764,6 +766,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                             title="Exporter"
                         >
                             <i className="fas fa-download text-base md:text-sm"></i> <span className="hidden md:inline ml-2">Export</span>
+                        </button>
+                        
+                        <button
+                            onClick={() => navigate('/settings')}
+                            className="p-1.5 md:px-3 md:py-2 bg-background-secondary border border-border rounded-lg hover:border-primary transition-all text-sm flex items-center justify-center text-text-secondary hover:text-primary"
+                            title="Paramètres"
+                        >
+                            <i className="fas fa-cog text-base md:text-sm"></i> <span className="hidden md:inline ml-2">Paramètres</span>
                         </button>
                     </div>
                 </div>

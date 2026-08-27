@@ -665,117 +665,219 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col min-h-0 relative">
                 {/* Header responsive */}
-                <div className="bg-background-secondary border-b border-border px-2 py-2 md:p-4 pt-safe flex justify-between items-center shadow-sm z-20 overflow-hidden">
-                    <div className="flex items-center gap-0.5 md:gap-3 shrink-0">
-                        <Button 
-                            onClick={onBack} 
-                            variant="secondary" 
-                            size="sm" 
-                            className="hidden sm:flex"
-                        >
-                            <i className="fas fa-home mr-2"></i> Accueil
-                        </Button>
-                        <button 
-                            onClick={onBack}
-                            className="p-1.5 sm:hidden hover:bg-background rounded-lg transition-colors"
-                        >
-                            <i className="fas fa-home text-base"></i>
-                        </button>
-                        
-                        <button
-                            onClick={() => setShowSidebar(!showSidebar)}
-                            className={`p-1.5 hover:bg-background rounded-lg transition-colors ${showSidebar ? 'text-primary' : ''}`}
-                            title="Historique"
-                        >
-                            <i className="fas fa-history text-base"></i>
-                        </button>
+                <div className={`bg-background-secondary border-b border-border shadow-sm z-20 overflow-hidden ${
+                    typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent)
+                        ? 'px-2 py-2.5 pt-safe flex flex-col gap-2'
+                        : 'px-2 py-2 md:p-4 pt-safe flex justify-between items-center'
+                }`}>
+                    {typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent) ? (
+                        /* --- Layout Android sur deux lignes --- */
+                        <>
+                            {/* Ligne 1 : Contrôles, Nom du prof, Actions */}
+                            <div className="flex justify-between items-center w-full">
+                                {/* Gauche : Retour, Sidebar, Nouveau */}
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                    <button 
+                                        onClick={onBack}
+                                        className="p-1.5 hover:bg-background rounded-lg transition-colors"
+                                    >
+                                        <i className="fas fa-home text-base"></i>
+                                    </button>
+                                    <button
+                                        onClick={() => setShowSidebar(!showSidebar)}
+                                        className={`p-1.5 hover:bg-background rounded-lg transition-colors ${showSidebar ? 'text-primary' : ''}`}
+                                        title="Historique"
+                                    >
+                                        <i className="fas fa-history text-base"></i>
+                                    </button>
+                                    <button
+                                        onClick={handleNewChat}
+                                        className="p-1.5 hover:bg-background rounded-lg transition-colors text-primary"
+                                        title="Nouvelle conversation"
+                                    >
+                                        <i className="fas fa-plus-circle text-base"></i>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (confirm(`Supprimer la conversation avec ${currentSession.tutorName} ?\nCette action est irréversible.`)) {
+                                                ChatService.deleteSession(currentSession.id);
+                                                setAllSessions(prev => prev.filter(s => s.id !== currentSession.id));
+                                                const newSession = ChatService.createSession(
+                                                    currentSession.tutorName,
+                                                    currentSession.tutorSubject
+                                                );
+                                                setCurrentSession(newSession);
+                                                showToast('Conversation effacée — nouvelle discussion démarrée', 'success');
+                                            }
+                                        }}
+                                        className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-red-400 hover:text-red-600"
+                                        title="Effacer cette conversation"
+                                    >
+                                        <i className="fas fa-minus-circle text-base"></i>
+                                    </button>
+                                </div>
 
-                        <button
-                            onClick={handleNewChat}
-                            className="p-1.5 hover:bg-background rounded-lg transition-colors text-primary"
-                            title="Nouvelle conversation"
-                        >
-                            <i className="fas fa-plus-circle text-base"></i>
-                        </button>
+                                {/* Centre : Nom du tuteur */}
+                                <div className="text-center flex-1 mx-1 min-w-0">
+                                    <h2 className="text-sm font-black text-primary flex items-center justify-center gap-1 truncate">
+                                        <span>🎓</span>
+                                        {currentSession.tutorName}
+                                    </h2>
+                                </div>
 
-                        <button
-                            onClick={() => {
-                                if (!currentSession) return;
-                                if (confirm(`Supprimer la conversation avec ${currentSession.tutorName} ?\nCette action est irréversible.`)) {
-                                    // Supprimer la session courante
-                                    ChatService.deleteSession(currentSession.id);
-                                    setAllSessions(prev => prev.filter(s => s.id !== currentSession.id));
-                                    // Créer une nouvelle session avec le même tuteur → on reste sur l'écran chat
-                                    const newSession = ChatService.createSession(
-                                        currentSession.tutorName,
-                                        currentSession.tutorSubject
-                                    );
-                                    setCurrentSession(newSession);
-                                    showToast('Conversation effacée — nouvelle discussion démarrée', 'success');
-                                }
-                            }}
-                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-red-400 hover:text-red-600"
-                            title="Effacer cette conversation"
-                        >
-                            <i className="fas fa-minus-circle text-base"></i>
-                        </button>
-                    </div>
-                    
-                    <div className="text-center flex-1 mx-1 md:mx-4 min-w-0">
-                        <h2 className="text-sm sm:text-base md:text-xl font-black text-primary flex items-center justify-center gap-1 md:gap-2 truncate">
-                            <span className="hidden sm:inline">🎓</span>
-                            {currentSession.tutorName}
-                        </h2>
-                        <p className="hidden xs:block text-[9px] md:text-sm text-text-secondary truncate">{currentSession.tutorSubject}</p>
-                    </div>
+                                {/* Droite : Quiz, Export, Paramètres */}
+                                <div className="flex gap-1 shrink-0">
+                                    <button
+                                        onClick={handleGenerateFlashcards}
+                                        disabled={isGeneratingCards || currentSession.messages.length < 2}
+                                        className="p-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm flex items-center justify-center"
+                                        title="Créer un Quiz"
+                                    >
+                                        {isGeneratingCards ? (
+                                            <i className="fas fa-spinner fa-spin"></i>
+                                        ) : (
+                                            <i className="fas fa-layer-group text-base"></i>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={handleExportMarkdown}
+                                        className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm flex items-center justify-center"
+                                        title="Exporter"
+                                    >
+                                        <i className="fas fa-download text-base"></i>
+                                    </button>
+                                    <button
+                                        onClick={() => navigate('/settings')}
+                                        className="p-1.5 bg-background-secondary border border-border rounded-lg hover:border-primary transition-all text-sm flex items-center justify-center text-text-secondary hover:text-primary"
+                                        title="Paramètres"
+                                    >
+                                        <i className="fas fa-cog text-base"></i>
+                                    </button>
+                                </div>
+                            </div>
 
-                    <div className="flex gap-1 md:gap-2 shrink-0">
-                        {/* Sélecteur de personnalité (compact on mobile) */}
-                        <select
-                            value={tutorPersonality}
-                            onChange={(e) => {
-                                setTutorPersonality(e.target.value);
-                                setTutorStyle(getStyleFromPersonality(e.target.value));
-                                showToast(`Personnalité : ${personalityOptions.find(p => p.id === e.target.value)?.label}`, 'info');
-                            }}
-                            className="hidden lg:block px-3 py-2 bg-background-secondary border border-border rounded-lg text-sm hover:border-primary transition-colors outline-none cursor-pointer"
-                        >
-                            {personalityOptions.map(option => (
-                                <option key={option.id} value={option.id}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
+                            {/* Ligne 2 : Sujet complet */}
+                            <div className="w-full text-center px-3 py-1 bg-background/50 rounded-xl border border-border/50 shadow-inner">
+                                <p className="text-xs font-semibold text-text-secondary leading-relaxed whitespace-normal break-words">
+                                    {currentSession.tutorSubject}
+                                </p>
+                            </div>
+                        </>
+                    ) : (
+                        /* --- Layout Standard (Non-Android) --- */
+                        <>
+                            <div className="flex items-center gap-0.5 md:gap-3 shrink-0">
+                                <Button 
+                                    onClick={onBack} 
+                                    variant="secondary" 
+                                    size="sm" 
+                                    className="hidden sm:flex"
+                                >
+                                    <i className="fas fa-home mr-2"></i> Accueil
+                                </Button>
+                                <button 
+                                    onClick={onBack}
+                                    className="p-1.5 sm:hidden hover:bg-background rounded-lg transition-colors"
+                                >
+                                    <i className="fas fa-home text-base"></i>
+                                </button>
+                                
+                                <button
+                                    onClick={() => setShowSidebar(!showSidebar)}
+                                    className={`p-1.5 hover:bg-background rounded-lg transition-colors ${showSidebar ? 'text-primary' : ''}`}
+                                    title="Historique"
+                                >
+                                    <i className="fas fa-history text-base"></i>
+                                </button>
 
-                        <button
-                            onClick={handleGenerateFlashcards}
-                            disabled={isGeneratingCards || currentSession.messages.length < 2}
-                            className="p-1.5 md:px-3 md:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm flex items-center justify-center"
-                            title="Créer un Quiz"
-                        >
-                            {isGeneratingCards ? (
-                                <i className="fas fa-spinner fa-spin"></i>
-                            ) : (
-                                <><i className="fas fa-layer-group md:mr-2 text-base md:text-sm"></i> <span className="hidden md:inline">Quiz</span></>
-                            )}
-                        </button>
-                        
-                        <button
-                            onClick={handleExportMarkdown}
-                            className="p-1.5 md:px-3 md:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm flex items-center justify-center"
-                            title="Exporter"
-                        >
-                            <i className="fas fa-download text-base md:text-sm"></i> <span className="hidden md:inline ml-2">Export</span>
-                        </button>
-                        
-                        <button
-                            onClick={() => navigate('/settings')}
-                            className="p-1.5 md:px-3 md:py-2 bg-background-secondary border border-border rounded-lg hover:border-primary transition-all text-sm flex items-center justify-center text-text-secondary hover:text-primary"
-                            title="Paramètres"
-                        >
-                            <i className="fas fa-cog text-base md:text-sm"></i> <span className="hidden md:inline ml-2">Paramètres</span>
-                        </button>
-                    </div>
+                                <button
+                                    onClick={handleNewChat}
+                                    className="p-1.5 hover:bg-background rounded-lg transition-colors text-primary"
+                                    title="Nouvelle conversation"
+                                >
+                                    <i className="fas fa-plus-circle text-base"></i>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        if (!currentSession) return;
+                                        if (confirm(`Supprimer la conversation avec ${currentSession.tutorName} ?\nCette action est irréversible.`)) {
+                                            // Supprimer la session courante
+                                            ChatService.deleteSession(currentSession.id);
+                                            setAllSessions(prev => prev.filter(s => s.id !== currentSession.id));
+                                            // Créer une nouvelle session avec le même tuteur → on reste sur l'écran chat
+                                            const newSession = ChatService.createSession(
+                                                currentSession.tutorName,
+                                                currentSession.tutorSubject
+                                            );
+                                            setCurrentSession(newSession);
+                                            showToast('Conversation effacée — nouvelle discussion démarrée', 'success');
+                                        }
+                                    }}
+                                    className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-red-400 hover:text-red-600"
+                                    title="Effacer cette conversation"
+                                >
+                                    <i className="fas fa-minus-circle text-base"></i>
+                                </button>
+                            </div>
+                            
+                            <div className="text-center flex-1 mx-1 md:mx-4 min-w-0">
+                                <h2 className="text-sm sm:text-base md:text-xl font-black text-primary flex items-center justify-center gap-1 md:gap-2 truncate">
+                                    <span className="hidden sm:inline">🎓</span>
+                                    {currentSession.tutorName}
+                                </h2>
+                                <p className="hidden xs:block text-[9px] md:text-sm text-text-secondary truncate">{currentSession.tutorSubject}</p>
+                            </div>
+
+                            <div className="flex gap-1 md:gap-2 shrink-0">
+                                {/* Sélecteur de personnalité (compact on mobile) */}
+                                <select
+                                    value={tutorPersonality}
+                                    onChange={(e) => {
+                                        setTutorPersonality(e.target.value);
+                                        setTutorStyle(getStyleFromPersonality(e.target.value));
+                                        showToast(`Personnalité : ${personalityOptions.find(p => p.id === e.target.value)?.label}`, 'info');
+                                    }}
+                                    className="hidden lg:block px-3 py-2 bg-background-secondary border border-border rounded-lg text-sm hover:border-primary transition-colors outline-none cursor-pointer"
+                                >
+                                    {personalityOptions.map(option => (
+                                        <option key={option.id} value={option.id}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <button
+                                    onClick={handleGenerateFlashcards}
+                                    disabled={isGeneratingCards || currentSession.messages.length < 2}
+                                    className="p-1.5 md:px-3 md:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm flex items-center justify-center"
+                                    title="Créer un Quiz"
+                                >
+                                    {isGeneratingCards ? (
+                                        <i className="fas fa-spinner fa-spin"></i>
+                                    ) : (
+                                        <><i className="fas fa-layer-group md:mr-2 text-base md:text-sm"></i> <span className="hidden md:inline">Quiz</span></>
+                                    )}
+                                </button>
+                                
+                                <button
+                                    onClick={handleExportMarkdown}
+                                    className="p-1.5 md:px-3 md:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm flex items-center justify-center"
+                                    title="Exporter"
+                                >
+                                    <i className="fas fa-download text-base md:text-sm"></i> <span className="hidden md:inline ml-2">Export</span>
+                                </button>
+                                
+                                <button
+                                    onClick={() => navigate('/settings')}
+                                    className="p-1.5 md:px-3 md:py-2 bg-background-secondary border border-border rounded-lg hover:border-primary transition-all text-sm flex items-center justify-center text-text-secondary hover:text-primary"
+                                    title="Paramètres"
+                                >
+                                    <i className="fas fa-cog text-base md:text-sm"></i> <span className="hidden md:inline ml-2">Paramètres</span>
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Messages optimized for mobile */}

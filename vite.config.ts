@@ -62,39 +62,6 @@ export default defineConfig(({ mode }) => ({
           'vendor-ai': ['@google/generative-ai', '@google/genai'],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-ui': ['canvas-confetti', 'react-markdown', 'remark-gfm'],
-          
-          // Feature chunks - Challenges (loaded on demand)
-          'challenges': [
-            './components/MusicChallengeScreen',
-            './components/ChessChallengeScreen', 
-            './components/DrawingChallengeScreen',
-            './components/CodingChallengeScreen',
-            './components/DrawingTutorialScreen'
-          ],
-          
-          // Feature chunks - Learning tools
-          'learning-tools': [
-            './components/ConjugatorScreen',
-            './components/LanguageLabScreen',
-            './components/VideoLabScreen'
-          ],
-          
-          // Services - AI and generation
-          'services-ai': [
-            './services/aiCardGenerator',
-            './services/aiLessonGenerator',
-            './services/curriculumService',
-            './services/chatService',
-            './services/conversationService'
-          ],
-          
-          // Services - Utilities
-          'services-utils': [
-            './services/youtubeService',
-            './services/fileParser',
-            './services/drawingEvaluationService',
-            './services/drawingTutorialService'
-          ]
         }
       }
     },

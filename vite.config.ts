@@ -30,8 +30,23 @@ export default defineConfig(({ mode }) => ({
     port: mode === 'web' ? 5173 : 1420,
     strictPort: mode !== 'web',
     proxy: {
+      // OpenRouter : proxy direct vers l'API — évite le CORS en dev
+      // (en prod, c'est la serverless function Vercel /api/openrouter-chat.ts)
+      '/api/openrouter-chat': {
+        target: 'https://openrouter.ai',
+        changeOrigin: true,
+        secure: true,
+        rewrite: () => '/api/v1/chat/completions',
+      },
+      '/api/openrouter-models': {
+        target: 'https://openrouter.ai',
+        changeOrigin: true,
+        secure: true,
+        rewrite: () => '/api/v1/models',
+      },
+      // Autres routes /api → Vercel dev server (si démarré)
       '/api': {
-        target: 'http://localhost:3000', // Vercel dev server default
+        target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
       }

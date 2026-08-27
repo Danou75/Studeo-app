@@ -827,6 +827,15 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
         return data.choices?.[0]?.message?.content || data.choices?.[0]?.text || 'Désolé, je n\'ai pas pu générer de réponse.';
     }
 
+    private static getOpenRouterUrl(): string {
+        // En Tauri (WKWebView natif) → appel direct, pas de CORS
+        // En navigateur (dev ou prod) → proxy /api/openrouter-chat pour éviter le CORS
+        const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
+        return isTauri
+            ? 'https://openrouter.ai/api/v1/chat/completions'
+            : '/api/openrouter-chat';
+    }
+
     private static async callOpenRouter(
         systemPrompt: string,
         history: ChatMessage[],
@@ -834,10 +843,12 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
         modelName?: string
     ): Promise<string> {
         const model = modelName || 'openai/gpt-4o';
-        const url = 'https://openrouter.ai/api/v1/chat/completions';
+        const url = ChatService.getOpenRouterUrl();
+        const isProxy = url.startsWith('/');
 
         console.log('[callOpenRouter] Début appel OpenRouter:', {
             model,
+            url,
             historyLength: history.length,
             apiKeyLength: apiKey?.length ?? 0,
             apiKeyPrefix: apiKey ? apiKey.substring(0, 10) + '...' : 'VIDE'
@@ -864,8 +875,11 @@ Attention au formatage Markdown : assure-toi de toujours insérer des espaces av
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${apiKey}`,
-                    'HTTP-Referer': 'https://studeo.app',
-                    'X-Title': 'Studeo'
+                    // Headers OpenRouter uniquement en appel direct (pas via proxy)
+                    ...(!isProxy ? {
+                        'HTTP-Referer': 'https://studeo.app',
+                        'X-Title': 'Studeo'
+                    } : {})
                 },
                 body: JSON.stringify({ model, messages, temperature: 0.7 }),
                 signal: controller.signal

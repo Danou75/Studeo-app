@@ -35,9 +35,18 @@ export default async function handler(req: any, res: any) {
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Appel léger à l'API auth — fonctionne toujours sans table dédiée
-    // Cela suffit pour signaler l'activité à Supabase
-    const { error } = await supabase.auth.getSession();
+    // Requête réelle vers la base de données (PostgREST) — c'est ce que
+    // Supabase comptabilise comme "activité" pour éviter la mise en pause.
+    // auth.getSession() ne suffit PAS : il touche le service Auth, pas la DB.
+    const { error } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1);
+
+    // PGRST116 = aucune ligne trouvée (table vide ou RLS strict) → pas une erreur
+    if (error && error.code !== 'PGRST116') {
+      throw new Error(error.message);
+    }
 
     const timestamp = new Date().toISOString();
     console.log(`[KeepAlive] ${timestamp} — Supabase ping OK`);

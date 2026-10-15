@@ -3,8 +3,7 @@ name: Keep Supabase Alive
 on:
   schedule:
     # S'exécute tous les 3 jours à 09:00 UTC (marge confortable sous les 7 jours de la limite Supabase)
-    # ⚠️  GitHub désactive ce workflow si le repo est inactif >60 jours sans push.
-    #     Le cron Vercel (vercel.json, daily à 8h UTC) est le mécanisme principal.
+    # Le cron Vercel (vercel.json, daily à 8h UTC) est le mécanisme principal.
     - cron: '0 9 */3 * *'
   workflow_dispatch: # Permet de le lancer manuellement depuis GitHub Actions
 
@@ -12,6 +11,11 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout (nécessaire pour le self-commit)
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Ping Supabase DB via REST (requête PostgREST authentifiée)
         run: |
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -26,13 +30,11 @@ jobs:
           fi
           echo "✅ Supabase DB est actif (code $RESPONSE)"
 
-      - name: Ping Vercel keep-alive endpoint (backup)
+      - name: Self-commit pour maintenir le repo actif (évite la désactivation GitHub Actions)
         run: |
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
-            "https://studeo.vercel.app/api/health-ping")
-          echo "Vercel health-ping status: $RESPONSE"
-          if [ "$RESPONSE" = "200" ]; then
-            echo "✅ Vercel cron endpoint opérationnel"
-          else
-            echo "⚠️  Vercel endpoint a retourné $RESPONSE (non bloquant)"
-          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" > .github/last-keepalive.txt
+          git add .github/last-keepalive.txt
+          git commit -m "chore: keep-alive ping [skip ci]" || echo "Rien à commiter"
+          git push || echo "Push optionnel échoué (non bloquant)"
